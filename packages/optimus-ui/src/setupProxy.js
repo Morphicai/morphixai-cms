@@ -6,8 +6,7 @@ module.exports = function (app) {
   app.use(
     createProxyMiddleware("/api", {
       changeOrigin: true,
-      // target: "http://localhost:8084",
-      target: isDebugRemote ? process.env.REACT_APP_REMOTE_API_URL || 'https://example.com' : "http://localhost:8084",
+      target: "http://localhost:8084",
       router: () => { },
     }),
   );
