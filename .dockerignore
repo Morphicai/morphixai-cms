@@ -1,0 +1,55 @@
+# 依赖和构建产物 (会重新生成)
+node_modules/
+packages/*/node_modules/
+packages/*/dist/
+packages/*/build/
+dist/
+build/
+
+# proxy-server 包 (Caddy 已提供代理功能)
+packages/proxy-server/
+
+# 日志和临时文件
+*.log
+logs/
+packages/*/logs/
+*.tmp
+
+# 开发环境文件 (保留生产环境配置)
+.env.local
+.env.development
+.env.test
+.env.e2e
+packages/*/.env.local
+packages/*/.env.development
+packages/*/.env.test
+packages/*/.env.e2e
+!packages/optimus-ui/.env.production
+!packages/optimus-api/.env.production.example
+
+# Git 和 IDE
+.git/
+.vscode/
+.idea/
+.DS_Store
+
+# 测试文件
+test/
+tests/
+e2e/
+packages/*/test/
+packages/*/e2e/
+*.test.*
+*.spec.*
+
+# 文档
+README.md
+*.md
+docs/
+!DOCKER.md
+
+
+# Docker 文件 (保留 Caddyfile 和启动脚本)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

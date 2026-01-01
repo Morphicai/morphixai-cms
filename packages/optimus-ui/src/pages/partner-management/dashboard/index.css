@@ -1,0 +1,80 @@
+.partner-dashboard {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+.partner-dashboard .page-title {
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.partner-dashboard .section {
+    margin-bottom: 24px;
+}
+
+.partner-dashboard .section .section-title {
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #262626;
+}
+
+.partner-dashboard .ranking-list .ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.partner-dashboard .ranking-list .ranking-item:last-child {
+    border-bottom: none;
+}
+
+.partner-dashboard .ranking-list .ranking-item .rank {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    border-radius: 50%;
+    background: #f0f0f0;
+    color: #666;
+    font-weight: 600;
+    margin-right: 16px;
+}
+
+.partner-dashboard .ranking-list .ranking-item .rank.rank-1 {
+    background: #ffd700;
+    color: #fff;
+}
+
+.partner-dashboard .ranking-list .ranking-item .rank.rank-2 {
+    background: #c0c0c0;
+    color: #fff;
+}
+
+.partner-dashboard .ranking-list .ranking-item .rank.rank-3 {
+    background: #cd7f32;
+    color: #fff;
+}
+
+.partner-dashboard .ranking-list .ranking-item .partner-code {
+    flex: 1;
+    font-size: 14px;
+    color: #262626;
+}
+
+.partner-dashboard .ranking-list .ranking-item .points {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1890ff;
+}
+
+.partner-dashboard-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}

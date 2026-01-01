@@ -1,0 +1,86 @@
+# E2E测试环境配置
+app:
+    prefix: "/api"
+    port: ${APP_PORT:8084}
+    swagger: true
+    logger:
+        dir: ${LOG_DIR:./logs/e2e}
+    file:
+        # 分片文件存储路径（用于 WebSocket 大文件分片上传）
+        tempUpload: ${UPLOAD_TEMP_PATH:../netdisk-cache-e2e}
+        domain: ${SITE_DOMAIN:http://localhost:8082}
+
+# E2E测试数据库配置 - 使用和开发环境相同的MySQL，但数据库名加e2e后缀
+db:
+    mysql:
+        host: ${DB_HOST:localhost}
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:your_test_database_password}
+        database: ${DB_DATABASE:kapok_e2e}
+        port: ${DB_PORT:3306}
+        charset: ${DB_CHARSET:utf8mb4}
+        logger: "advanced-console"
+        logging: ${DB_LOGGING:false}
+        multipleStatements: true
+        maxQueryExecutionTime: 1000
+        dropSchema: false
+        synchronize: ${DB_SYNCHRONIZE:false}
+        supportBigNumbers: true
+        bigNumberStrings: true
+
+# jwt 配置
+jwt:
+    secretkey: ${JWT_SECRET:your_test_jwt_secret_key}
+    expiresin: ${JWT_EXPIRES_IN:1h}
+    refreshExpiresIn: ${JWT_REFRESH_EXPIRES_IN:2h}
+
+# 权限白名单配置
+perm:
+    router:
+        whitelist:
+            [
+                { path: "/api/register", method: "POST" },
+                { path: "/api/login", method: "POST" },
+                { path: "/api/perm/{id}", method: "GET" },
+                { path: "/api/oss/upload", method: "POST" },
+                { path: "/api/proxy/file/:path*", method: "GET" },
+                { path: "/api/files/file/:path*", method: "GET" },
+            ]
+
+# 用户相关
+user:
+    initialPassword: ${INITIAL_PASSWORD:your_test_initial_password}
+
+# 邮箱相关
+mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    account: ${MAIL_ACCOUNT:your_email@example.com}
+    code: ${MAIL_PASSWORD:your_email_password}
+
+# 测试模式配置
+test:
+    mode: ${TEST_MODE:true}
+    bypassCaptcha: ${BYPASS_CAPTCHA:true}
+    user:
+        account: ${TEST_USER_ACCOUNT:testuser}
+        password: ${TEST_USER_PASSWORD:testpass123}
+    admin:
+        account: ${TEST_ADMIN_ACCOUNT:testadmin}
+        password: ${TEST_ADMIN_PASSWORD:adminpass123}
+    api:
+        timeout: ${API_TEST_TIMEOUT:30000}
+        retries: ${API_TEST_RETRIES:3}
+        baseUrl: ${API_TEST_BASE_URL:http://localhost:8082}
+
+# 存储配置 - 测试环境使用本地存储
+storage:
+    provider: ${STORAGE_PROVIDER:local}
+    minio:
+        endpoint: ${MINIO_ENDPOINT:localhost}
+        port: ${MINIO_PORT:9000}
+        useSSL: ${MINIO_USE_SSL:false}
+        accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+        secretKey: ${MINIO_SECRET_KEY:your_minio_secret_key}
+        bucketName: ${MINIO_BUCKET_NAME:e2e-uploads}
+        thumbnailBucket: ${MINIO_THUMBNAIL_BUCKET:e2e-thumbnails}
+        region: ${MINIO_REGION:us-east-1}

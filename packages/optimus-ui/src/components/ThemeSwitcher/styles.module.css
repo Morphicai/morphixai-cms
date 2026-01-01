@@ -1,0 +1,73 @@
+/**
+ * ThemeSwitcher 样式
+ * 包含平滑的过渡动画效果
+ */
+
+.themeSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background-color: var(--color-bg-secondary, #f5f5f7);
+  transition: background-color var(--transition-base, 250ms ease);
+}
+
+.icon {
+  font-size: 16px;
+  color: var(--color-text-tertiary, #95a5a6);
+  transition: all var(--transition-fast, 150ms ease);
+  cursor: default;
+}
+
+.icon.active {
+  color: var(--color-primary, #6c5ce7);
+  transform: scale(1.1);
+}
+
+.switch {
+  margin: 0;
+}
+
+/* 暗色主题下的样式调整 */
+:global([data-theme="dark"]) .themeSwitcher {
+  background-color: var(--color-bg-tertiary, #2d3348);
+}
+
+:global([data-theme="dark"]) .icon {
+  color: var(--color-text-tertiary, #6b7280);
+}
+
+:global([data-theme="dark"]) .icon.active {
+  color: var(--color-primary, #a855f7);
+}
+
+/* 悬停效果 */
+.themeSwitcher:hover .icon {
+  color: var(--color-text-secondary, #636e72);
+}
+
+:global([data-theme="dark"]) .themeSwitcher:hover .icon {
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.themeSwitcher:hover .icon.active {
+  color: var(--color-primary, #6c5ce7);
+  transform: scale(1.15);
+}
+
+:global([data-theme="dark"]) .themeSwitcher:hover .icon.active {
+  color: var(--color-primary, #a855f7);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .themeSwitcher {
+    gap: 6px;
+    padding: 4px 6px;
+  }
+  
+  .icon {
+    font-size: 14px;
+  }
+}

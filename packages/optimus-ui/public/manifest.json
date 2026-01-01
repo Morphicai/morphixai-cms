@@ -1,0 +1,25 @@
+{
+  "short_name": "Optimus",
+  "name": "Optimus CMS - 现代化企业级内容管理系统",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "logo192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#3576f6",
+  "background_color": "#ffffff"
+}

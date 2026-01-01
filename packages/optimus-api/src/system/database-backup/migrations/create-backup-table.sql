@@ -1,0 +1,26 @@
+-- 创建数据库备份记录表
+CREATE TABLE IF NOT EXISTS `sys_database_backup` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `fileName` varchar(255) NOT NULL COMMENT '备份文件名',
+  `fileKey` varchar(500) NOT NULL COMMENT '文件键名（OSS路径）',
+  `fileSize` bigint(20) NOT NULL COMMENT '文件大小（字节）',
+  `backupType` varchar(20) NOT NULL COMMENT '备份类型：auto/manual',
+  `storageProvider` varchar(50) NOT NULL COMMENT '存储提供商：minio/aliyun',
+  `status` varchar(20) NOT NULL DEFAULT 'pending' COMMENT '备份状态：pending/completed/failed',
+  `startTime` datetime NOT NULL COMMENT '备份开始时间',
+  `completedTime` datetime DEFAULT NULL COMMENT '备份完成时间',
+  `duration` int(11) DEFAULT NULL COMMENT '备份耗时（毫秒）',
+  `errorMessage` text DEFAULT NULL COMMENT '错误信息',
+  `description` varchar(500) DEFAULT NULL COMMENT '备份描述',
+  `createdBy` int(11) DEFAULT NULL COMMENT '创建人ID',
+  `createDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updateDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `isDeleted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已删除：0-否，1-是',
+  `deletedAt` datetime DEFAULT NULL COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_backup_type` (`backupType`),
+  KEY `idx_status` (`status`),
+  KEY `idx_start_time` (`startTime`),
+  KEY `idx_storage_provider` (`storageProvider`),
+  KEY `idx_is_deleted` (`isDeleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据库备份记录表';

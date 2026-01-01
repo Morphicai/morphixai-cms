@@ -1,0 +1,857 @@
+/* ========================================
+   CSS 变量系统 - 默认回退值
+   为不支持 CSS 变量的浏览器提供回退
+   ======================================== */
+:root {
+  /* 主色 - 默认使用亮色主题 */
+  --color-primary: #6C5CE7;
+  --color-primary-hover: #5F4FD1;
+  --color-primary-active: #5243C2;
+  
+  /* 背景色 */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F5F5F7;
+  --color-bg-tertiary: #EBEBED;
+  --color-bg-elevated: #FFFFFF;
+  
+  /* 文本色 */
+  --color-text-primary: #2D3436;
+  --color-text-secondary: #636E72;
+  --color-text-tertiary: #95A5A6;
+  --color-text-disabled: #B2BEC3;
+  
+  /* 边框色 */
+  --color-border-primary: #DFE6E9;
+  --color-border-secondary: #EBEBED;
+  
+  /* 状态色 */
+  --color-success: #00B894;
+  --color-warning: #FDCB6E;
+  --color-error: #D63031;
+  --color-info: #74B9FF;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* 排版 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ========================================
+   CSS 变量系统 - 亮色主题
+   ======================================== */
+:root[data-theme="light"] {
+  /* 主色 */
+  --color-primary: #6C5CE7;
+  --color-primary-hover: #5F4FD1;
+  --color-primary-active: #5243C2;
+  
+  /* 背景色 */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F5F5F7;
+  --color-bg-tertiary: #EBEBED;
+  --color-bg-elevated: #FFFFFF;
+  
+  /* 文本色 */
+  --color-text-primary: #2D3436;
+  --color-text-secondary: #636E72;
+  --color-text-tertiary: #95A5A6;
+  --color-text-disabled: #B2BEC3;
+  
+  /* 边框色 */
+  --color-border-primary: #DFE6E9;
+  --color-border-secondary: #EBEBED;
+  
+  /* 状态色 */
+  --color-success: #00B894;
+  --color-warning: #FDCB6E;
+  --color-error: #D63031;
+  --color-info: #74B9FF;
+  
+  /* 图表色 */
+  --color-chart-blue-1: #4A90E2;
+  --color-chart-blue-2: #74B9FF;
+  --color-chart-blue-3: #A8D8FF;
+  --color-chart-purple-1: #6C5CE7;
+  --color-chart-purple-2: #A29BFE;
+  --color-chart-purple-3: #D6D1FF;
+  --color-chart-green-1: #00B894;
+  --color-chart-green-2: #55EFC4;
+  --color-chart-green-3: #A8FFE5;
+  --color-chart-orange-1: #FDCB6E;
+  --color-chart-orange-2: #FFE5A3;
+  --color-chart-orange-3: #FFF3D4;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: none;
+  
+  /* 排版 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* 间距 */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+  
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ========================================
+   CSS 变量系统 - 暗色主题
+   ======================================== */
+:root[data-theme="dark"] {
+  /* 主色 */
+  --color-primary: #A855F7;
+  --color-primary-hover: #C084FC;
+  --color-primary-active: #D8B4FE;
+  
+  /* 背景色 */
+  --color-bg-primary: #1A1D29;
+  --color-bg-secondary: #252A3D;
+  --color-bg-tertiary: #2D3348;
+  --color-bg-elevated: #2D3348;
+  
+  /* 文本色 */
+  --color-text-primary: #E5E7EB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-tertiary: #6B7280;
+  --color-text-disabled: #4B5563;
+  
+  /* 边框色 */
+  --color-border-primary: #374151;
+  --color-border-secondary: #2D3348;
+  
+  /* 状态色 */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* 图表色 */
+  --color-chart-blue-1: #3B82F6;
+  --color-chart-blue-2: #60A5FA;
+  --color-chart-blue-3: #93C5FD;
+  --color-chart-purple-1: #A855F7;
+  --color-chart-purple-2: #C084FC;
+  --color-chart-purple-3: #E9D5FF;
+  --color-chart-green-1: #10B981;
+  --color-chart-green-2: #34D399;
+  --color-chart-green-3: #6EE7B7;
+  --color-chart-orange-1: #F59E0B;
+  --color-chart-orange-2: #FBBF24;
+  --color-chart-orange-3: #FCD34D;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.3);
+  
+  /* 排版 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* 间距 */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+  
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ========================================
+   全局样式和平滑过渡
+   ======================================== */
+* {
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              border-color var(--transition-base),
+              box-shadow var(--transition-base);
+}
+
+/* 禁用某些元素的过渡以提高性能 */
+*:focus,
+*:active,
+input,
+textarea,
+select {
+  transition: none;
+}
+
+body {
+    margin: 0;
+    /* 回退值 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-family-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 回退值 */
+    background-color: #FFFFFF;
+    background-color: var(--color-bg-primary);
+    /* 回退值 */
+    color: #2D3436;
+    color: var(--color-text-primary);
+}
+
+code {
+    /* 回退值 */
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    font-family: var(--font-family-mono);
+}
+
+#root {
+    height: 100%;
+}
+.trigger {
+    padding: 0 24px;
+    font-size: 18px;
+    line-height: 64px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.trigger:hover {
+    color: #1890ff;
+}
+
+.logo {
+    height: 32px;
+    margin: 16px;
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    line-height: 32px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.site-layout .site-layout-background {
+    background: #fff;
+}
+
+.app-layout {
+    height: 100%;
+}
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mr-10 {
+    margin-right: 10px;
+}
+
+.cl-666 {
+    color: #666;
+}
+
+/* ========================================
+   排版系统 - Typography System
+   ======================================== */
+
+/* 标题样式 - Headings */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  /* 回退值 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-family-base);
+  /* 回退值 */
+  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
+  /* 回退值 */
+  line-height: 1.2;
+  line-height: var(--line-height-tight);
+  /* 回退值 */
+  color: #2D3436;
+  color: var(--color-text-primary);
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-6);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-5);
+}
+
+h3 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-4);
+}
+
+h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-3);
+}
+
+h5 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+h6 {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+/* 段落和文本样式 - Paragraphs and Text */
+p {
+  margin: 0 0 var(--spacing-4) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-primary);
+}
+
+/* 文本层次 - Text Hierarchy */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.text-disabled {
+  color: var(--color-text-disabled);
+}
+
+/* 字体大小工具类 - Font Size Utilities */
+.text-xs {
+  font-size: var(--font-size-xs);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+}
+
+.text-2xl {
+  font-size: var(--font-size-2xl);
+}
+
+.text-3xl {
+  font-size: var(--font-size-3xl);
+}
+
+/* 字体粗细工具类 - Font Weight Utilities */
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+/* 行高工具类 - Line Height Utilities */
+.leading-tight {
+  line-height: var(--line-height-tight);
+}
+
+.leading-normal {
+  line-height: var(--line-height-normal);
+}
+
+.leading-relaxed {
+  line-height: var(--line-height-relaxed);
+}
+
+/* 特殊文本样式 - Special Text Styles */
+strong, b {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+em, i {
+  font-style: italic;
+  color: var(--color-text-primary);
+}
+
+small {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* 链接样式 - Link Styles */
+a {
+  /* 回退值 */
+  color: #6C5CE7;
+  color: var(--color-primary);
+  text-decoration: none;
+  /* 回退值 */
+  transition: color 150ms ease;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  /* 回退值 */
+  color: #5F4FD1;
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+a:active {
+  /* 回退值 */
+  color: #5243C2;
+  color: var(--color-primary-active);
+}
+
+/* 代码样式 - Code Styles */
+code, kbd, samp, pre {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}
+
+code {
+  padding: 2px 6px;
+  /* 回退值 */
+  background-color: #F5F5F7;
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
+  /* 回退值 */
+  color: #2D3436;
+  color: var(--color-text-primary);
+}
+
+pre {
+  /* 回退值 */
+  padding: 16px;
+  padding: var(--spacing-4);
+  /* 回退值 */
+  background-color: #F5F5F7;
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  overflow-x: auto;
+  /* 回退值 */
+  line-height: 1.75;
+  line-height: var(--line-height-relaxed);
+}
+
+pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+/* 列表样式 - List Styles */
+ul, ol {
+  margin: 0 0 var(--spacing-4) 0;
+  padding-left: var(--spacing-6);
+  color: var(--color-text-primary);
+}
+
+li {
+  margin-bottom: var(--spacing-2);
+  line-height: var(--line-height-normal);
+}
+
+/* 引用样式 - Blockquote Styles */
+blockquote {
+  /* 回退值 */
+  margin: 0 0 16px 0;
+  margin: 0 0 var(--spacing-4) 0;
+  /* 回退值 */
+  padding-left: 16px;
+  padding-left: var(--spacing-4);
+  /* 回退值 */
+  border-left: 4px solid #6C5CE7;
+  border-left: 4px solid var(--color-primary);
+  /* 回退值 */
+  color: #636E72;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* 水平分割线 - Horizontal Rule */
+hr {
+  /* 回退值 */
+  margin: 24px 0;
+  margin: var(--spacing-6) 0;
+  border: none;
+  /* 回退值 */
+  border-top: 1px solid #DFE6E9;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+/* 文本对齐工具类 - Text Alignment Utilities */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-justify {
+  text-align: justify;
+}
+
+/* 文本转换工具类 - Text Transform Utilities */
+.uppercase {
+  text-transform: uppercase;
+}
+
+.lowercase {
+  text-transform: lowercase;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+/* 文本截断工具类 - Text Truncation Utilities */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ========================================
+   表格优化样式 - Table Optimization
+   ======================================== */
+
+/* Ant Design Table 样式优化 */
+.ant-table-wrapper {
+  /* 表格行高优化 - 减少行间距 */
+  .ant-table-tbody > tr > td {
+    padding: 12px 16px !important;
+  }
+  
+  /* 表头样式增强 */
+  .ant-table-thead > tr > th {
+    font-weight: var(--font-weight-semibold) !important;
+    background-color: var(--color-bg-secondary) !important;
+    color: var(--color-text-primary) !important;
+    padding: 14px 16px !important;
+  }
+  
+  /* 缩略图尺寸优化 */
+  .ant-table-cell img {
+    width: 80px !important;
+    height: 60px !important;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  /* 操作按钮间距优化 */
+  .ant-table-cell .ant-space-item {
+    margin-right: 8px !important;
+  }
+  
+  .ant-table-cell .ant-btn-link {
+    padding: 4px 8px !important;
+  }
+  
+  /* 标签样式增强 */
+  .ant-tag {
+    font-weight: var(--font-weight-medium);
+    padding: 2px 10px;
+    border-radius: 4px;
+  }
+  
+  /* 表格悬停效果 */
+  .ant-table-tbody > tr:hover > td {
+    background-color: var(--color-bg-secondary) !important;
+  }
+}
+
+/* 分页器样式优化 */
+.ant-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 16px !important;
+  
+  .ant-pagination-item {
+    border-radius: 6px;
+    transition: all var(--transition-fast);
+  }
+  
+  .ant-pagination-item-active {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    
+    a {
+      color: #fff !important;
+    }
+  }
+  
+  .ant-pagination-item:hover {
+    border-color: var(--color-primary) !important;
+    
+    a {
+      color: var(--color-primary) !important;
+    }
+  }
+}
+
+/* 搜索栏优化 */
+.ant-input-search {
+  .ant-input {
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  
+  .ant-input-search-button {
+    border-radius: 0 8px 8px 0;
+  }
+}
+
+/* 下拉选择器优化 */
+.ant-select {
+  .ant-select-selector {
+    border-radius: 8px !important;
+    padding: 4px 12px !important;
+  }
+}
+
+/* 按钮优化 */
+.ant-btn {
+  border-radius: 8px;
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+  
+  &.ant-btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    
+    &:hover {
+      background-color: var(--color-primary-hover);
+      border-color: var(--color-primary-hover);
+      box-shadow: var(--shadow-md);
+    }
+    
+    &:active {
+      background-color: var(--color-primary-active);
+      border-color: var(--color-primary-active);
+    }
+  }
+}
+
+/* 面包屑隐藏 - 节省空间 */
+.ant-breadcrumb {
+  display: none !important;
+}
+
+/* 头像样式优化 - 符合主题规范 */
+.ant-avatar {
+  background-color: var(--color-primary) !important;
+  color: #fff !important;
+  font-weight: var(--font-weight-semibold) !important;
+  font-size: var(--font-size-sm) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.ant-avatar:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: scale(1.05);
+}
+
+/* 头像文字截取 - 中文显示一个字，英文显示首字母 */
+.ant-avatar-string {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* 分页文字显示优化 */
+.ant-pagination {
+  /* 确保分页信息正常显示 */
+  .ant-pagination-total-text {
+    color: var(--color-text-secondary) !important;
+    font-size: var(--font-size-sm) !important;
+    margin-right: auto !important;
+    order: -1;
+  }
+  
+  /* 分页选项样式 */
+  .ant-pagination-options {
+    margin-left: var(--spacing-4) !important;
+  }
+  
+  .ant-pagination-options-size-changer {
+    .ant-select-selector {
+      border-radius: 6px !important;
+    }
+  }
+  
+  /* 分页项和跳转输入框 */
+  .ant-pagination-item,
+  .ant-pagination-prev,
+  .ant-pagination-next,
+  .ant-pagination-jump-prev,
+  .ant-pagination-jump-next {
+    min-width: 32px;
+    height: 32px;
+    line-height: 30px;
+  }
+  
+  /* 确保"共 X 条"文字显示 */
+  .ant-pagination-total-text {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+.ant-pro-table .ant-pro-table-search{
+  margin-block-end:0
+}
+
+/* ========================================
+   操作日志样式 - Operation Log Styles
+   ======================================== */
+
+/* 失败日志行高亮 */
+.ant-table-tbody .row-failed > td {
+  background-color: rgba(214, 48, 49, 0.05) !important;
+}
+
+.ant-table-tbody .row-failed:hover > td {
+  background-color: rgba(214, 48, 49, 0.1) !important;
+}
+
+/* 暗色主题下的失败日志行高亮 */
+:root[data-theme="dark"] .ant-table-tbody .row-failed > td {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+:root[data-theme="dark"] .ant-table-tbody .row-failed:hover > td {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}

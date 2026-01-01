@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-10-28T15:57:34.210Z",
+  "common": {
+    "packageJson": true,
+    "menusConstant": true,
+    "permissionUtils": true
+  },
+  "optimus-ui": {
+    "src/apis/permission.js": true,
+    "src/utils/PermissionManager.js": true,
+    "src/constants/routes.js": true,
+    "src/shared/components/Panel/ConstantSiderMenus.jsx": true,
+    "src/router/RouteManager.jsx": true
+  },
+  "rbac": {
+    "src/system/perm/perm.service.ts": true,
+    "src/system/perm/perm.controller.simplified.ts": true
+  },
+  "menuValidation": {
+    "valid": true,
+    "message": "需要在浏览器环境中验证"
+  },
+  "summary": {
+    "commonReady": true,
+    "backendReady": true,
+    "rbacReady": true,
+    "overallReady": true
+  }
+}

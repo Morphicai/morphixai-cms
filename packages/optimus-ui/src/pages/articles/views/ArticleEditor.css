@@ -1,0 +1,76 @@
+.article-editor-layout {
+  /* min-height: calc(100vh - 64px); */
+  background: #fff;
+}
+
+.article-editor-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 16px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.article-editor-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.article-editor-content {
+  min-height: calc(100vh - 129px);
+}
+
+.article-editor-main {
+  padding: 0;
+  background: #fff;
+  max-width: 100%;
+}
+
+.article-editor-actions {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #e8e8e8;
+  background: #fafafa;
+}
+
+.article-editor-sider {
+  background: #fff;
+  border-left: 1px solid #f0f0f0;
+  overflow-y: auto;
+}
+
+.version-panel-wrapper {
+  padding: 16px;
+}
+
+.version-panel-toggle {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  border-radius: 4px 0 0 4px;
+  writing-mode: vertical-rl;
+  padding: 12px 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .article-editor-actions {
+    padding: 16px;
+  }
+
+  .article-editor-sider {
+    position: fixed;
+    right: 0;
+    top: 64px;
+    height: calc(100vh - 64px);
+    z-index: 99;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+}

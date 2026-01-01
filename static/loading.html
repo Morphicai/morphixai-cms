@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimus 服务启动中...</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 500px;
+      padding: 2rem;
+    }
+
+    .logo {
+      font-size: 3rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      background: linear-gradient(45deg, #fff, #f0f0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 2rem;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .status {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #fff, #f0f0f0);
+      border-radius: 4px;
+      width: 0%;
+      animation: progress 3s ease-in-out infinite;
+    }
+
+    @keyframes progress {
+      0% {
+        width: 0%;
+      }
+
+      50% {
+        width: 70%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    .services {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .service {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    .service-name {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .service-status {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .service.checking {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .service.ready {
+      background: rgba(76, 175, 80, 0.3);
+      border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+
+    .service.error {
+      background: rgba(244, 67, 54, 0.3);
+      border: 1px solid rgba(244, 67, 54, 0.5);
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    .footer {
+      font-size: 0.9rem;
+      opacity: 0.6;
+      margin-top: 2rem;
+    }
+
+    .retry-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .retry-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="logo">Optimus</div>
+    <div class="title">服务启动中，请稍候...</div>
+
+    <div class="loading-spinner"></div>
+
+    <div class="status" id="status">正在检查服务状态...</div>
+
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+
+    <div class="services">
+      <div class="service checking" id="frontend-service">
+        <div class="service-name">前端服务</div>
+        <div class="service-status">检查中...</div>
+      </div>
+      <div class="service checking" id="api-service">
+        <div class="service-name">API 服务</div>
+        <div class="service-status">检查中...</div>
+      </div>
+    </div>
+
+    <button class="retry-btn" onclick="checkServices()" style="display: none;" id="retry-btn">
+      重新检查
+    </button>
+
+    <div class="footer">
+      系统将在服务就绪后自动跳转
+    </div>
+  </div>
+
+  <script>
+    let checkCount = 0;
+    let maxChecks = 60; // 最多检查60次 (5分钟)
+    let checkInterval;
+
+    function updateServiceStatus(serviceId, status, message) {
+      const service = document.getElementById(serviceId);
+      service.className = `service ${status}`;
+      service.querySelector('.service-status').textContent = message;
+    }
+
+    function updateStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+
+    async function checkHealth() {
+      try {
+        const response = await fetch('/health', {
+          method: 'GET',
+          cache: 'no-cache'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return { success: true, data };
+        }
+        return { success: false, error: `HTTP ${response.status}` };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    }
+
+    async function checkService(url) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          cache: 'no-cache',
+          timeout: 5000
+        });
+        return response.ok;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async function checkServices() {
+      checkCount++;
+      updateStatus(`正在检查服务状态... (${checkCount}/${maxChecks})`);
+
+      // 检查健康端点
+      const healthCheck = await checkHealth();
+
+      if (healthCheck.success) {
+        updateServiceStatus('api-service', 'ready', '运行正常');
+        updateServiceStatus('frontend-service', 'ready', '运行正常');
+
+        // 再次确认前端服务是否真的可用
+        const frontendReady = await checkService('/');
+
+        if (frontendReady) {
+          updateStatus('✅ 所有服务已就绪，正在跳转...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+          return;
+        }
+      }
+
+      // 单独检查各个服务
+      const apiReady = await checkService('/api/health');
+      const frontendReady = await checkService('/');
+
+      updateServiceStatus('api-service',
+        apiReady ? 'ready' : 'checking',
+        apiReady ? '运行正常' : '启动中...'
+      );
+
+      updateServiceStatus('frontend-service',
+        frontendReady ? 'ready' : 'checking',
+        frontendReady ? '运行正常' : '启动中...'
+      );
+
+      if (apiReady && frontendReady) {
+        updateStatus('✅ 所有服务已就绪，正在跳转...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
+      }
+
+      if (checkCount >= maxChecks) {
+        updateStatus('⚠️ 服务启动超时，请检查服务状态');
+        updateServiceStatus('api-service', 'error', '启动超时');
+        updateServiceStatus('frontend-service', 'error', '启动超时');
+        document.getElementById('retry-btn').style.display = 'inline-block';
+        clearInterval(checkInterval);
+        return;
+      }
+    }
+
+    // 页面加载后开始检查
+    window.addEventListener('load', () => {
+      // 立即检查一次
+      checkServices();
+
+      // 每3秒检查一次
+      checkInterval = setInterval(checkServices, 3000);
+    });
+
+    // 页面可见性变化时重新检查
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        checkServices();
+      }
+    });
+  </script>
+</body>
+
+</html>

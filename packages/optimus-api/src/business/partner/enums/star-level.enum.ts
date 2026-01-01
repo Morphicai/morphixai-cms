@@ -1,0 +1,9 @@
+export enum StarLevel {
+    NEW = "NEW",
+    S1 = "S1",
+    S2 = "S2",
+    S3 = "S3",
+    S4 = "S4",
+    S5 = "S5",
+    LEGEND = "LEGEND",
+}

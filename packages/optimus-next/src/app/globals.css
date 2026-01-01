@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+/* 设计系统基础样式 - 现代化配色方案 */
+:root {
+  /* 基础颜色 - 浅蓝紫色调 */
+  --background: #e8eaf4;
+  --foreground: #1a1a1a;
+  --muted: #d4d7e8;
+  --muted-foreground: #5a5f7e;
+  --border: #c4c8dc;
+  --input: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  
+  /* 语义化颜色 - 主题配色 */
+  --primary: #3576f6;
+  --primary-dark: #2d6ef5;
+  --primary-foreground: #ffffff;
+  --secondary: #10b981;
+  --secondary-dark: #059669;
+  --secondary-foreground: #ffffff;
+  --accent: #8b5cf6;
+  --accent-foreground: #ffffff;
+  
+  /* 渐变色定义 */
+  --gradient-primary: linear-gradient(135deg, #3576f6 0%, #6b93f8 100%);
+  --gradient-light: linear-gradient(135deg, #e8eaf4 0%, #f5f6fc 100%);
+  --gradient-blue: linear-gradient(135deg, #3576f6 0%, #7ea4f9 100%);
+  --gradient-hero: linear-gradient(135deg, #dbe0f5 0%, #e8eaf4 50%, #f0e8f6 100%);
+  
+  /* 状态颜色 */
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --error: #ef4444;
+  --error-foreground: #ffffff;
+  --info: #3576f6;
+  --info-foreground: #ffffff;
+  
+  /* 字体 */
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* 暗色主题 - 深色配色方案 */
+.dark {
+  --background: #1a1a2e;
+  --foreground: #f1f5f9;
+  --muted: #262640;
+  --muted-foreground: #94a3b8;
+  --border: #383850;
+  --input: #262640;
+  --card: #262640;
+  --card-foreground: #f1f5f9;
+  --popover: #262640;
+  --popover-foreground: #f1f5f9;
+  
+  --primary: #5c8df7;
+  --primary-dark: #3576f6;
+  --primary-foreground: #ffffff;
+  --secondary: #10b981;
+  --secondary-dark: #059669;
+  --secondary-foreground: #ffffff;
+  --accent: #a78bfa;
+  --accent-foreground: #ffffff;
+  
+  --gradient-primary: linear-gradient(135deg, #5c8df7 0%, #8baef9 100%);
+  --gradient-light: linear-gradient(135deg, #1e3a6e 0%, #2d4478 100%);
+  --gradient-blue: linear-gradient(135deg, #3576f6 0%, #6b93f8 100%);
+  --gradient-hero: linear-gradient(135deg, #1a1a2e 0%, #252540 50%, #2a2045 100%);
+  
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --error: #ef4444;
+  --error-foreground: #ffffff;
+  --info: #5c8df7;
+  --info-foreground: #ffffff;
+}
+
+/* 基础样式 */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 无障碍性改进 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 焦点样式 */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 选择文本样式 */
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* 滚动条样式 - 优化为更细、更低调的样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* 暗色模式下的滚动条 */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 自定义动画效果 */
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* 玻璃态效果 */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-effect {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* 渐变文字效果 */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 工具类 */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
