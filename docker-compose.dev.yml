@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 开发环境数据库
   db:
@@ -74,5 +72,5 @@ volumes:
 
 
 networks:
-  kapok-dev-network:
+  optimus-dev-network:
     driver: bridge
