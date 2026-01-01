@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # 开发环境数据库
+  db:
+    image: mysql:8.0.31
+    command: --authentication-policy=mysql_native_password
+    restart: unless-stopped
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Z8wfnaVUjqde5LKt}
+      MYSQL_DATABASE: ${DB_DATABASE:-optimus}
+      MYSQL_CHARSET: ${DB_CHARSET:-utf8mb4}
+      MYSQL_COLLATION: utf8mb4_general_ci
+    ports:
+      - "${DB_EXTERNAL_PORT:-3306}:3306"
+    networks:
+      - optimus-dev-network
+
+  # 开发环境 MinIO
+  minio:
+    image: minio/minio:latest
+    container_name: optimus-minio-dev
+    restart: unless-stopped
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - optimus-dev-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO 初始化服务
+  minio-init:
+    image: minio/mc:latest
+    container_name: optimus-minio-init-dev
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-uploads}
+      MINIO_THUMBNAIL_BUCKET: ${MINIO_THUMBNAIL_BUCKET:-thumbnails}
+    volumes:
+      - ./scripts/minio-init.sh:/minio-init.sh:ro
+    entrypoint: [ "/bin/sh", "/minio-init.sh" ]
+    networks:
+      - optimus-dev-network
+
+  # 数据库管理工具
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - 8083:8080
+    networks:
+      - optimus-dev-network
+
+volumes:
+  mysql_dev_data:
+  minio_dev_data:
+
+
+networks:
+  kapok-dev-network:
+    driver: bridge

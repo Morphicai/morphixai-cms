@@ -1,0 +1,13 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# 禁止访问 API 路由
+Disallow: /api/
+
+# 禁止访问管理后台（如果有）
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://example.com/sitemap.xml
+

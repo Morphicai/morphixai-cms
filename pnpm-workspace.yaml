@@ -1,0 +1,6 @@
+packages:
+  - 'packages/*'
+  # 排除不需要的包
+  - '!packages/rbac-new-servers'
+  - '!packages/rbac-new-client'
+  - '!packages/rbac-client'

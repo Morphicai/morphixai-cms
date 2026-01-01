@@ -1,0 +1,77 @@
+# 生产环境配置
+app:
+    prefix: "/api"
+    port: ${APP_PORT:8081}
+    swagger: true
+    logger:
+        # 项目日志存储路径，相对路径（相对本项目根目录）或绝对路径
+        dir: ${LOG_DIR:./logs}
+    # 文件相关, 生产环境
+    file:
+        # 临时使用地址，放在这里不会被 nest-cli autoreload（用于分片文件存储）
+        tempUpload: ${UPLOAD_TEMP_PATH:./netdisk}
+        # 文件服务器地址
+        domain: ${SITE_DOMAIN:http://localhost:8081}
+# 数据库配置
+db:
+    mysql:
+        host: ${DB_HOST:db}
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:your_production_database_password}
+        database: ${DB_DATABASE:kapok}
+        port: ${DB_PORT:3306}
+        charser: ${DB_CHARSET:utf8mb4}
+        logger: "file"
+        logging: ${DB_LOGGING:false}
+        multipleStatements: true
+        maxQueryExecutionTime: 1000
+        dropSchema: false
+        synchronize: ${DB_SYNCHRONIZE:false}
+        supportBigNumbers: true
+        bigNumberStrings: true
+
+
+
+# jwt 配置
+jwt:
+    secretkey: ${JWT_SECRET:your_production_jwt_secret_key_must_be_strong}
+    expiresin: ${JWT_EXPIRES_IN:1h}
+    refreshExpiresIn: ${JWT_REFRESH_EXPIRES_IN:2h}
+# 权限 白名单配置
+perm:
+    router:
+        whitelist:
+            [
+                { path: "/api/register", method: "POST" },
+                { path: "/api/login", method: "POST" },
+                { path: "/api/perm/{id}", method: "GET" },
+                { path: "/api/oss/upload", method: "POST" },
+            ]
+
+# 用户相关
+# 初始密码， 重置密码
+user:
+    initialPassword: ${INITIAL_PASSWORD:your_production_initial_password}
+
+# 邮箱相关
+mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    account: ${MAIL_ACCOUNT:your_email@example.com}
+    code: ${MAIL_PASSWORD:your_email_password}
+
+# 数据库备份配置
+backup:
+    # 是否启用自动备份
+    enabled: ${BACKUP_ENABLED:true}
+    # 备份计划（cron 表达式）
+    schedule: ${BACKUP_SCHEDULE:0 2 * * *}
+    # 备份保留天数
+    retentionDays: ${BACKUP_RETENTION_DAYS:30}
+    # 清理计划（cron 表达式）
+    cleanupSchedule: ${BACKUP_CLEANUP_SCHEDULE:0 3 * * *}
+    # OSS 存储路径
+    ossPath: ${BACKUP_OSS_PATH:database-backups}
+    # 加密算法
+    encryptionAlgorithm: "aes-256-cbc"
+    # 默认加密密钥（生产环境必须通过环境变量 BACKUP_ENCRYPTION_SECRET 设置）
+    defaultEncryptionSecret: "default-backup-encryption-secret-key-change-in-production"

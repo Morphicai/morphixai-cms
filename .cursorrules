@@ -1,0 +1,139 @@
+# Cursor AI Rules for Optimus CMS
+
+## Project Context
+
+Optimus CMS is a full-stack content management system built with:
+- **Backend**: NestJS + TypeORM + MySQL
+- **Admin UI**: React + Ant Design
+- **Client UI**: Next.js + TypeScript
+- **Monorepo**: pnpm workspace
+
+## Task Management
+
+**📋 Always check TASKS.md before starting work**
+
+- Read `TASKS.md` to understand current priorities and ongoing work
+- Update `TASKS.md` when:
+  - Starting a new task (move to "进行中")
+  - Completing a task (move to "已完成")  
+  - Discovering new tasks (add to "接下来需要做")
+- Keep TASKS.md lean - remove completed items older than 1 month
+- Reference specific sections in responses when relevant
+
+## Code Standards
+
+### General
+- Follow existing code style and patterns in the codebase
+- Write clear, self-documenting code with comments for complex logic
+- Prefer TypeScript over JavaScript for new code
+- Use meaningful variable and function names
+
+### React/Next.js
+- Use functional components with hooks
+- Prefer `const` over `let`, avoid `var`
+- Use TypeScript interfaces for props
+- Handle loading and error states
+- Avoid inline styles, use Tailwind CSS or CSS modules
+
+### NestJS
+- Follow NestJS best practices and module structure
+- Use DTOs for request/response validation
+- Implement proper error handling
+- Use dependency injection
+- Write unit tests for services
+
+### Database
+- Use TypeORM entities and repositories
+- Write migrations for schema changes
+- Never expose sensitive data in logs
+- Use proper indexes for performance
+
+### Security
+- Never commit sensitive information (passwords, API keys, tokens)
+- Always use environment variables for configuration
+- Validate and sanitize user input
+- Follow OWASP security guidelines
+
+## Documentation
+
+- Update README.md when adding new features or changing setup
+- Document complex algorithms and business logic
+- Keep inline comments up-to-date
+- Add JSDoc comments for public APIs
+
+## Git Workflow
+
+- Write clear, descriptive commit messages
+- Keep commits focused and atomic
+- Reference issue numbers when applicable
+- Never commit to main directly (use feature branches)
+
+## Project-Specific Rules
+
+### Environment Variables
+- All secrets must be in `.env` files (never committed)
+- Use `.env.example` as template
+- Document new environment variables in README
+- Before open-sourcing: check `OPENSOURCE_PREPARATION.md`
+
+### API Development
+- RESTful endpoint naming conventions
+- Consistent response format: `{ code, data, msg }`
+- Handle 401 errors gracefully (see axios.js interceptor)
+- Use proper HTTP status codes
+
+### Frontend Development  
+- Check authentication before API calls
+- Handle 401 responses properly (see fixes in axios.js)
+- Use shared components from `@/components`
+- Optimize images and assets
+
+### Testing
+- Write tests for critical business logic
+- E2E tests for important user flows
+- Mock external services in tests
+- Maintain test coverage above 60%
+
+## Open Source Preparation
+
+When working on open-source related tasks:
+1. **Never** add real credentials or sensitive data
+2. Use placeholder values in examples (e.g., `example.com`, `your_key_here`)
+3. Check `OPENSOURCE_PREPARATION.md` for sensitive patterns to avoid
+4. Run security scans before committing
+
+## Current Focus Areas
+
+Check `TASKS.md` for current priorities. As of last update:
+- 🔒 Open source preparation and security
+- 🐛 Bug fixes (401 authentication, build errors)
+- 📚 Documentation improvements
+
+## Response Format
+
+When providing code solutions:
+1. Explain the approach briefly
+2. Show the code with proper formatting
+3. Highlight important changes
+4. Mention any side effects or dependencies
+5. Update TASKS.md if completing a tracked task
+
+## File References
+
+Important files to reference:
+- `TASKS.md` - Current tasks and priorities
+- `OPENSOURCE_PREPARATION.md` - Open source security checklist
+- `README.md` - Project overview and setup
+- `CONTRIBUTING.md` - Contribution guidelines (when created)
+
+## Maintenance Reminders
+
+- Review and update `TASKS.md` weekly
+- Clean up old log files monthly
+- Update dependencies quarterly
+- Security audit before each release
+
+---
+
+**Remember**: Always prioritize security, code quality, and user experience. When in doubt, ask for clarification rather than making assumptions.
+

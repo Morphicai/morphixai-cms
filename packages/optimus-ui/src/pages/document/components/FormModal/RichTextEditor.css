@@ -1,0 +1,14 @@
+/* 富文本编辑器样式 - 确保段落间距正确显示 */
+.rich-text-editor-wrapper .ql-editor p {
+  margin-bottom: 1em;
+  min-height: 1em;
+}
+
+.rich-text-editor-wrapper .ql-editor p:last-child {
+  margin-bottom: 0;
+}
+
+/* 确保空段落也能显示 */
+.rich-text-editor-wrapper .ql-editor p:empty::before {
+  content: '\200B'; /* 零宽空格 */
+}

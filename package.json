@@ -1,0 +1,33 @@
+{
+  "name": "morphixai-cms",
+  "version": "0.0.1",
+  "private": true,
+  "volta": {
+    "node": "22.21.1",
+    "pnpm": "8.15.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.1",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r run dev",
+    "dev:next": "pnpm --filter optimus-next dev",
+    "test": "pnpm -r --no-bail run test",
+    "test:e2e": "echo true",
+    "lint": "pnpm -r run lint",
+    "clean": "./scripts/clean.sh",
+    "doctor": "./scripts/doctor.sh",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:build": "docker build -t optimus ."
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "lodash": "^4.17.21"
+  },
+  "dependencies": {
+    "@infisical/sdk": "^4.0.4"
+  }
+}

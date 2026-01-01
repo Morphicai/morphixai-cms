@@ -1,0 +1,79 @@
+# Caddy 配置文件 - Docker 生产环境
+
+:8080 {
+    # 健康检查端点
+    handle /health {
+        respond `{"status":"ok","timestamp":"{time.now.unix}","services":{"frontend":"localhost:8082","api":"localhost:8084","next":"localhost:8086"}}`
+    }
+
+    # API 路由代理到后端服务
+    handle /api/* {
+        reverse_proxy localhost:8084 {
+            # 请求头处理
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Next.js 应用路由 (优先于旧前端)
+    handle /next/* {
+        uri strip_prefix /next
+        reverse_proxy localhost:8086 {
+            # 请求头处理
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Caddy 本地静态文件服务 (启动页面等)
+    handle /caddy-static/* {
+        uri strip_prefix /caddy-static
+        file_server {
+            root /app/static
+        }
+    }
+
+    # 根路径和其他所有路径代理到前端应用 (包括前端的静态资源)
+    handle /* {
+        reverse_proxy localhost:8082 {
+            # 请求头处理
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 日志配置
+    log {
+        output stdout
+        format console
+    }
+
+    # 错误页面 - 服务启动中页面
+    handle_errors {
+        @5xx expression {http.error.status_code} >= 500
+        @502_503 expression {http.error.status_code} == 502 || {http.error.status_code} == 503
+        handle @502_503 {
+            rewrite * /loading.html
+            file_server {
+                root /app/static
+            }
+        }
+        handle @5xx {
+            respond "服务内部错误，请稍后重试" 500
+        }
+        
+        @4xx expression {http.error.status_code} >= 400 && {http.error.status_code} < 500
+        handle @4xx {
+            rewrite * /loading.html
+            file_server {
+                root /app/static
+            }
+        }
+    }
+}

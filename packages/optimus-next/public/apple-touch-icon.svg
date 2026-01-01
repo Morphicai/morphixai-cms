@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <!-- Apple Touch Icon 版本 -->
+  <rect width="180" height="180" rx="40" fill="#3576f6"/>
+  
+  <circle cx="90" cy="90" r="60" stroke="white" stroke-width="8" fill="none" opacity="0.9"/>
+  <circle cx="90" cy="90" r="45" stroke="#10b981" stroke-width="6" fill="none" opacity="0.7"/>
+  <circle cx="90" cy="90" r="25" fill="white"/>
+  <circle cx="90" cy="90" r="20" fill="url(#gradient1)"/>
+  
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5c8df7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

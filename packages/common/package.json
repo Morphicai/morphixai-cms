@@ -1,0 +1,30 @@
+{
+  "name": "@optimus/common",
+  "version": "1.0.0",
+  "description": "Optimus 项目通用工具库",
+  "author": "Optimus Team <team@example.com>",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "echo \"No tests in common package\" && exit 0"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,116 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# Build outputs
+/dist
+/build
+packages/*/dist
+packages/*/build
+
+# Logs
+logs
+./packages/logs
+packages/optimus-api/logs
+packages/proxy-server/logs
+packages/optimus-ui/logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Test results
+packages/optimus-ui/e2e/test-results
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# Environment variables
+# 根目录的本地环境变量文件（不提交）
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+PRODUCTION.env
+*.env
+!*.env.example
+!env.example
+
+# Keep example files in root directory
+!.env.example
+!.env.development.example
+!.env.production.example
+!.env.e2e.example
+!.env.deploy.example
+
+# 子项目中的旧 env 文件（已迁移到根目录，不再使用）
+# packages/*/.env.local
+# packages/*/.env.development.local
+# packages/*/.env.test.local
+# packages/*/.env.production.local
+
+# Infisical
+# .infisical.json.backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temporary folders
+tmp/
+temp/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+.dev
+.env.dev
+.cursor
+
+ormlogs.log
