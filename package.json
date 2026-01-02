@@ -25,9 +25,10 @@
   },
   "devDependencies": {
     "dotenv": "^17.2.3",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "@infisical/sdk": "^4.0.4"
   },
   "dependencies": {
-    "@infisical/sdk": "^4.0.4"
+    
   }
 }
