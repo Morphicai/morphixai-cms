@@ -1,18 +1,16 @@
 services:
   # 开发环境数据库
   db:
-    image: mysql:8.0.31
-    command: --authentication-policy=mysql_native_password
+    image: mysql:8.0
     restart: unless-stopped
     volumes:
       - mysql_dev_data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Z8wfnaVUjqde5LKt}
-      MYSQL_DATABASE: ${DB_DATABASE:-optimus}
-      MYSQL_CHARSET: ${DB_CHARSET:-utf8mb4}
-      MYSQL_COLLATION: utf8mb4_general_ci
+      - MYSQL_ROOT_PASSWORD=OptimusRoot2024Secure
+      - TZ=Asia/Shanghai
+   
     ports:
-      - "${DB_EXTERNAL_PORT:-3306}:3306"
+      - "3306:3306"
     networks:
       - optimus-dev-network
 
@@ -22,11 +20,11 @@ services:
     container_name: optimus-minio-dev
     restart: unless-stopped
     ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
     command: server /data --console-address ":9001"
     volumes:
       - minio_dev_data:/data
@@ -47,10 +45,10 @@ services:
         condition: service_healthy
     environment:
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-uploads}
-      MINIO_THUMBNAIL_BUCKET: ${MINIO_THUMBNAIL_BUCKET:-thumbnails}
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: uploads
+      MINIO_THUMBNAIL_BUCKET: thumbnails
     volumes:
       - ./scripts/minio-init.sh:/minio-init.sh:ro
     entrypoint: [ "/bin/sh", "/minio-init.sh" ]
