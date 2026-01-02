@@ -6,7 +6,7 @@ The new test initialization script has been redesigned to automatically complete
 
 1. **Database Connection Check** - Verify MySQL database connection
 2. **OSS Connection Check** - Verify object storage service connection
-3. **Database Initialization** - Initialize database using `kapok-minimal.sql` seed data
+3. **Database Initialization** - Initialize database using `optimus-minimal.sql` seed data
 4. **Server Startup** - Start test server
 5. **Run Tests** - Execute all test cases
 6. **Preserve Data** - Do not clean database after tests, convenient for debugging
@@ -60,7 +60,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USERNAME=root
 DB_PASSWORD=your_test_database_password
-DB_DATABASE=kapok_e2e
+DB_DATABASE=optimus_e2e
 
 # Application Configuration
 APP_PORT=8082
@@ -74,7 +74,7 @@ MINIO_PORT=9000
 
 ## Seed Data
 
-Tests use `db/kapok-minimal.sql` as seed data, including:
+Tests use `db/optimus-minimal.sql` as seed data, including:
 
 - **System Users** (sys_user)
   - admin (super admin)
@@ -123,7 +123,7 @@ await resetDatabase();
 3. Verify access keys
 
 ### Seed Data Loading Failed
-1. Ensure `db/kapok-minimal.sql` file exists
+1. Ensure `db/optimus-minimal.sql` file exists
 2. Check SQL syntax
 3. Ensure database user has sufficient permissions
 

@@ -107,7 +107,7 @@ describe("Database Creation Safety", () => {
 
             try {
                 // 使用已存在的测试数据库
-                process.env.DB_DATABASE = "kapok_e2e";
+                process.env.DB_DATABASE = "optimus_e2e";
 
                 // 这应该成功连接而不需要创建
                 await expect(databaseHelper.checkConnection()).resolves.not.toThrow();

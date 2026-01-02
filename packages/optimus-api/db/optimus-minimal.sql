@@ -1,5 +1,5 @@
 /*
- Kapok Database Schema - Minimal Version
+ Optimus Database Schema - Minimal Version
  Optimized for development with essential data only
  
  IMPORTANT CHANGES:
@@ -99,8 +99,8 @@ CREATE TABLE IF NOT EXISTS `sys_document` (
 -- Records of sys_document (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© Kapok System 2024</p>', '2024-01-01 10:00:00.000000', '1', '底部版权信息', 1, 1);
-INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (2, 'welcome', 'home', 'text', '欢迎使用Kapok系统', '2024-01-01 10:00:00.000000', '1', '欢迎信息', 0, 1);
+INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© Optimus System 2024</p>', '2024-01-01 10:00:00.000000', '1', '底部版权信息', 1, 1);
+INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (2, 'welcome', 'home', 'text', '欢迎使用Optimus系统', '2024-01-01 10:00:00.000000', '1', '欢迎信息', 0, 1);
 COMMIT;
 
 -- ----------------------------
@@ -396,7 +396,7 @@ CREATE TABLE IF NOT EXISTS `sys_article` (
 -- ----------------------------
 BEGIN;
 INSERT IGNORE INTO `sys_article` (`id`, `slug`, `status`, `published_at`, `current_version_id`, `published_version_id`, `category_id`, `user_id`, `is_deleted`, `create_date`, `update_date`) VALUES 
-(1, 'welcome-to-kapok', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00'),
+(1, 'welcome-to-optimus', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00'),
 (2, 'system-maintenance-notice', 'published', '2024-01-02 10:00:00', 2, 2, 3, '1', 0, '2024-01-02 10:00:00', '2024-01-02 10:00:00');
 COMMIT;
 
@@ -432,7 +432,7 @@ CREATE TABLE IF NOT EXISTS `sys_article_version` (
 -- ----------------------------
 BEGIN;
 INSERT IGNORE INTO `sys_article_version` (`id`, `article_id`, `version_number`, `title`, `summary`, `content`, `cover_images`, `sort_weight`, `seo_title`, `seo_description`, `seo_keywords`, `status`, `is_current`, `user_id`, `create_date`) VALUES 
-(1, 1, 1, '欢迎使用Kapok系统', '这是一篇欢迎文章，介绍Kapok系统的基本功能', '<h1>欢迎使用Kapok系统</h1><p>Kapok是一个功能强大的内容管理系统，提供文章管理、用户权限、文件上传等功能。</p>', NULL, 100, '欢迎使用Kapok系统', 'Kapok系统介绍', 'Kapok,CMS,内容管理', 'published', 1, '1', '2024-01-01 10:00:00'),
+(1, 1, 1, '欢迎使用Optimus系统', '这是一篇欢迎文章，介绍Optimus系统的基本功能', '<h1>欢迎使用Optimus系统</h1><p>Optimus是一个功能强大的内容管理系统，提供文章管理、用户权限、文件上传等功能。</p>', NULL, 100, '欢迎使用Optimus系统', 'Optimus系统介绍', 'Optimus,CMS,内容管理', 'published', 1, '1', '2024-01-01 10:00:00'),
 (2, 2, 1, '系统维护通知', '系统将于本周末进行例行维护', '<h1>系统维护通知</h1><p>尊敬的用户，系统将于本周末进行例行维护，预计维护时间2小时。</p>', NULL, 90, '系统维护通知', '系统维护公告', '维护,通知,公告', 'published', 1, '1', '2024-01-02 10:00:00');
 COMMIT;
 

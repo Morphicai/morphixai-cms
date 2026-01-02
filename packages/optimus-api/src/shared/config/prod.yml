@@ -18,7 +18,7 @@ db:
         host: ${DB_HOST:db}
         username: ${DB_USERNAME:root}
         password: ${DB_PASSWORD:your_production_database_password}
-        database: ${DB_DATABASE:kapok}
+        database: ${DB_DATABASE:optimus}
         port: ${DB_PORT:3306}
         charser: ${DB_CHARSET:utf8mb4}
         logger: "file"

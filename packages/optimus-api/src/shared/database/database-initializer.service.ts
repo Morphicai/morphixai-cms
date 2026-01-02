@@ -191,7 +191,7 @@ export class DatabaseInitializerService {
      * 执行种子数据
      */
     private async executeSeedData(queryRunner: QueryRunner): Promise<void> {
-        const seedPath = this.getDbFilePath("db/kapok-minimal.sql");
+        const seedPath = this.getDbFilePath("db/optimus-minimal.sql");
 
         if (!existsSync(seedPath)) {
             throw new Error(`Seed data file not found: ${seedPath}`);
