@@ -81,7 +81,7 @@ export class DatabaseBackupService {
             const dbPort = this.configService.get<number>("db.mysql.port") || 3306;
             const dbUsername = this.configService.get<string>("db.mysql.username") || "root";
             const dbPassword = this.configService.get<string>("db.mysql.password") || "";
-            const dbDatabase = this.configService.get<string>("db.mysql.database") || "kapok";
+            const dbDatabase = this.configService.get<string>("db.mysql.database") || "optimus";
 
             this.logger.log(`Starting database dump for ${dbDatabase}...`);
             this.logger.log(`Connection: ${dbUsername}@${dbHost}:${dbPort}`);

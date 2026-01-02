@@ -16,7 +16,7 @@ db:
         host: ${DB_HOST:localhost}
         username: ${DB_USERNAME:root}
         password: ${DB_PASSWORD:your_test_database_password}
-        database: ${DB_DATABASE:kapok_e2e}
+        database: ${DB_DATABASE:optimus_e2e}
         port: ${DB_PORT:3306}
         charset: ${DB_CHARSET:utf8mb4}
         logger: "advanced-console"

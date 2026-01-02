@@ -18,7 +18,7 @@ db:
         host: ${DB_HOST:localhost}
         username: ${DB_USERNAME:root}
         password: ${DB_PASSWORD:your_database_password}
-        database: ${DB_DATABASE:kapok}
+        database: ${DB_DATABASE:optimus}
         port: ${DB_PORT:3306}
         charset: ${DB_CHARSET:utf8mb4}
         logger: "advanced-console"

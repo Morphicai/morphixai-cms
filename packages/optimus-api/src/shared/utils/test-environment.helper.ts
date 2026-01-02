@@ -34,7 +34,7 @@ export class TestEnvironmentHelper {
             environment: TestModeDetector.getEnvironment(),
             databaseConfig: {
                 type: process.env.DB_TYPE || "mysql",
-                database: process.env.DB_DATABASE || "kapok_e2e",
+                database: process.env.DB_DATABASE || "optimus_e2e",
                 inMemory: false,
             },
             storageConfig: {

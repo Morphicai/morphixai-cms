@@ -100,7 +100,7 @@ beforeAll(async () => {
     // Ensure MySQL test database configuration
     if (!process.env.DB_TYPE) {
         process.env.DB_TYPE = "mysql";
-        process.env.DB_DATABASE = process.env.DB_DATABASE || "kapok_e2e";
+        process.env.DB_DATABASE = process.env.DB_DATABASE || "optimus_e2e";
     }
 
     // 3. 启动服务器

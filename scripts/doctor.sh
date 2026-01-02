@@ -186,7 +186,7 @@ initialize_database() {
     # 设置默认值
     DB_USERNAME=${DB_USERNAME:-root}
     DB_PASSWORD=${DB_PASSWORD:-123456}
-    DB_DATABASE=${DB_DATABASE:-kapok}
+    DB_DATABASE=${DB_DATABASE:-optimus}
     
     # 等待数据库就绪
     log_info "等待数据库就绪..."
@@ -222,9 +222,9 @@ initialize_database() {
         log_info "数据库为空，导入初始数据..."
         
         # 选择SQL文件
-        SQL_FILE="packages/optimus-api/db/kapok-minimal.sql"
+        SQL_FILE="packages/optimus-api/db/optimus-minimal.sql"
         if [ ! -f "$SQL_FILE" ]; then
-            SQL_FILE="packages/optimus-api/db/kapok.sql"
+            SQL_FILE="packages/optimus-api/db/optimus.sql"
         fi
         
         if [ -f "$SQL_FILE" ]; then
@@ -303,7 +303,7 @@ show_environment_info() {
     echo "   🏠 主机: localhost:3306"
     echo "   👤 用户名: root"
     echo "   🔑 密码: 123456"
-    echo "   🗄️  数据库: kapok"
+    echo "   🗄️  数据库: optimus"
     echo ""
     echo -e "${GREEN}${STORAGE} MinIO 信息:${NC}"
     echo "   🏠 API: http://localhost:9000"

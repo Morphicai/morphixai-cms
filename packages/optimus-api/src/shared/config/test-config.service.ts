@@ -122,7 +122,7 @@ export class TestConfigService {
             port: parseInt(process.env.DB_PORT || "3306", 10),
             username: process.env.DB_USERNAME || "root",
             password: process.env.DB_PASSWORD || "123456",
-            database: process.env.DB_DATABASE || "kapok_e2e",
+            database: process.env.DB_DATABASE || "optimus_e2e",
             charset: process.env.DB_CHARSET || "utf8mb4",
             logging: process.env.DB_LOGGING === "true",
             synchronize: process.env.DB_SYNCHRONIZE === "true",

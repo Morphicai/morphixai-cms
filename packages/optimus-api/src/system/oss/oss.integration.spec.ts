@@ -52,7 +52,7 @@ describe("OSS Storage Integration Tests", () => {
                     port: parseInt(process.env.DB_PORT || "3306"),
                     username: process.env.DB_USERNAME,
                     password: process.env.DB_PASSWORD,
-                    database: process.env.DB_DATABASE || "kapok_e2e",
+                    database: process.env.DB_DATABASE || "optimus_e2e",
                     entities: [OssEntity],
                     synchronize: true,
                     dropSchema: true,

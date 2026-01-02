@@ -20,7 +20,7 @@ export class DatabaseTestHelper {
             throw new Error("DB_PASSWORD environment variable is required");
         }
 
-        const dbName = process.env.DB_DATABASE || "kapok_e2e";
+        const dbName = process.env.DB_DATABASE || "optimus_e2e";
 
         try {
             // 首先尝试连接到目标数据库

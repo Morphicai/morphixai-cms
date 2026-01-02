@@ -92,7 +92,7 @@ describe("DatabaseInitializerService", () => {
     describe("validateInitializationSafety", () => {
         it("should return error for e2e environment without _e2e suffix", async () => {
             process.env.NODE_ENV = "e2e";
-            jest.spyOn(configService, "get").mockReturnValue("kapok_e2e"); // Wrong name
+            jest.spyOn(configService, "get").mockReturnValue("optimus_e2e"); // Wrong name
 
             const result = await service.validateInitializationSafety();
 
@@ -102,7 +102,7 @@ describe("DatabaseInitializerService", () => {
 
         it("should be safe for e2e environment with correct database name", async () => {
             process.env.NODE_ENV = "e2e";
-            jest.spyOn(configService, "get").mockReturnValue("kapok_e2e");
+            jest.spyOn(configService, "get").mockReturnValue("optimus_e2e");
 
             const result = await service.validateInitializationSafety();
 
@@ -113,7 +113,7 @@ describe("DatabaseInitializerService", () => {
         it("should return error for production environment without force flag", async () => {
             process.env.NODE_ENV = "production";
             delete process.env.ALLOW_PROD_INIT;
-            jest.spyOn(configService, "get").mockReturnValue("kapok_production");
+            jest.spyOn(configService, "get").mockReturnValue("optimus_production");
 
             const result = await service.validateInitializationSafety(false);
 
@@ -126,7 +126,7 @@ describe("DatabaseInitializerService", () => {
         it("should be safe for production environment with force flag", async () => {
             process.env.NODE_ENV = "production";
             delete process.env.ALLOW_PROD_INIT;
-            jest.spyOn(configService, "get").mockReturnValue("kapok_production");
+            jest.spyOn(configService, "get").mockReturnValue("optimus_production");
 
             const result = await service.validateInitializationSafety(true);
 
@@ -136,7 +136,7 @@ describe("DatabaseInitializerService", () => {
 
         it("should be safe for development environment", async () => {
             process.env.NODE_ENV = "development";
-            jest.spyOn(configService, "get").mockReturnValue("kapok_dev");
+            jest.spyOn(configService, "get").mockReturnValue("optimus_dev");
 
             const result = await service.validateInitializationSafety();
 
