@@ -141,6 +141,9 @@ class Entity {
 3. ✅ **`ClientUserExternalAccountEntity`** - 已移除列级别的 `@Index()` 装饰器，因为类级别已有复合索引
 4. ✅ **`ShortLinkEntity`** - 已移除类级别的 `@Index(["token"], { unique: true })`，因为列级别已有 `unique: true`
 5. ✅ **`ClientUserEntity`** - 已移除 `username`, `email`, `phone` 上的 `@Index()`，因为列级别已有 `unique: true`
+6. ✅ **`PartnerProfileEntity`** - 已移除 `partnerCode` 上的 `@Index()`，因为列级别已有 `unique: true`
+7. ✅ **`TaskCompletionLogEntity`** - 已移除冗余的 `@Index(["partnerId"])`，保留复合索引 `@Index(["taskCode", "partnerId", "eventId"])`
+8. ✅ **`DictionaryCollectionEntity`** - 已移除类级别的 `@Index(["name"])`，因为列级别已有 `unique: true`
 
 ## 其他实体检查
 
