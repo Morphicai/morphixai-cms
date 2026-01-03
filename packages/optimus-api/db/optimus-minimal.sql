@@ -47,10 +47,9 @@ CREATE TABLE IF NOT EXISTS `op_biz_contact` (
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of op_biz_contact (Essential demo data only)
+-- Records of op_biz_contact (No demo data - will be created as needed)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_biz_contact` (`id`, `email`, `phone_num`, `address`, `eng_address`) VALUES (1, 'contact@example.com', '13800138000', '上海市浦东新区示例地址123号', 'Example Address 123, Pudong, Shanghai, China');
 COMMIT;
 
 -- ----------------------------
@@ -67,10 +66,9 @@ CREATE TABLE IF NOT EXISTS `op_biz_feedback` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of op_biz_feedback (Essential demo data only)
+-- Records of op_biz_feedback (No demo data - will be created as needed)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_biz_feedback` (`id`, `email`, `nick_name`, `message`, `create_date`) VALUES (1, 'user@example.com', 'demo_user', '系统运行正常，测试反馈功能', '2024-01-01 10:00:00.000000');
 COMMIT;
 
 
@@ -99,8 +97,7 @@ CREATE TABLE IF NOT EXISTS `op_sys_document` (
 -- Records of sys_document (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© Optimus System 2024</p>', '2024-01-01 10:00:00.000000', '1', '底部版权信息', 1, 1);
-INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (2, 'welcome', 'home', 'text', '欢迎使用Optimus系统', '2024-01-01 10:00:00.000000', '1', '欢迎信息', 0, 1);
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© 2024 Optimus CMS. Built with modern technologies for powerful content management.</p>', '2024-01-01 10:00:00.000000', '1', 'Copyright notice for Optimus CMS', 1, 1);
 COMMIT;
 
 -- ----------------------------
@@ -120,7 +117,6 @@ CREATE TABLE IF NOT EXISTS `op_sys_document_perm` (
 -- ----------------------------
 BEGIN;
 INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (1, 0, 1, 1);
-INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (2, 0, 1, 2);
 COMMIT;
 
 -- ----------------------------
@@ -355,13 +351,12 @@ CREATE TABLE IF NOT EXISTS `op_sys_category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章分类表';
 
 -- ----------------------------
--- Records of op_sys_category (Built-in categories)
+-- Records of op_sys_category (Temporary default category for demo article only)
 -- ----------------------------
 BEGIN;
+-- Note: This category is only for the demo article. In production, create categories as needed.
 INSERT IGNORE INTO `op_sys_category` (`id`, `name`, `code`, `description`, `is_built_in`, `config`, `sort_weight`) VALUES 
-(1, '新闻', 'news', '新闻资讯类文章', true, '{"maxCoverImages": 3, "maxVersions": 10}', 100),
-(2, '活动', 'activity', '活动相关文章', true, '{"maxCoverImages": 5, "maxVersions": 15}', 90),
-(3, '公告', 'announcement', '公告通知类文章', true, '{"maxCoverImages": 1, "maxVersions": 5}', 80);
+(1, 'General', 'general', 'General category for demo content', false, '{}', 0);
 COMMIT;
 
 -- ----------------------------
@@ -391,12 +386,14 @@ CREATE TABLE IF NOT EXISTS `op_sys_article` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章主表';
 
 -- ----------------------------
--- Records of sys_article (Sample articles)
+-- Records of sys_article (Sample article - Optimus CMS introduction)
 -- ----------------------------
 BEGIN;
+-- Note: category_id is required, so a category must be created first if needed
+-- For minimal seed data, we'll use a placeholder category_id (1)
+-- In production, categories should be created before articles
 INSERT IGNORE INTO `op_sys_article` (`id`, `slug`, `status`, `published_at`, `current_version_id`, `published_version_id`, `category_id`, `user_id`, `is_deleted`, `create_date`, `update_date`) VALUES 
-(1, 'welcome-to-optimus', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00'),
-(2, 'system-maintenance-notice', 'published', '2024-01-02 10:00:00', 2, 2, 3, '1', 0, '2024-01-02 10:00:00', '2024-01-02 10:00:00');
+(1, 'welcome-to-optimus-cms', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00');
 COMMIT;
 
 -- ----------------------------
@@ -427,12 +424,23 @@ CREATE TABLE IF NOT EXISTS `op_sys_article_version` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章版本表';
 
 -- ----------------------------
--- Records of op_sys_article_version (Sample article versions)
+-- Records of op_sys_article_version (Sample article version - plain text format)
 -- ----------------------------
 BEGIN;
 INSERT IGNORE INTO `op_sys_article_version` (`id`, `article_id`, `version_number`, `title`, `summary`, `content`, `cover_images`, `sort_weight`, `seo_title`, `seo_description`, `seo_keywords`, `status`, `is_current`, `user_id`, `create_date`) VALUES 
-(1, 1, 1, '欢迎使用Optimus系统', '这是一篇欢迎文章，介绍Optimus系统的基本功能', '<h1>欢迎使用Optimus系统</h1><p>Optimus是一个功能强大的内容管理系统，提供文章管理、用户权限、文件上传等功能。</p>', NULL, 100, '欢迎使用Optimus系统', 'Optimus系统介绍', 'Optimus,CMS,内容管理', 'published', 1, '1', '2024-01-01 10:00:00'),
-(2, 2, 1, '系统维护通知', '系统将于本周末进行例行维护', '<h1>系统维护通知</h1><p>尊敬的用户，系统将于本周末进行例行维护，预计维护时间2小时。</p>', NULL, 90, '系统维护通知', '系统维护公告', '维护,通知,公告', 'published', 1, '1', '2024-01-02 10:00:00');
+(1, 1, 1, 'Welcome to Optimus CMS', 'Optimus CMS is a powerful, modern content management system built with NestJS, React, and Next.js', 'Welcome to Optimus CMS
+
+Optimus CMS is a full-stack content management system designed for modern web applications. Built with cutting-edge technologies including NestJS for the backend, React for the admin interface, and Next.js for the client-facing frontend, Optimus CMS provides a robust foundation for managing content, users, permissions, and more.
+
+Key Features:
+- Flexible content management with article versioning
+- Role-based access control and permissions
+- File upload and storage management
+- Modern admin dashboard
+- RESTful API architecture
+- TypeScript throughout for type safety
+
+Optimus CMS empowers developers and content creators to build and manage sophisticated web applications with ease.', NULL, 100, 'Welcome to Optimus CMS', 'Optimus CMS - A modern content management system built with NestJS, React, and Next.js', 'Optimus,CMS,Content Management System,NestJS,React,Next.js', 'published', 1, '1', '2024-01-01 10:00:00');
 COMMIT;
 
 -- ----------------------------
