@@ -64,10 +64,11 @@ import { join } from "path";
                 // 根据 NODE_ENV 动态加载对应的环境变量文件
                 //
                 // ⚠️ 重要：NestJS ConfigModule 使用 dotenv 加载文件
-                // dotenv 的行为：第一个文件优先，后面的文件中的变量只有在前面的文件中不存在时才会生效
-                //
+                // dotenv 的默认行为：按顺序加载，如果变量已存在则不会覆盖
                 // 因此顺序应该是：本地覆盖配置 -> 环境特定配置 -> 基础配置（优先级从高到低）
-                // 这样优先级最高的文件会先被加载，其变量会被保留
+                // 这样优先级最高的文件先加载，其变量会被保留，后面的文件不会覆盖它
+                //
+                // 参考：https://docs.nestjs.com/techniques/configuration
                 const envFiles = [
                     join(projectDir, ".env.local"), // 本地覆盖配置（优先级最高，先加载）
                     join(projectDir, `.env.${nodeEnv}`), // 环境特定配置（如 .env.development, .env.e2e）
@@ -82,11 +83,34 @@ import { join } from "path";
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: async (config: ConfigService) => {
+                // ConfigModule 加载后，再次执行 DATABASE_* 到 DB_* 的映射
+                // 确保环境变量映射正确（因为 ConfigModule 可能会重新加载环境变量）
+                if (process.env.DATABASE_HOST && !process.env.DB_HOST) {
+                    process.env.DB_HOST = process.env.DATABASE_HOST;
+                }
+                if (process.env.DATABASE_PORT && !process.env.DB_PORT) {
+                    process.env.DB_PORT = process.env.DATABASE_PORT;
+                }
+                if (process.env.DATABASE_USERNAME && !process.env.DB_USERNAME) {
+                    process.env.DB_USERNAME = process.env.DATABASE_USERNAME;
+                }
+                if (process.env.DATABASE_PASSWORD && !process.env.DB_PASSWORD) {
+                    process.env.DB_PASSWORD = process.env.DATABASE_PASSWORD;
+                }
+                if (process.env.DATABASE_NAME && !process.env.DB_DATABASE) {
+                    process.env.DB_DATABASE = process.env.DATABASE_NAME;
+                }
+
                 const dbConfig = config.get("db.mysql");
                 const logger = new Logger("DatabaseConfig");
 
                 // 打印数据库连接信息（隐藏密码）
                 logger.log("=== 数据库连接配置 ===");
+                logger.log(
+                    `连接字符串: mysql://${dbConfig?.username || "未配置"}:***@${dbConfig?.host || "未配置"}:${
+                        dbConfig?.port || "未配置"
+                    }/${dbConfig?.database || "未配置"}`,
+                );
                 logger.log(`Host: ${dbConfig?.host || "未配置"}`);
                 logger.log(`Port: ${dbConfig?.port || "未配置"}`);
                 logger.log(`Database: ${dbConfig?.database || "未配置"}`);
@@ -94,12 +118,39 @@ import { join } from "path";
                 logger.log(`Password: ${dbConfig?.password ? "***已配置***" : "未配置"}`);
                 logger.log(`Password Length: ${dbConfig?.password?.length || 0}`);
                 logger.log(`Charset: ${dbConfig?.charset || dbConfig?.charser || "未配置"}`);
+                logger.log(`Connect Timeout: ${dbConfig?.connectTimeout || 60000}ms`);
+                logger.log(`Query Timeout: ${dbConfig?.timeout || 60000}ms`);
+                logger.log(`Retry Attempts: ${dbConfig?.retryAttempts || 3}`);
+                logger.log(`Retry Delay: ${dbConfig?.retryDelay || 3000}ms`);
+                logger.log(`Keep Connection Alive: ${dbConfig?.keepConnectionAlive !== false}`);
                 logger.log(`NODE_ENV: ${process.env.NODE_ENV || "未设置"}`);
-                logger.log(`DB_HOST (env): ${process.env.DB_HOST || "未设置"}`);
-                logger.log(`DB_USERNAME (env): ${process.env.DB_USERNAME || "未设置"}`);
-                logger.log(`DB_PASSWORD (env): ${process.env.DB_PASSWORD ? "***已设置***" : "未设置"}`);
-                logger.log(`DB_DATABASE (env): ${process.env.DB_DATABASE || "未设置"}`);
-                logger.log(`DB_PORT (env): ${process.env.DB_PORT || "未设置"}`);
+                logger.log("--- 环境变量检查 ---");
+                logger.log(
+                    `DB_HOST (env): ${process.env.DB_HOST || "未设置"} ${
+                        process.env.DATABASE_HOST ? `(从 DATABASE_HOST 映射)` : ""
+                    }`,
+                );
+                logger.log(
+                    `DB_USERNAME (env): ${process.env.DB_USERNAME || "未设置"} ${
+                        process.env.DATABASE_USERNAME ? `(从 DATABASE_USERNAME 映射)` : ""
+                    }`,
+                );
+                logger.log(
+                    `DB_PASSWORD (env): ${process.env.DB_PASSWORD ? "***已设置***" : "未设置"} ${
+                        process.env.DATABASE_PASSWORD ? `(从 DATABASE_PASSWORD 映射)` : ""
+                    }`,
+                );
+                logger.log(
+                    `DB_DATABASE (env): ${process.env.DB_DATABASE || "未设置"} ${
+                        process.env.DATABASE_NAME ? `(从 DATABASE_NAME 映射)` : ""
+                    }`,
+                );
+                logger.log(
+                    `DB_PORT (env): ${process.env.DB_PORT || "未设置"} ${
+                        process.env.DATABASE_PORT ? `(从 DATABASE_PORT 映射)` : ""
+                    }`,
+                );
+                logger.log(`DB_CHARSET (env): ${process.env.DB_CHARSET || "未设置"}`);
                 logger.log("====================");
 
                 return {

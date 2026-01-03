@@ -21,12 +21,44 @@ function replaceEnvVars(str: string, fieldPath = ""): any {
         const colonIndex = varName.indexOf(":");
         if (colonIndex === -1) {
             // 没有默认值
-            return process.env[varName] || "";
+            const value = process.env[varName];
+            // 如果找不到，尝试从 DATABASE_* 映射到 DB_*（向后兼容）
+            if (!value && varName.startsWith("DB_")) {
+                if (varName === "DB_HOST") {
+                    return process.env.DATABASE_HOST || "";
+                } else if (varName === "DB_PORT") {
+                    return process.env.DATABASE_PORT || "";
+                } else if (varName === "DB_USERNAME") {
+                    return process.env.DATABASE_USERNAME || "";
+                } else if (varName === "DB_PASSWORD") {
+                    return process.env.DATABASE_PASSWORD || "";
+                } else if (varName === "DB_DATABASE") {
+                    return process.env.DATABASE_NAME || "";
+                }
+            }
+            return value || "";
         }
 
         const name = varName.substring(0, colonIndex);
         const defaultValue = varName.substring(colonIndex + 1);
-        return process.env[name] || defaultValue || "";
+        
+        // 支持 DATABASE_* 到 DB_* 的映射（向后兼容）
+        let value = process.env[name];
+        if (!value && name.startsWith("DB_")) {
+            if (name === "DB_HOST") {
+                value = process.env.DATABASE_HOST;
+            } else if (name === "DB_PORT") {
+                value = process.env.DATABASE_PORT;
+            } else if (name === "DB_USERNAME") {
+                value = process.env.DATABASE_USERNAME;
+            } else if (name === "DB_PASSWORD") {
+                value = process.env.DATABASE_PASSWORD;
+            } else if (name === "DB_DATABASE") {
+                value = process.env.DATABASE_NAME;
+            }
+        }
+        
+        return value || defaultValue || "";
     });
 
     // 检查是否是需要保持为字符串的字段
