@@ -99,7 +99,7 @@ export default function ApiTestPage() {
             <li>
               API 地址：
               <code className="bg-gray-100 px-2 py-1 rounded text-sm ml-1">
-                {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}
+                {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8084'}
               </code>
             </li>
             <li>确保 optimus-api 服务正在运行</li>

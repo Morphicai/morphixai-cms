@@ -42,9 +42,9 @@
     "web-vitals": "^2.1.3"
   },
   "scripts": {
-    "start": "craco start",
-    "dev": "craco start",
-    "start:dev": "craco start",
+    "start": "craco start -p 8082",
+    "dev": "craco start -p 8082",
+    "start:dev": "craco start -p 8082",
     "build": "craco build",
     "test": "craco test --run-in-band --passWithNoTests --watchAll=false",
     "start:prod": "serve -s build -l 8082",

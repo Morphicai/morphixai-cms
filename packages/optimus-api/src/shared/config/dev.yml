@@ -11,7 +11,7 @@ app:
         # 临时使用地址，放在这里不会被 nest-cli autoreload（用于分片文件存储）
         tempUpload: ${UPLOAD_TEMP_PATH:../netdisk-cache}
         # 文件服务器地址，开发环境
-        domain: ${SITE_DOMAIN:http://localhost:8081}
+        domain: ${SITE_DOMAIN:http://localhost:8084}
 # 数据库配置
 db:
     mysql:

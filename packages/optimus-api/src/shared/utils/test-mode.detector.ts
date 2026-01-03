@@ -117,17 +117,18 @@ export class TestModeDetector {
         }
 
         // 检查端口配置
-        if (process.env.APP_PORT === "8081") {
+        if (process.env.APP_PORT === "8084") {
             warnings.push("Using production port in e2e mode, consider using a different port");
         }
 
         // 检查JWT密钥（检查是否使用了默认值或生产环境密钥）
         const jwtSecret = process.env.JWT_SECRET;
-        if (jwtSecret && (
-            jwtSecret.includes("production") ||
-            jwtSecret.length < 32 ||
-            jwtSecret === "your_jwt_secret_key_change_in_production"
-        )) {
+        if (
+            jwtSecret &&
+            (jwtSecret.includes("production") ||
+                jwtSecret.length < 32 ||
+                jwtSecret === "your_jwt_secret_key_change_in_production")
+        ) {
             warnings.push("JWT secret may not be properly configured for e2e mode");
         }
 

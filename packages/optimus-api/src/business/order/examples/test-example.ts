@@ -55,7 +55,7 @@ export function testExample() {
 /**
  * cURL 命令示例
  */
-export function generateCurlCommand(baseUrl = "http://localhost:8081") {
+export function generateCurlCommand(baseUrl = "http://localhost:8084") {
     const { encryptedData } = testExample();
 
     return `curl -X POST ${baseUrl}/api/biz/order/create \\

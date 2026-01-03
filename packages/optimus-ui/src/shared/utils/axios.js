@@ -10,7 +10,7 @@ let refreshTokenPromise = null;
 let hasShownAuthError = false; // 防止重复显示错误提示
 
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
+  baseURL: process.env.REACT_APP_API_BASE_URL || '/api',
   transformResponse: [
     function (dataStr) {
       try {
