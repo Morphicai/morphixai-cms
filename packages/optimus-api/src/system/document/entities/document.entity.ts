@@ -69,6 +69,17 @@ export class DocumentEntity {
     })
     public isPublic?: boolean;
 
+    @ApiProperty({ description: "是否为内置数据" })
+    @IsBoolean({ message: "isBuiltIn 必须为布尔型" })
+    @IsOptional()
+    @Column({
+        type: "boolean",
+        name: "is_built_in",
+        comment: "是否为内置数据",
+        default: false,
+    })
+    public isBuiltIn?: boolean;
+
     @ApiProperty({ description: "开启权限控制后的用户名单", required: false })
     @IsArray({ message: "权限列表中的用户名单必须为数组类型" })
     @IsOptional()
