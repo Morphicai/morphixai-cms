@@ -88,16 +88,45 @@ CREATE TABLE IF NOT EXISTS `op_sys_document` (
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '对当前文案 Item 的简要描述',
   `is_public` tinyint NOT NULL DEFAULT '0' COMMENT '是否对外公开',
   `show_on_menu` tinyint NOT NULL DEFAULT '0' COMMENT '该文案中心是否需要展示在菜单上',
+  `is_built_in` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否为内置数据',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `idx_doc_key_unique` (`doc_key`),
   KEY `idx_is_public` (`is_public`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of sys_document (Essential demo data only)
+-- Records of sys_document (Essential demo data and base configuration)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© 2024 Optimus CMS. Built with modern technologies for powerful content management.</p>', '2024-01-01 10:00:00.000000', '1', 'Copyright notice for Optimus CMS', 1, 1);
+-- Copyright notice (Built-in)
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
+(1, 'copyright', 'home', 'html', '<p>© 2024 Optimus CMS. Built with modern technologies for powerful content management.</p>', '2024-01-01 10:00:00.000000', '1', 'Copyright notice for Optimus CMS', 1, 1, 1);
+
+-- SEO Configuration (Built-in)
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
+(2, 'site_title', 'seo', 'text', 'Optimus CMS - Modern Content Management System', '2024-01-01 10:00:00.000000', '1', 'Site title for SEO', 1, 0, 1),
+(3, 'site_description', 'seo', 'text', 'Optimus CMS is a powerful, full-stack content management system built with NestJS, React, and Next.js. Manage your content, users, and permissions with ease.', '2024-01-01 10:00:00.000000', '1', 'Site meta description for SEO', 1, 0, 1),
+(4, 'site_keywords', 'seo', 'text', 'Optimus CMS, Content Management System, CMS, NestJS, React, Next.js, TypeScript, Web Development', '2024-01-01 10:00:00.000000', '1', 'Site keywords for SEO', 1, 0, 1),
+(5, 'og_image', 'seo', 'url', 'https://example.com/images/optimus-cms-og-image.jpg', '2024-01-01 10:00:00.000000', '1', 'Open Graph image URL for social media sharing', 1, 0, 1),
+(6, 'favicon_url', 'seo', 'url', 'https://example.com/favicon.ico', '2024-01-01 10:00:00.000000', '1', 'Favicon URL', 1, 0, 1);
+
+-- Site Basic Information (Built-in)
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
+(7, 'site_name', 'config', 'text', 'Optimus CMS', '2024-01-01 10:00:00.000000', '1', 'Site name', 1, 0, 1),
+(8, 'site_logo', 'config', 'url', 'https://example.com/images/optimus-cms-logo.png', '2024-01-01 10:00:00.000000', '1', 'Site logo URL', 1, 0, 1),
+(9, 'contact_email', 'config', 'text', 'contact@optimus-cms.com', '2024-01-01 10:00:00.000000', '1', 'Contact email address', 1, 0, 1),
+(10, 'contact_phone', 'config', 'text', '+1 (555) 123-4567', '2024-01-01 10:00:00.000000', '1', 'Contact phone number', 1, 0, 1);
+
+-- Legal Documents (Built-in)
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
+(11, 'terms_of_service', 'legal', 'html', '<h1>Terms of Service</h1><p>Welcome to Optimus CMS. By accessing and using this platform, you agree to comply with and be bound by the following terms and conditions.</p><h2>1. Acceptance of Terms</h2><p>By using Optimus CMS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p><h2>2. Use License</h2><p>Permission is granted to temporarily use Optimus CMS for personal or commercial purposes. This is the grant of a license, not a transfer of title.</p><h2>3. User Responsibilities</h2><p>Users are responsible for maintaining the confidentiality of their account credentials and for all activities that occur under their account.</p><h2>4. Limitation of Liability</h2><p>Optimus CMS shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the platform.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Terms of Service document', 1, 1, 1),
+(12, 'privacy_policy', 'legal', 'html', '<h1>Privacy Policy</h1><p>Optimus CMS is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our platform.</p><h2>1. Information We Collect</h2><p>We collect information that you provide directly to us, including account information, content you create, and usage data.</p><h2>2. How We Use Your Information</h2><p>We use the information we collect to provide, maintain, and improve Optimus CMS services, process transactions, and communicate with you.</p><h2>3. Data Security</h2><p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p><h2>4. Your Rights</h2><p>You have the right to access, update, or delete your personal information at any time through your account settings.</p><h2>5. Cookies and Tracking</h2><p>Optimus CMS uses cookies and similar tracking technologies to enhance your experience and analyze usage patterns.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Privacy Policy document', 1, 1, 1);
+
+-- Additional Configuration (JSON format) - Built-in
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
+(13, 'footer_links', 'config', 'json', '{"links": [{"title": "Home", "url": "/"}, {"title": "About", "url": "/about"}, {"title": "Terms of Service", "url": "/terms"}, {"title": "Privacy Policy", "url": "/privacy"}, {"title": "Contact", "url": "/contact"}]}', '2024-01-01 10:00:00.000000', '1', 'Footer navigation links in JSON format', 1, 0, 1),
+(14, 'social_media', 'config', 'json', '{"platforms": [{"name": "Twitter", "url": "https://twitter.com/optimuscms", "icon": "twitter"}, {"name": "GitHub", "url": "https://github.com/optimus-cms", "icon": "github"}, {"name": "LinkedIn", "url": "https://linkedin.com/company/optimus-cms", "icon": "linkedin"}]}', '2024-01-01 10:00:00.000000', '1', 'Social media links in JSON format', 1, 0, 1),
+(15, 'site_settings', 'config', 'json', '{"theme": {"primaryColor": "#1890ff", "secondaryColor": "#52c41a"}, "features": {"enableComments": true, "enableNotifications": true, "enableAnalytics": true}, "localization": {"defaultLanguage": "en", "supportedLanguages": ["en", "zh-CN"]}}', '2024-01-01 10:00:00.000000', '1', 'Site settings configuration in JSON format', 0, 0, 1);
 COMMIT;
 
 -- ----------------------------
@@ -110,13 +139,44 @@ CREATE TABLE IF NOT EXISTS `op_sys_document_perm` (
   `role_id` bigint NOT NULL DEFAULT '0' COMMENT '角色id',
   `document_id` bigint NOT NULL COMMENT '文案中心id',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of op_sys_document_perm (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (1, 0, 1, 1);
+-- Admin role (role_id=1) has access to all documents
+INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES 
+(1, 0, 1, 1),   -- copyright
+(2, 0, 1, 2),   -- site_title
+(3, 0, 1, 3),   -- site_description
+(4, 0, 1, 4),   -- site_keywords
+(5, 0, 1, 5),   -- og_image
+(6, 0, 1, 6),   -- favicon_url
+(7, 0, 1, 7),   -- site_name
+(8, 0, 1, 8),   -- site_logo
+(9, 0, 1, 9),   -- contact_email
+(10, 0, 1, 10), -- contact_phone
+(11, 0, 1, 11), -- terms_of_service
+(12, 0, 1, 12), -- privacy_policy
+(13, 0, 1, 13), -- footer_links
+(14, 0, 1, 14), -- social_media
+(15, 0, 1, 15); -- site_settings
+
+-- Operator role (role_id=2) has access to public documents and config
+INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES 
+(16, 0, 2, 1),   -- copyright
+(17, 0, 2, 2),   -- site_title
+(18, 0, 2, 3),   -- site_description
+(19, 0, 2, 4),   -- site_keywords
+(20, 0, 2, 7),   -- site_name
+(21, 0, 2, 8),   -- site_logo
+(22, 0, 2, 9),   -- contact_email
+(23, 0, 2, 10),  -- contact_phone
+(24, 0, 2, 11),  -- terms_of_service
+(25, 0, 2, 12),  -- privacy_policy
+(26, 0, 2, 13),  -- footer_links
+(27, 0, 2, 14);  -- social_media
 COMMIT;
 
 -- ----------------------------
