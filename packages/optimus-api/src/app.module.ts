@@ -44,6 +44,7 @@ import { PartnerModule } from "./business/partner/partner.module";
 import { PointsEngineModule } from "./business/points-engine/points-engine.module";
 import { ExternalTaskModule } from "./business/external-task/external-task.module";
 import { ClientUserModule } from "./business/client-user/client-user.module";
+import { SetupModule } from "./system/setup/setup.module";
 import { join } from "path";
 
 @Module({
@@ -213,6 +214,8 @@ import { join } from "path";
         ExternalTaskModule,
         // C端用户模块
         ClientUserModule,
+        // 系统安装模块
+        SetupModule,
     ],
     // app module 守卫，统一认证守卫依赖多个服务，而这些服务没有设置全局模块，
     // 所以统一守卫不能在 main.ts 设置全局守卫

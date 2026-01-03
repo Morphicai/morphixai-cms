@@ -23,6 +23,8 @@ import { globalPermissionManager } from "./utils/PermissionManager";
 
 // 导入权限API
 import { getUserPermissionCodes } from "./apis/permission";
+// 导入系统安装API
+import { setupApi } from "./apis/setup";
 
 const ability = new Ability();
 
@@ -55,6 +57,8 @@ const Routers = ({ shouldUpdate }) => {
   const [routes, setRoutes] = useState([]);
   const [userPermissions, setUserPermissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingSetup, setIsCheckingSetup] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(true);
   const { isLogin, userInfo } = useAuth();
   const location = window.location;
 
@@ -87,6 +91,36 @@ const Routers = ({ shouldUpdate }) => {
 
   // 传统路由初始化函数已移除，现在只使用常量路由
 
+  // 检查系统初始化状态
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      try {
+        setIsCheckingSetup(true);
+        const response = await setupApi.getStatus();
+        if (response.success && response.data) {
+          const initialized = response.data.isInitialized;
+          setIsInitialized(initialized);
+
+          // 如果未初始化且当前不在 setup 页面，自动跳转
+          if (!initialized) {
+            const currentPath = location.hash.replace('#', '') || '/';
+            if (currentPath !== '/setup') {
+              window.location.hash = '/setup';
+            }
+          }
+        }
+      } catch (error) {
+        console.error('检查系统状态失败:', error);
+        // 如果检查失败，假设已初始化，避免阻塞用户
+        setIsInitialized(true);
+      } finally {
+        setIsCheckingSetup(false);
+      }
+    };
+
+    checkSystemStatus();
+  }, []);
+
   // 使用useEffect来初始化路由
   useEffect(() => {
     // 同时检查 isLogin 和 userInfo 确保用户已登录且有有效的用户信息
@@ -95,11 +129,30 @@ const Routers = ({ shouldUpdate }) => {
     }
   }, [isLogin, userInfo, shouldUpdate, initConstantRoutes]);
 
+  // 如果正在检查系统状态，显示加载中
+  if (isCheckingSetup) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        <Spin size="large" tip="正在检查系统状态..." />
+      </div>
+    );
+  }
+
+  // 如果未初始化，强制显示安装页面
+  if (!isInitialized) {
+    return <PublicRoutes />;
+  }
+
   // 如果访问的是公开页面，直接显示公开路由
   if (!isLogin) {
     // 检查当前路径是否为公开页面
     const currentPath = location.hash.replace('#', '') || '/';
-    if (currentPath === '/help') {
+    if (currentPath === '/help' || currentPath === '/setup') {
       return <PublicRoutes />;
     }
     return <Login />;

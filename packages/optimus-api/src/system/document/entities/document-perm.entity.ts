@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity("sys_document_perm")
+@Entity("op_sys_document_perm")
 export class DocumentPermEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     id?: number;

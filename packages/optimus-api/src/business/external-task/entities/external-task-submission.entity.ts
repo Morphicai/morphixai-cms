@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { ExternalTaskType } from "../enums/external-task-type.enum";
 import { SubmissionStatus } from "../enums/submission-status.enum";
 
-@Entity("biz_external_task_submission")
+@Entity("op_biz_external_task_submission")
 @Index(["partnerId"])
 @Index(["status"])
 @Index(["taskType"])

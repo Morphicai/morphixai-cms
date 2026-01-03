@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, JoinColumn, Column, ManyToOne } from "t
 import { ApiProperty } from "@nestjs/swagger";
 import { RoleEntity } from "./role.entity";
 
-@Entity("sys_role_leader")
+@Entity("op_sys_role_leader")
 export class RoleLeaderEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     readonly id: number;

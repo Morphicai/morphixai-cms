@@ -5,7 +5,7 @@ import { ClientUserEntity } from "./client-user.entity";
  * 外部账号绑定实体
  * 用于绑定第三方平台账号（可选功能）
  */
-@Entity("client_user_external_account")
+@Entity("op_biz_client_user_external_account")
 @Index(["userId", "platform"], { unique: true })
 @Index(["platform", "externalUserId"], { unique: true })
 export class ClientUserExternalAccountEntity {

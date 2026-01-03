@@ -11,7 +11,7 @@ export enum DictionaryStatus {
 /**
  * 字典实体
  */
-@Entity("dictionary")
+@Entity("op_sys_dictionary")
 @Index(["collection"])
 @Index(["status"])
 @Index(["sortOrder"])

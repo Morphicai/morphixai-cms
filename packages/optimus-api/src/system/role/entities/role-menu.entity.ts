@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity("sys_role_menu")
+@Entity("op_sys_role_menu")
 export class RoleMenuEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     id: string;

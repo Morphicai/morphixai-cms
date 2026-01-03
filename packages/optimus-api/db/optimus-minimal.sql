@@ -3,11 +3,11 @@
  Optimized for development with essential data only
  
  IMPORTANT CHANGES:
- - Updated sys_role_menu table to use permission_code instead of menu_id
+ - Updated op_sys_role_menu table to use permission_code instead of menu_id
  - Menu structure is now managed entirely by constants in code (packages/optimus-ui/src/constants/routes.js)
  - Simplified role-based permission system using permission codes
  - sys_menu and sys_menu_perm tables have been completely removed
- - Permission codes are stored in sys_role_menu and defined in frontend constants
+ - Permission codes are stored in op_sys_role_menu and defined in frontend constants
  
  Version: 2024-11-11 - Menu Tables Removal
 */
@@ -16,9 +16,9 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
--- Table structure for sys_database_info
+-- Table structure for op_sys_database_info
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `sys_database_info` (
+CREATE TABLE IF NOT EXISTS `op_sys_database_info` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `schema_version` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '数据库结构版本',
   `seed_version` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '种子数据版本',
@@ -34,10 +34,10 @@ CREATE TABLE IF NOT EXISTS `sys_database_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据库信息表，记录数据库初始化和版本信息';
 
 -- ----------------------------
--- Table structure for biz_contact
+-- Table structure for op_biz_contact
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_contact`;
-CREATE TABLE IF NOT EXISTS `biz_contact` (
+-- DROP TABLE IF EXISTS `op_biz_contact`;
+CREATE TABLE IF NOT EXISTS `op_biz_contact` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '邮箱',
   `phone_num` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '用户手机号码',
@@ -47,17 +47,17 @@ CREATE TABLE IF NOT EXISTS `biz_contact` (
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of biz_contact (Essential demo data only)
+-- Records of op_biz_contact (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `biz_contact` (`id`, `email`, `phone_num`, `address`, `eng_address`) VALUES (1, 'contact@example.com', '13800138000', '上海市浦东新区示例地址123号', 'Example Address 123, Pudong, Shanghai, China');
+INSERT IGNORE INTO `op_biz_contact` (`id`, `email`, `phone_num`, `address`, `eng_address`) VALUES (1, 'contact@example.com', '13800138000', '上海市浦东新区示例地址123号', 'Example Address 123, Pudong, Shanghai, China');
 COMMIT;
 
 -- ----------------------------
--- Table structure for biz_feedback
+-- Table structure for op_biz_feedback
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_feedback`;
-CREATE TABLE IF NOT EXISTS `biz_feedback` (
+-- DROP TABLE IF EXISTS `op_biz_feedback`;
+CREATE TABLE IF NOT EXISTS `op_biz_feedback` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '邮箱',
   `nick_name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '昵称',
@@ -67,10 +67,10 @@ CREATE TABLE IF NOT EXISTS `biz_feedback` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of biz_feedback (Essential demo data only)
+-- Records of op_biz_feedback (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `biz_feedback` (`id`, `email`, `nick_name`, `message`, `create_date`) VALUES (1, 'user@example.com', 'demo_user', '系统运行正常，测试反馈功能', '2024-01-01 10:00:00.000000');
+INSERT IGNORE INTO `op_biz_feedback` (`id`, `email`, `nick_name`, `message`, `create_date`) VALUES (1, 'user@example.com', 'demo_user', '系统运行正常，测试反馈功能', '2024-01-01 10:00:00.000000');
 COMMIT;
 
 
@@ -78,8 +78,8 @@ COMMIT;
 -- ----------------------------
 -- Table structure for sys_document
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_document`;
-CREATE TABLE IF NOT EXISTS `sys_document` (
+-- DROP TABLE IF EXISTS `op_sys_document`;
+CREATE TABLE IF NOT EXISTS `op_sys_document` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `doc_key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '文案中心 Key',
   `source` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '描述当前 Item 来源',
@@ -99,15 +99,15 @@ CREATE TABLE IF NOT EXISTS `sys_document` (
 -- Records of sys_document (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© Optimus System 2024</p>', '2024-01-01 10:00:00.000000', '1', '底部版权信息', 1, 1);
-INSERT IGNORE INTO `sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (2, 'welcome', 'home', 'text', '欢迎使用Optimus系统', '2024-01-01 10:00:00.000000', '1', '欢迎信息', 0, 1);
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (1, 'copyright', 'home', 'html', '<p>© Optimus System 2024</p>', '2024-01-01 10:00:00.000000', '1', '底部版权信息', 1, 1);
+INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`) VALUES (2, 'welcome', 'home', 'text', '欢迎使用Optimus系统', '2024-01-01 10:00:00.000000', '1', '欢迎信息', 0, 1);
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_document_perm
+-- Table structure for op_sys_document_perm
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_document_perm`;
-CREATE TABLE IF NOT EXISTS `sys_document_perm` (
+-- DROP TABLE IF EXISTS `op_sys_document_perm`;
+CREATE TABLE IF NOT EXISTS `op_sys_document_perm` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL DEFAULT '0' COMMENT '用户id',
   `role_id` bigint NOT NULL DEFAULT '0' COMMENT '角色id',
@@ -116,31 +116,31 @@ CREATE TABLE IF NOT EXISTS `sys_document_perm` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
--- Records of sys_document_perm (Essential demo data only)
+-- Records of op_sys_document_perm (Essential demo data only)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (1, 0, 1, 1);
-INSERT IGNORE INTO `sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (2, 0, 1, 2);
+INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (1, 0, 1, 1);
+INSERT IGNORE INTO `op_sys_document_perm` (`id`, `user_id`, `role_id`, `document_id`) VALUES (2, 0, 1, 2);
 COMMIT;
 
 -- ----------------------------
--- NOTE: sys_menu table has been removed
+-- NOTE: op_sys_menu table has been removed
 -- Menu structure is now managed entirely by constants in code
 -- See: packages/optimus-ui/src/constants/routes.js
 -- ----------------------------
 
 -- ----------------------------
--- NOTE: sys_menu_perm table has been removed
--- API permissions are now controlled through permission codes in sys_role_menu
+-- NOTE: op_sys_menu_perm table has been removed
+-- API permissions are now controlled through permission codes in op_sys_role_menu
 -- Menu structure and permission codes are managed in code
 -- See: packages/optimus-ui/src/constants/routes.js
 -- ----------------------------
 
 -- ----------------------------
--- Table structure for sys_oss
+-- Table structure for op_sys_oss
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_oss`;
-CREATE TABLE IF NOT EXISTS `sys_oss` (
+-- DROP TABLE IF EXISTS `op_sys_oss`;
+CREATE TABLE IF NOT EXISTS `op_sys_oss` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件 url',
   `ossKey` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件hash key',
@@ -163,16 +163,16 @@ CREATE TABLE IF NOT EXISTS `sys_oss` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of sys_oss (Empty for now - files will be uploaded as needed)
+-- Records of op_sys_oss (Empty for now - files will be uploaded as needed)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_operation_log
+-- Table structure for op_sys_operation_log
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_operation_log`;
-CREATE TABLE IF NOT EXISTS `sys_operation_log` (
+-- DROP TABLE IF EXISTS `op_sys_operation_log`;
+CREATE TABLE IF NOT EXISTS `op_sys_operation_log` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
   `module` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模块名称，如：user, role, menu',
   `action` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '操作类型，如：create, update, delete',
@@ -196,14 +196,14 @@ CREATE TABLE IF NOT EXISTS `sys_operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统操作日志表';
 
 -- ----------------------------
--- Records of sys_operation_log (No initial data)
+-- Records of op_sys_operation_log (No initial data)
 -- ----------------------------
 
 -- ----------------------------
 -- Table structure for sys_role
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_role`;
-CREATE TABLE IF NOT EXISTS `sys_role` (
+-- DROP TABLE IF EXISTS `op_sys_role`;
+CREATE TABLE IF NOT EXISTS `op_sys_role` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色名称',
   `remark` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '角色备注',
@@ -216,16 +216,16 @@ CREATE TABLE IF NOT EXISTS `sys_role` (
 -- Records of sys_role (Essential roles)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (1, '管理员', '系统管理员，拥有所有权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
-INSERT IGNORE INTO `sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (2, '运营', '运营人员，拥有内容管理权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
-INSERT IGNORE INTO `sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (3, '普通用户', '普通用户，基础权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
+INSERT IGNORE INTO `op_sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (1, '管理员', '系统管理员，拥有所有权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
+INSERT IGNORE INTO `op_sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (2, '运营', '运营人员，拥有内容管理权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
+INSERT IGNORE INTO `op_sys_role` (`id`, `name`, `remark`, `create_date`, `update_date`) VALUES (3, '普通用户', '普通用户，基础权限', '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000');
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_role_leader
+-- Table structure for op_sys_role_leader
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_role_leader`;
-CREATE TABLE IF NOT EXISTS `sys_role_leader` (
+-- DROP TABLE IF EXISTS `op_sys_role_leader`;
+CREATE TABLE IF NOT EXISTS `op_sys_role_leader` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `role_id` bigint NOT NULL COMMENT 'role id',
   `leader_id` bigint NOT NULL COMMENT 'leader id(userId)',
@@ -234,16 +234,16 @@ CREATE TABLE IF NOT EXISTS `sys_role_leader` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
--- Records of sys_role_leader (Empty for now)
+-- Records of op_sys_role_leader (Empty for now)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_role_menu
+-- Table structure for op_sys_role_menu
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_role_menu`;
-CREATE TABLE IF NOT EXISTS `sys_role_menu` (
+-- DROP TABLE IF EXISTS `op_sys_role_menu`;
+CREATE TABLE IF NOT EXISTS `op_sys_role_menu` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `role_id` bigint NOT NULL COMMENT '角色 id',
   `permission_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权限编码',
@@ -253,40 +253,40 @@ CREATE TABLE IF NOT EXISTS `sys_role_menu` (
 ) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of sys_role_menu (Essential role-permission mappings)
+-- Records of op_sys_role_menu (Essential role-permission mappings)
 -- ----------------------------
 BEGIN;
 -- 管理员角色拥有所有权限
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (1, 1, 'Dashboard');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (2, 1, 'PermissionManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (3, 1, 'PermUsers');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (4, 1, 'PermRoles');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (5, 1, 'ContentManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (6, 1, 'NewsManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (7, 1, 'ActivityManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (8, 1, 'DocumentManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (9, 1, 'Files');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (10, 1, 'UserProfile');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (1, 1, 'Dashboard');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (2, 1, 'PermissionManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (3, 1, 'PermUsers');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (4, 1, 'PermRoles');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (5, 1, 'ContentManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (6, 1, 'NewsManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (7, 1, 'ActivityManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (8, 1, 'DocumentManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (9, 1, 'Files');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (10, 1, 'UserProfile');
 
 -- 运营角色拥有内容管理权限
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (11, 2, 'Dashboard');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (12, 2, 'ContentManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (13, 2, 'NewsManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (14, 2, 'ActivityManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (15, 2, 'DocumentManagement');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (16, 2, 'Files');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (17, 2, 'UserProfile');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (11, 2, 'Dashboard');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (12, 2, 'ContentManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (13, 2, 'NewsManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (14, 2, 'ActivityManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (15, 2, 'DocumentManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (16, 2, 'Files');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (17, 2, 'UserProfile');
 
 -- 普通用户只有基础权限
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (18, 3, 'Dashboard');
-INSERT IGNORE INTO `sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (19, 3, 'UserProfile');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (18, 3, 'Dashboard');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (19, 3, 'UserProfile');
 COMMIT;
 
 -- ----------------------------
 -- Table structure for sys_user
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_user`;
-CREATE TABLE IF NOT EXISTS `sys_user` (
+-- DROP TABLE IF EXISTS `op_sys_user`;
+CREATE TABLE IF NOT EXISTS `op_sys_user` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `password` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户登录密码',
   `salt` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '盐',
@@ -309,16 +309,16 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
 -- Records of sys_user (Essential users)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (1, '$2a$10$FniuuM.L8JXBPeLl.4nfXep9hmjDL0SP4ARe7saiBfVJNZAU9i9C6', '$2a$10$FniuuM.L8JXBPeLl.4nfXe', 'admin', '13800138000', 'admin@example.com', 1, 1, NULL, '', 0, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '系统管理员', NULL);
-INSERT IGNORE INTO `sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (2, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'operator', '13800138001', 'operator@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '运营人员', NULL);
-INSERT IGNORE INTO `sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (3, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'user', '13800138002', 'user@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '普通用户', NULL);
+INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (1, '$2a$10$FniuuM.L8JXBPeLl.4nfXep9hmjDL0SP4ARe7saiBfVJNZAU9i9C6', '$2a$10$FniuuM.L8JXBPeLl.4nfXe', 'admin', '13800138000', 'admin@example.com', 1, 1, NULL, '', 0, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '系统管理员', NULL);
+INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (2, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'operator', '13800138001', 'operator@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '运营人员', NULL);
+INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (3, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'user', '13800138002', 'user@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '普通用户', NULL);
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_user_role
+-- Table structure for op_sys_user_role
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_user_role`;
-CREATE TABLE IF NOT EXISTS `sys_user_role` (
+-- DROP TABLE IF EXISTS `op_sys_user_role`;
+CREATE TABLE IF NOT EXISTS `op_sys_user_role` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL COMMENT '用户id',
   `role_id` bigint NOT NULL COMMENT '角色id',
@@ -326,19 +326,19 @@ CREATE TABLE IF NOT EXISTS `sys_user_role` (
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of sys_user_role (Essential user-role mappings)
+-- Records of op_sys_user_role (Essential user-role mappings)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_user_role` (`id`, `user_id`, `role_id`) VALUES (1, 1, 1);
-INSERT IGNORE INTO `sys_user_role` (`id`, `user_id`, `role_id`) VALUES (2, 2, 2);
-INSERT IGNORE INTO `sys_user_role` (`id`, `user_id`, `role_id`) VALUES (3, 3, 3);
+INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (1, 1, 1);
+INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (2, 2, 2);
+INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (3, 3, 3);
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_category
+-- Table structure for op_sys_category
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_category`;
-CREATE TABLE IF NOT EXISTS `sys_category` (
+-- DROP TABLE IF EXISTS `op_sys_category`;
+CREATE TABLE IF NOT EXISTS `op_sys_category` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '分类ID',
   `name` varchar(100) NOT NULL COMMENT '分类名称',
   `code` varchar(100) NOT NULL UNIQUE COMMENT '分类标识符',
@@ -356,10 +356,10 @@ CREATE TABLE IF NOT EXISTS `sys_category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章分类表';
 
 -- ----------------------------
--- Records of sys_category (Built-in categories)
+-- Records of op_sys_category (Built-in categories)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_category` (`id`, `name`, `code`, `description`, `is_built_in`, `config`, `sort_weight`) VALUES 
+INSERT IGNORE INTO `op_sys_category` (`id`, `name`, `code`, `description`, `is_built_in`, `config`, `sort_weight`) VALUES 
 (1, '新闻', 'news', '新闻资讯类文章', true, '{"maxCoverImages": 3, "maxVersions": 10}', 100),
 (2, '活动', 'activity', '活动相关文章', true, '{"maxCoverImages": 5, "maxVersions": 15}', 90),
 (3, '公告', 'announcement', '公告通知类文章', true, '{"maxCoverImages": 1, "maxVersions": 5}', 80);
@@ -368,8 +368,8 @@ COMMIT;
 -- ----------------------------
 -- Table structure for sys_article
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_article`;
-CREATE TABLE IF NOT EXISTS `sys_article` (
+-- DROP TABLE IF EXISTS `op_sys_article`;
+CREATE TABLE IF NOT EXISTS `op_sys_article` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '文章ID',
   `slug` varchar(200) DEFAULT NULL COMMENT 'URL友好的标识符',
   `status` enum('draft','published','archived') NOT NULL DEFAULT 'draft' COMMENT '当前发布状态',
@@ -395,16 +395,16 @@ CREATE TABLE IF NOT EXISTS `sys_article` (
 -- Records of sys_article (Sample articles)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_article` (`id`, `slug`, `status`, `published_at`, `current_version_id`, `published_version_id`, `category_id`, `user_id`, `is_deleted`, `create_date`, `update_date`) VALUES 
+INSERT IGNORE INTO `op_sys_article` (`id`, `slug`, `status`, `published_at`, `current_version_id`, `published_version_id`, `category_id`, `user_id`, `is_deleted`, `create_date`, `update_date`) VALUES 
 (1, 'welcome-to-optimus', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00'),
 (2, 'system-maintenance-notice', 'published', '2024-01-02 10:00:00', 2, 2, 3, '1', 0, '2024-01-02 10:00:00', '2024-01-02 10:00:00');
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_article_version
+-- Table structure for op_sys_article_version
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_article_version`;
-CREATE TABLE IF NOT EXISTS `sys_article_version` (
+-- DROP TABLE IF EXISTS `op_sys_article_version`;
+CREATE TABLE IF NOT EXISTS `op_sys_article_version` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '版本ID',
   `article_id` bigint NOT NULL COMMENT '文章ID',
   `version_number` int NOT NULL COMMENT '版本号',
@@ -428,19 +428,19 @@ CREATE TABLE IF NOT EXISTS `sys_article_version` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章版本表';
 
 -- ----------------------------
--- Records of sys_article_version (Sample article versions)
+-- Records of op_sys_article_version (Sample article versions)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `sys_article_version` (`id`, `article_id`, `version_number`, `title`, `summary`, `content`, `cover_images`, `sort_weight`, `seo_title`, `seo_description`, `seo_keywords`, `status`, `is_current`, `user_id`, `create_date`) VALUES 
+INSERT IGNORE INTO `op_sys_article_version` (`id`, `article_id`, `version_number`, `title`, `summary`, `content`, `cover_images`, `sort_weight`, `seo_title`, `seo_description`, `seo_keywords`, `status`, `is_current`, `user_id`, `create_date`) VALUES 
 (1, 1, 1, '欢迎使用Optimus系统', '这是一篇欢迎文章，介绍Optimus系统的基本功能', '<h1>欢迎使用Optimus系统</h1><p>Optimus是一个功能强大的内容管理系统，提供文章管理、用户权限、文件上传等功能。</p>', NULL, 100, '欢迎使用Optimus系统', 'Optimus系统介绍', 'Optimus,CMS,内容管理', 'published', 1, '1', '2024-01-01 10:00:00'),
 (2, 2, 1, '系统维护通知', '系统将于本周末进行例行维护', '<h1>系统维护通知</h1><p>尊敬的用户，系统将于本周末进行例行维护，预计维护时间2小时。</p>', NULL, 90, '系统维护通知', '系统维护公告', '维护,通知,公告', 'published', 1, '1', '2024-01-02 10:00:00');
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_article_operation_log
+-- Table structure for op_sys_article_operation_log
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_article_operation_log`;
-CREATE TABLE IF NOT EXISTS `sys_article_operation_log` (
+-- DROP TABLE IF EXISTS `op_sys_article_operation_log`;
+CREATE TABLE IF NOT EXISTS `op_sys_article_operation_log` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
   `article_id` bigint NOT NULL COMMENT '文章ID',
   `operationType` varchar(50) NOT NULL COMMENT '操作类型',
@@ -458,16 +458,16 @@ CREATE TABLE IF NOT EXISTS `sys_article_operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章操作日志表';
 
 -- ----------------------------
--- Records of sys_article_operation_log (Empty for now - logs will be created automatically)
+-- Records of op_sys_article_operation_log (Empty for now - logs will be created automatically)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for biz_order
+-- Table structure for op_biz_order
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_order`;
-CREATE TABLE IF NOT EXISTS `biz_order` (
+-- DROP TABLE IF EXISTS `op_biz_order`;
+CREATE TABLE IF NOT EXISTS `op_biz_order` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID',
   `order_no` varchar(100) NOT NULL COMMENT '订单号（唯一）',
   `uid` varchar(100) NOT NULL COMMENT 'GameWemade 用户ID',
@@ -491,16 +491,16 @@ CREATE TABLE IF NOT EXISTS `biz_order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
 
 -- ----------------------------
--- Records of biz_order (Empty for now - orders will be created through API)
+-- Records of op_biz_order (Empty for now - orders will be created through API)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for biz_recharge_record
+-- Table structure for op_biz_recharge_record
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_recharge_record`;
-CREATE TABLE IF NOT EXISTS `biz_recharge_record` (
+-- DROP TABLE IF EXISTS `op_biz_recharge_record`;
+CREATE TABLE IF NOT EXISTS `op_biz_recharge_record` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '充值记录ID',
   `uid` varchar(100) NOT NULL COMMENT '用户ID（唯一）',
   `amount` bigint NOT NULL COMMENT '充值金额（单位：分）',
@@ -513,41 +513,44 @@ CREATE TABLE IF NOT EXISTS `biz_recharge_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='充值记录表';
 
 -- ----------------------------
--- Records of biz_recharge_record (Empty for now - records will be imported through admin)
+-- Records of op_biz_recharge_record (Empty for now - records will be imported through admin)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for biz_activity
+-- Table structure for op_biz_activity
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_activity`;
-CREATE TABLE IF NOT EXISTS `biz_activity` (
+-- DROP TABLE IF EXISTS `op_biz_activity`;
+CREATE TABLE IF NOT EXISTS `op_biz_activity` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '活动ID',
   `activity_code` varchar(100) NOT NULL COMMENT '活动唯一代码，用于识别唯一活动',
   `name` varchar(200) NOT NULL COMMENT '活动名称',
   `start_time` timestamp NOT NULL COMMENT '活动开始时间',
   `end_time` timestamp NOT NULL COMMENT '活动结束时间',
   `rules` text DEFAULT NULL COMMENT '活动规则（暂时不用，预留字段）',
-  `type` varchar(50) NOT NULL COMMENT '活动类型，用于识别走哪一类的活动',
+  `type` enum('recharge_rebate', 'daily_checkin', 'task_reward', 'other') NOT NULL COMMENT '活动类型，用于识别走哪一类的活动',
   `is_deleted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已删除（软删除标记）',
   `deleted_at` timestamp NULL DEFAULT NULL COMMENT '删除时间',
   `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_activity_code` (`activity_code`),
+  KEY `idx_type` (`type`),
+  KEY `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动中心表';
 
 -- ----------------------------
--- Records of biz_activity (Empty for now - activities will be created through admin)
+-- Records of op_biz_activity (Empty for now - activities will be created through admin)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for biz_reward_claim_record
+-- Table structure for op_biz_reward_claim_record
 -- ----------------------------
--- DROP TABLE IF EXISTS `biz_reward_claim_record`;
-CREATE TABLE IF NOT EXISTS `biz_reward_claim_record` (
+-- DROP TABLE IF EXISTS `op_biz_reward_claim_record`;
+CREATE TABLE IF NOT EXISTS `op_biz_reward_claim_record` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
   `uid` varchar(100) NOT NULL COMMENT '用户ID',
   `activity_code` varchar(100) NOT NULL COMMENT '活动代码，关联到活动中心',
@@ -565,16 +568,16 @@ CREATE TABLE IF NOT EXISTS `biz_reward_claim_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='奖励发放记录表';
 
 -- ----------------------------
--- Records of biz_reward_claim_record (Empty for now - records will be created through API)
+-- Records of op_biz_reward_claim_record (Empty for now - records will be created through API)
 -- ----------------------------
 BEGIN;
 COMMIT;
 
 -- ----------------------------
--- Table structure for sys_database_backup
+-- Table structure for op_sys_database_backup
 -- ----------------------------
--- DROP TABLE IF EXISTS `sys_database_backup`;
-CREATE TABLE IF NOT EXISTS `sys_database_backup` (
+-- DROP TABLE IF EXISTS `op_sys_database_backup`;
+CREATE TABLE IF NOT EXISTS `op_sys_database_backup` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `fileName` varchar(255) NOT NULL COMMENT '备份文件名',
   `fileKey` varchar(500) NOT NULL COMMENT '文件键名（OSS路径）',
@@ -601,9 +604,132 @@ CREATE TABLE IF NOT EXISTS `sys_database_backup` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据库备份记录表';
 
 -- ----------------------------
--- Records of sys_database_backup (Empty for now - backup records will be created automatically)
+-- Records of op_sys_database_backup (Empty for now - backup records will be created automatically)
 -- ----------------------------
 BEGIN;
 COMMIT;
+
+-- ----------------------------
+-- Table structure for op_biz_partner_profile (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_partner_profile` (
+  `partner_id` bigint NOT NULL AUTO_INCREMENT COMMENT '合伙人ID',
+  `user_id` varchar(255) NOT NULL COMMENT '通用用户标识',
+  `user_source` varchar(50) NOT NULL DEFAULT 'wemade' COMMENT '用户来源',
+  `uid` varchar(100) NULL COMMENT '用户ID（向后兼容）',
+  `username` varchar(100) NULL COMMENT '用户名（向后兼容）',
+  `partner_code` varchar(32) NOT NULL COMMENT '合伙人代码',
+  `status` enum('active', 'frozen', 'deleted') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `current_star` varchar(16) NOT NULL DEFAULT 'NEW' COMMENT '当前星级',
+  `total_mira` bigint NOT NULL DEFAULT 0 COMMENT '总积分',
+  `join_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  `last_update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+  `remark` varchar(255) NULL COMMENT '备注',
+  `extra_data` json NULL COMMENT '扩展数据',
+  `team_name` varchar(100) NULL COMMENT '团队名称',
+  PRIMARY KEY (`partner_id`),
+  UNIQUE KEY `idx_partner_code` (`partner_code`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_user_source` (`user_source`),
+  KEY `idx_uid` (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='合伙人资料表';
+
+-- ----------------------------
+-- Table structure for client_user (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_client_user` (
+  `user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` varchar(50) NULL COMMENT '用户名',
+  `email` varchar(100) NULL COMMENT '邮箱',
+  `phone` varchar(20) NULL COMMENT '手机号',
+  `password_hash` varchar(255) NULL COMMENT '密码哈希',
+  `nickname` varchar(50) NULL COMMENT '昵称',
+  `avatar` varchar(500) NULL COMMENT '头像',
+  `status` enum('active', 'inactive', 'banned') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `register_source` varchar(50) NOT NULL DEFAULT 'direct' COMMENT '注册来源',
+  `register_ip` varchar(45) NULL COMMENT '注册IP',
+  `last_login_at` timestamp NULL COMMENT '最后登录时间',
+  `last_login_ip` varchar(45) NULL COMMENT '最后登录IP',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `extra_data` json NULL COMMENT '扩展数据',
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `idx_username` (`username`),
+  UNIQUE KEY `idx_email` (`email`),
+  UNIQUE KEY `idx_phone` (`phone`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='客户端用户表';
+
+-- ----------------------------
+-- Table structure for op_biz_appointment (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_appointment` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '预约记录ID',
+  `phone` varchar(20) NOT NULL COMMENT '手机号',
+  `uid` varchar(100) NULL COMMENT '用户UID',
+  `stage` varchar(100) NOT NULL COMMENT '阶段',
+  `channel` varchar(100) NOT NULL COMMENT '渠道',
+  `appointment_time` timestamp NOT NULL COMMENT '预约时间',
+  `extra_field_1` varchar(500) NULL COMMENT '额外字段1',
+  `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_phone` (`phone`),
+  KEY `idx_uid` (`uid`),
+  KEY `idx_appointment_time` (`appointment_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预约表';
+
+-- ----------------------------
+-- Table structure for op_biz_partner_hierarchy (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_partner_hierarchy` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `parent_partner_id` bigint NOT NULL COMMENT '父合伙人ID',
+  `child_partner_id` bigint NOT NULL COMMENT '子合伙人ID',
+  `level` tinyint NOT NULL COMMENT '层级',
+  `source_channel_id` bigint NULL COMMENT '来源渠道ID',
+  `bind_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否激活',
+  PRIMARY KEY (`id`),
+  KEY `idx_parent_level` (`parent_partner_id`, `level`),
+  KEY `idx_child_level_active` (`child_partner_id`, `level`, `is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='合伙人层级关系表';
+
+-- ----------------------------
+-- Table structure for op_biz_partner_channel (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_partner_channel` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `partner_id` bigint NOT NULL COMMENT '合伙人ID',
+  `channel_code` varchar(32) NOT NULL COMMENT '渠道代码',
+  `name` varchar(64) NOT NULL COMMENT '渠道名称',
+  `short_url` varchar(255) NULL COMMENT '短链接',
+  `status` enum('active', 'disabled') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_partner_channel` (`partner_id`, `channel_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='合伙人渠道表';
+
+-- ----------------------------
+-- Table structure for op_biz_client_user_external_account (根据实体定义添加)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_client_user_external_account` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `platform` varchar(50) NOT NULL COMMENT '平台',
+  `external_user_id` varchar(255) NOT NULL COMMENT '外部用户ID',
+  `external_username` varchar(100) NULL COMMENT '外部用户名',
+  `external_email` varchar(100) NULL COMMENT '外部邮箱',
+  `external_avatar` varchar(500) NULL COMMENT '外部头像',
+  `bind_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
+  `last_sync_time` timestamp NULL COMMENT '最后同步时间',
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否主账号',
+  `extra_data` json NULL COMMENT '扩展数据',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_platform` (`user_id`, `platform`),
+  UNIQUE KEY `idx_platform_external` (`platform`, `external_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='客户端用户外部账号表';
 
 SET FOREIGN_KEY_CHECKS = 1;

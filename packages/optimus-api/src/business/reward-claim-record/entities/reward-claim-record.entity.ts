@@ -6,7 +6,7 @@ import { RewardClaimStatus } from "../enums/reward-claim-status.enum";
  * 奖励发放记录实体
  * 注意：允许同一用户多次领取同一活动的奖励（根据活动的 maxClaimTimes 限制）
  */
-@Entity("biz_reward_claim_record")
+@Entity("op_biz_reward_claim_record")
 @Index(["activityCode"])
 @Index(["uid", "activityCode"]) // 复合索引已包含 uid，无需单独为 uid 创建索引
 export class RewardClaimRecordEntity {

@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { ArticleEntity } from "./article.entity";
 
-@Entity("sys_article_operation_log")
+@Entity("op_sys_article_operation_log")
 export class ArticleOperationLogEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     public id: number;

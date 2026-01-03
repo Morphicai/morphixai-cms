@@ -80,6 +80,8 @@ export const COMPONENT_MAP = {
   ExternalTaskReview: React.lazy(() => import('../pages/external-task-review')), // 外部任务审核管理页面
   // 商品管理组件
   ProductManagement: React.lazy(() => import('../pages/product')), // 商品管理页面
+  // 系统安装组件
+  Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
 };
 
 // 系统全量菜单和路由配置
@@ -540,6 +542,20 @@ export const SYSTEM_ROUTES = [
     exact: true,
     description: '系统使用说明和帮助文档',
     public: true, // 标记为公开页面，不需要登录
+  },
+  {
+    id: 'setup_page',
+    name: '系统安装',
+    code: 'Setup',
+    type: MENU_TYPES.MENU,
+    path: '/setup',
+    component: 'Setup',
+    icon: 'SettingOutlined',
+    orderNum: 998,
+    parentId: null,
+    exact: true,
+    public: true, // 标记为公开页面，不需要登录
+    description: '系统安装和初始化页面',
   },
 
   // 隐藏页面（不在菜单中显示，但需要权限控制）

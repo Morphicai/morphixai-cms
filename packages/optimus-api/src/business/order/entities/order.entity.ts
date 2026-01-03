@@ -16,7 +16,7 @@ export enum OrderStatus {
 /**
  * 订单实体
  */
-@Entity("biz_order")
+@Entity("op_biz_order")
 @Index(["uid"])
 @Index(["status"])
 export class OrderEntity {

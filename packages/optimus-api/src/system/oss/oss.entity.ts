@@ -5,7 +5,7 @@ import { IsOptional, IsIn, IsString, MaxLength } from "class-validator";
 
 export type StorageProvider = "minio" | "aliyun" | "local";
 
-@Entity("sys_oss")
+@Entity("op_sys_oss")
 export class OssEntity {
     @ApiProperty({ description: "id" })
     @PrimaryGeneratedColumn({ type: "bigint" })

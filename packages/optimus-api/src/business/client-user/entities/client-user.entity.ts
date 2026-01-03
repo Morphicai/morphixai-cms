@@ -5,7 +5,7 @@ import { UserStatus } from "../enums/user-status.enum";
  * 客户端用户实体
  * 核心用户表，所有业务模块使用此表的 user_id
  */
-@Entity("client_user")
+@Entity("op_biz_client_user")
 export class ClientUserEntity {
     @PrimaryGeneratedColumn({ type: "bigint", name: "user_id" })
     userId: string;

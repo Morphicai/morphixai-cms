@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from "typeor
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsBoolean, MaxLength, MinLength, IsNotEmpty, IsArray, IsOptional } from "class-validator";
 
-@Entity("sys_document")
+@Entity("op_sys_document")
 export class DocumentEntity {
     @ApiProperty({ description: "文案中心唯一 ID" })
     @PrimaryGeneratedColumn({ type: "bigint" })

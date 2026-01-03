@@ -12,7 +12,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { CategoryEntity } from "../../category/entities/category.entity";
 import { ArticleVersionEntity } from "../../article-version/entities/article-version.entity";
 
-@Entity("sys_article")
+@Entity("op_sys_article")
 export class ArticleEntity {
     @ApiProperty({ description: "文章ID" })
     @PrimaryGeneratedColumn({ type: "bigint" })
