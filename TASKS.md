@@ -82,8 +82,9 @@
 ### This Month's Goals (2024-12)
 - [x] Code optimization
 - [x] Bug fixes
-- [ ] Database support for SQLite, migrate development mode to SQLite
-- [ ] Development mode use S3rver
+- [ ] setup
+- [ ] 版本升级
+- [ ] 权限管理模型
 - [ ] Support micro-frontend, support admin control of sub-applications
 - [ ] Support no-code system
 - [ ] Support AI no-code system
