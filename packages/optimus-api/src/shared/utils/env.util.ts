@@ -123,7 +123,7 @@ export const shouldLogPerformanceMetrics = (): boolean => !isProduction();
  * 获取应用端口
  */
 export function getAppPort(): number {
-    return parseInt(process.env.APP_PORT || "8081", 10);
+    return parseInt(process.env.APP_PORT || "8084", 10);
 }
 
 /**

@@ -106,7 +106,7 @@ beforeAll(async () => {
     // 3. 启动服务器
     console.log("🌐 Starting test server...");
     try {
-        const port = parseInt(process.env.APP_PORT || "8081", 10);
+        const port = parseInt(process.env.APP_PORT || "8084", 10);
         console.log(`🔧 Configured port: ${port}`);
         console.log(`🔧 Environment APP_PORT: ${process.env.APP_PORT}`);
 
