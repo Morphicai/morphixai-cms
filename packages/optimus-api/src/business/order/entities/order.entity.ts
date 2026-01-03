@@ -25,7 +25,7 @@ export class OrderEntity {
     public id: number;
 
     @ApiProperty({ description: "订单号（唯一）" })
-    @Column({ type: "varchar", length: 100, unique: true, comment: "订单号" })
+    @Column({ type: "varchar", length: 100, unique: true, name: "order_no", comment: "订单号" })
     public orderNo: string;
 
     @ApiProperty({ description: "GameWemade 用户ID" })
@@ -33,7 +33,7 @@ export class OrderEntity {
     public uid: string;
 
     @ApiProperty({ description: "产品ID" })
-    @Column({ type: "varchar", length: 50, comment: "产品ID" })
+    @Column({ type: "varchar", length: 50, name: "product_id", comment: "产品ID" })
     public productId: string;
 
     @ApiProperty({ description: "订单金额" })
@@ -50,35 +50,35 @@ export class OrderEntity {
     public status: OrderStatus;
 
     @ApiProperty({ description: "游戏订单号", required: false })
-    @Column({ type: "varchar", length: 100, nullable: true, comment: "游戏订单号" })
+    @Column({ type: "varchar", length: 100, nullable: true, name: "cp_order_no", comment: "游戏订单号" })
     public cpOrderNo?: string;
 
     @ApiProperty({ description: "支付渠道订单号", required: false })
-    @Column({ type: "varchar", length: 100, nullable: true, comment: "支付渠道订单号" })
+    @Column({ type: "varchar", length: 100, nullable: true, name: "channel_order_no", comment: "支付渠道订单号" })
     public channelOrderNo?: string;
 
     @ApiProperty({ description: "支付方式ID", required: false })
-    @Column({ type: "int", nullable: true, comment: "支付方式ID" })
+    @Column({ type: "int", nullable: true, name: "pay_type", comment: "支付方式ID" })
     public payType?: number;
 
     @ApiProperty({ description: "支付时间", required: false })
-    @Column({ type: "timestamp", nullable: true, comment: "支付时间" })
+    @Column({ type: "timestamp", nullable: true, name: "pay_time", comment: "支付时间" })
     public payTime?: Date;
 
     @ApiProperty({ description: "确认收货时间", required: false })
-    @Column({ type: "timestamp", nullable: true, comment: "确认收货时间" })
+    @Column({ type: "timestamp", nullable: true, name: "confirm_time", comment: "确认收货时间" })
     public confirmTime?: Date;
 
     @ApiProperty({ description: "角色名", required: false })
-    @Column({ type: "varchar", length: 100, nullable: true, comment: "角色名" })
+    @Column({ type: "varchar", length: 100, nullable: true, name: "role_name", comment: "角色名" })
     public roleName?: string;
 
     @ApiProperty({ description: "区服名", required: false })
-    @Column({ type: "varchar", length: 100, nullable: true, comment: "区服名" })
+    @Column({ type: "varchar", length: 100, nullable: true, name: "server_name", comment: "区服名" })
     public serverName?: string;
 
     @ApiProperty({ description: "扩展参数（JSON格式）", required: false })
-    @Column({ type: "json", nullable: true, comment: "扩展参数" })
+    @Column({ type: "json", nullable: true, name: "extras_params", comment: "扩展参数" })
     public extrasParams?: Record<string, any>;
 
     @ApiProperty({ description: "创建时间" })

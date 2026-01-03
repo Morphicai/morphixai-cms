@@ -14,7 +14,7 @@ import {
     RewardClaimRecordListResponseDto,
     RewardClaimRecordInfoDto,
 } from "./dto";
-import { ActivityService } from "./services/activity.service";
+import { ActivityService } from "../activity/activity.service";
 
 /**
  * 奖励发放记录服务
@@ -310,7 +310,7 @@ export class RewardClaimRecordService {
             // 按活动类型筛选（需要通过关联活动表）
             if (activityType) {
                 queryBuilder
-                    .innerJoin("biz_activity", "activity", "activity.activity_code = record.activity_code")
+                    .innerJoin("op_biz_activity", "activity", "activity.activity_code = record.activity_code")
                     .andWhere("activity.type = :activityType", { activityType });
             }
 

@@ -279,7 +279,7 @@ export class DatabaseInitializerService {
             try {
                 await queryRunner.query(
                     `
-                    INSERT IGNORE INTO sys_category 
+                    INSERT IGNORE INTO op_sys_category 
                     (id, name, code, description, is_built_in, config, sort_weight, create_date, update_date)
                     VALUES (?, ?, ?, ?, true, ?, ?, NOW(), NOW())
                     ON DUPLICATE KEY UPDATE
