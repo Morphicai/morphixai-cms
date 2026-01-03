@@ -14,6 +14,8 @@ import { GameWemadeModule } from "./shared/libs/gamewemade/gamewemade.module";
 import { OperationLogModule } from "./shared/modules/operation-log.module";
 import { OperationLogInterceptor } from "./shared/interceptors/operation-log.interceptor";
 import { UnifiedAuthGuard } from "./shared/guards/unified-auth.guard";
+import { InitializationGuard } from "./shared/guards/initialization.guard";
+import { InitializationModule } from "./shared/guards/initialization.module";
 import { GlobalExceptionFilter } from "./shared/filters/global-exception.filter";
 import { HealthController } from "./health.controller";
 import { DatabaseInitializerModule } from "./shared/database/database-initializer.module";
@@ -172,6 +174,9 @@ import { join } from "path";
         // 数据库初始化模块
         DatabaseInitializerModule,
 
+        // 初始化守卫模块（必须在其他模块之前导入）
+        InitializationModule,
+
         // 共享模块
         SharedModule,
 
@@ -221,6 +226,13 @@ import { join } from "path";
     // 所以统一守卫不能在 main.ts 设置全局守卫
     providers: [
         DatabaseStartupService,
+        // 初始化守卫 - 优先级最高，在所有其他守卫之前执行
+        // 确保系统未初始化时，只有初始化接口可以访问
+        {
+            provide: APP_GUARD,
+            useClass: InitializationGuard,
+        },
+        // 统一认证守卫 - 在初始化守卫之后执行
         {
             provide: APP_GUARD,
             useClass: UnifiedAuthGuard,

@@ -90,8 +90,8 @@ export class PermService {
         const permissionResults = await getConnection()
             .createQueryBuilder()
             .select(["rm.permission_code"])
-            .from("sys_user_role", "ur")
-            .leftJoin("sys_role_menu", "rm", "ur.role_id = rm.role_id")
+            .from("op_sys_user_role", "ur")
+            .leftJoin("op_sys_role_menu", "rm", "ur.role_id = rm.role_id")
             .where("ur.user_id = :userId AND rm.permission_code IS NOT NULL", { userId })
             .getRawMany();
 

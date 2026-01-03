@@ -303,15 +303,15 @@ CREATE TABLE IF NOT EXISTS `op_sys_user` (
   `full_name` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_login_time` timestamp NULL DEFAULT NULL COMMENT '最后一次登录时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of sys_user (Essential users)
+-- Records of op_sys_user (No default users - users will be created during initialization)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (1, '$2a$10$FniuuM.L8JXBPeLl.4nfXep9hmjDL0SP4ARe7saiBfVJNZAU9i9C6', '$2a$10$FniuuM.L8JXBPeLl.4nfXe', 'admin', '13800138000', 'admin@example.com', 1, 1, NULL, '', 0, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '系统管理员', NULL);
-INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (2, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'operator', '13800138001', 'operator@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '运营人员', NULL);
-INSERT IGNORE INTO `op_sys_user` (`id`, `password`, `salt`, `account`, `phone_num`, `email`, `status`, `is_deleted`, `deleted_date`, `avatar`, `type`, `create_date`, `update_date`, `full_name`, `last_login_time`) VALUES (3, '$2a$10$/fPFUpoLGk.8T8pKKyhEkOtoRXsRzyUQhqb/MWNxW0kiJU3tFPgwi', '$2a$10$/fPFUpoLGk.8T8pKKyhEkO', 'user', '13800138002', 'user@example.com', 1, 1, NULL, '', 1, '2024-01-01 10:00:00.000000', '2024-01-01 10:00:00.000000', '普通用户', NULL);
+-- 管理员账号将在系统初始化时通过 /api/setup/initialize 接口创建
+-- 不再预设管理员账号，避免与初始化时创建的管理员账号冲突
+-- 如需测试用户，可以在初始化后手动创建
 COMMIT;
 
 -- ----------------------------
@@ -323,15 +323,14 @@ CREATE TABLE IF NOT EXISTS `op_sys_user_role` (
   `user_id` bigint NOT NULL COMMENT '用户id',
   `role_id` bigint NOT NULL COMMENT '角色id',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of op_sys_user_role (Essential user-role mappings)
+-- Records of op_sys_user_role (No default user-role mappings)
 -- ----------------------------
 BEGIN;
-INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (1, 1, 1);
-INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (2, 2, 2);
-INSERT IGNORE INTO `op_sys_user_role` (`id`, `user_id`, `role_id`) VALUES (3, 3, 3);
+-- 用户角色关联将在系统初始化时通过 /api/setup/initialize 接口创建
+-- 不再预设用户角色关联，避免与初始化时创建的管理员账号冲突
 COMMIT;
 
 -- ----------------------------

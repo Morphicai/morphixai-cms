@@ -55,7 +55,7 @@ export class DatabaseInitializerService {
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'op_op_sys_database_info'
+        AND table_name = 'op_sys_database_info'
       `);
             const hasInfoTable = Number(infoTableExists[0]?.exists_count || 0) > 0;
 
@@ -140,7 +140,7 @@ export class DatabaseInitializerService {
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'op_op_sys_database_info'
+        AND table_name = 'op_sys_database_info'
       `);
 
             if (tableExists[0]?.exists_count > 0) {
@@ -468,7 +468,7 @@ export class DatabaseInitializerService {
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'op_op_sys_database_info'
+        AND table_name = 'op_sys_database_info'
       `);
 
             const existsCount = Number(tableExists[0]?.exists_count || 0);

@@ -1,6 +1,7 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous } from "./shared/decorators/allow-anonymous.decorator";
+import { AllowBeforeInitialization } from "./shared/decorators/allow-before-initialization.decorator";
 
 @ApiTags("健康检查")
 @Controller()
@@ -8,6 +9,7 @@ export class HealthController {
     @Get()
     @ApiOperation({ summary: "健康检查" })
     @AllowAnonymous()
+    @AllowBeforeInitialization()
     health(): string {
         return "OK";
     }
@@ -15,6 +17,7 @@ export class HealthController {
     @Get("health")
     @ApiOperation({ summary: "详细健康检查" })
     @AllowAnonymous()
+    @AllowBeforeInitialization()
     healthCheck(): object {
         return {
             status: "ok",
