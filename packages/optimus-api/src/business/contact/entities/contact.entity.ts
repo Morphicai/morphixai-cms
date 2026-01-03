@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsEmail } from "class-validator";
 
-@Entity("biz_contact")
+@Entity("op_biz_contact")
 export class ContactEntity {
     @ApiProperty({ description: "id" })
     @PrimaryGeneratedColumn({ type: "bigint" })

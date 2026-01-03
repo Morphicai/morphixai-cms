@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from "typeorm";
 
-@Entity("biz_partner_admin_log")
+@Entity("op_biz_partner_admin_log")
 @Index(["partnerId"])
 @Index(["adminId"])
 export class AdminOperationLogEntity {

@@ -2,14 +2,14 @@ import { Entity, OneToMany, PrimaryGeneratedColumn, Column, CreateDateColumn, Up
 import { ApiProperty } from "@nestjs/swagger";
 import { RoleLeaderEntity } from "./role-leader.entity";
 
-@Entity("sys_role")
+@Entity("op_sys_role")
 export class RoleEntity {
     @ApiProperty({ description: "id" })
     @PrimaryGeneratedColumn({ type: "bigint" })
     id: string;
 
     @ApiProperty({ description: "角色名称" })
-    @Column({ type: "varchar", length: 100, comment: "角色名称", default: "", nullable: true })
+    @Column({ type: "varchar", length: 100, comment: "角色名称", default: "" })
     name: string;
 
     @ApiProperty({ description: "角色备注" })

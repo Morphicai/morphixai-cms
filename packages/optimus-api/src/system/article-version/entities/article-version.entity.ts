@@ -11,7 +11,7 @@ import {
 import { ApiProperty } from "@nestjs/swagger";
 import { ArticleEntity } from "../../article/entities/article.entity";
 
-@Entity("sys_article_version")
+@Entity("op_sys_article_version")
 @Unique("uk_article_version", ["articleId", "versionNumber"])
 @Index("idx_article_id", ["articleId"])
 @Index("idx_status", ["status"])

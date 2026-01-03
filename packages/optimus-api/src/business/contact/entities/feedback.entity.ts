@@ -3,7 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsEmail } from "class-validator";
 import { Exclude } from "class-transformer";
 
-@Entity("biz_feedback")
+@Entity("op_biz_feedback")
 export class FeedbackEntity {
     @ApiProperty({ description: "id" })
     @Exclude({ toPlainOnly: true })

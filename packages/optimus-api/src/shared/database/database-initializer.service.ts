@@ -27,7 +27,7 @@ export class DatabaseInitializerService {
 
     /**
      * 检查数据库是否需要初始化
-     * 判断依据：sys_database_info 表是否存在或强制初始化
+     * 判断依据：op_sys_database_info 表是否存在或强制初始化
      */
     async shouldInitializeDatabase(connection: Connection, forceInit = false): Promise<boolean> {
         try {
@@ -50,23 +50,23 @@ export class DatabaseInitializerService {
                 return true;
             }
 
-            // 3. 检查 sys_database_info 表是否存在
+            // 3. 检查 op_sys_database_info 表是否存在
             const infoTableExists = await queryRunner.query(`
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'sys_database_info'
+        AND table_name = 'op_op_sys_database_info'
       `);
             const hasInfoTable = Number(infoTableExists[0]?.exists_count || 0) > 0;
 
-            // 4. sys_database_info 表不存在 - 需要初始化
+            // 4. op_sys_database_info 表不存在 - 需要初始化
             if (!hasInfoTable) {
-                this.logger.log(`sys_database_info table does not exist, initialization required`);
+                this.logger.log(`op_sys_database_info table does not exist, initialization required`);
                 return true;
             }
 
-            // 5. sys_database_info 表已存在 - 不需要初始化
-            this.logger.log(`sys_database_info table exists, skipping initialization`);
+            // 5. op_sys_database_info 表已存在 - 不需要初始化
+            this.logger.log(`op_sys_database_info table exists, skipping initialization`);
             return false;
         } catch (error) {
             this.logger.error("Error checking database initialization status:", error);
@@ -82,7 +82,7 @@ export class DatabaseInitializerService {
 
     /**
      * 初始化数据库
-     * 完整流程：创建 sys_database_info 表 → 执行种子数据 → 记录环境初始化信息
+     * 完整流程：创建 op_sys_database_info 表 → 执行种子数据 → 记录环境初始化信息
      */
     async initializeDatabase(connection: Connection, forceInit = false): Promise<void> {
         const queryRunner = connection.createQueryRunner();
@@ -101,7 +101,7 @@ export class DatabaseInitializerService {
             this.logger.log("🌱 Step 2: Executing seed data...");
             await this.executeSeedData(queryRunner);
             // await this.createDatabaseInfoTable(queryRunner);
-            // 步骤 3: 记录当前环境的初始化信息到 sys_database_info 表
+            // 步骤 3: 记录当前环境的初始化信息到 op_sys_database_info 表
             this.logger.log("📝 Step 3: Recording initialization info for current environment...");
             await this.recordInitializationInfo(queryRunner);
 
@@ -140,15 +140,15 @@ export class DatabaseInitializerService {
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'sys_database_info'
+        AND table_name = 'op_op_sys_database_info'
       `);
 
             if (tableExists[0]?.exists_count > 0) {
-                this.logger.log("   sys_database_info table already exists, skipping creation");
+                this.logger.log("   op_sys_database_info table already exists, skipping creation");
                 return;
             }
 
-            const schemaPath = this.getDbFilePath("db/schema/sys_database_info.sql");
+            const schemaPath = this.getDbFilePath("db/schema/op_sys_database_info.sql");
 
             if (!existsSync(schemaPath)) {
                 throw new Error(`Database info schema file not found: ${schemaPath}`);
@@ -180,9 +180,9 @@ export class DatabaseInitializerService {
                 }
             }
 
-            this.logger.log("   ✅ sys_database_info table created successfully");
+            this.logger.log("   ✅ op_sys_database_info table created successfully");
         } catch (error) {
-            this.logger.error("   ❌ Failed to create sys_database_info table:", error);
+            this.logger.error("   ❌ Failed to create op_sys_database_info table:", error);
             throw error;
         }
     }
@@ -307,7 +307,7 @@ export class DatabaseInitializerService {
     }
 
     /**
-     * 记录初始化信息到 sys_database_info 表
+     * 记录初始化信息到 op_sys_database_info 表
      * 为当前环境创建或更新记录
      */
     private async recordInitializationInfo(queryRunner: QueryRunner): Promise<void> {
@@ -346,7 +346,7 @@ export class DatabaseInitializerService {
         // 使用 INSERT ... ON DUPLICATE KEY UPDATE 来处理重复环境
         await queryRunner.query(
             `
-      INSERT INTO sys_database_info 
+      INSERT INTO op_sys_database_info 
       (schema_version, seed_version, environment, node_env, app_version, initialization_source, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
@@ -367,7 +367,7 @@ export class DatabaseInitializerService {
             ],
         );
 
-        this.logger.log(`   ✅ Environment '${currentEnv}' record created/updated in sys_database_info`);
+        this.logger.log(`   ✅ Environment '${currentEnv}' record created/updated in op_sys_database_info`);
     }
 
     /**
@@ -463,25 +463,25 @@ export class DatabaseInitializerService {
             const queryRunner = connection.createQueryRunner();
             const currentEnv = this.getCurrentEnvironment();
 
-            // 先检查 sys_database_info 表是否存在
+            // 先检查 op_sys_database_info 表是否存在
             const tableExists = await queryRunner.query(`
         SELECT COUNT(*) as exists_count
         FROM information_schema.tables 
         WHERE table_schema = DATABASE() 
-        AND table_name = 'sys_database_info'
+        AND table_name = 'op_op_sys_database_info'
       `);
 
             const existsCount = Number(tableExists[0]?.exists_count || 0);
-            this.logger.log(`sys_database_info table exists check: ${existsCount}`);
+            this.logger.log(`op_sys_database_info table exists check: ${existsCount}`);
 
             if (existsCount === 0) {
-                this.logger.log("sys_database_info table does not exist, skipping status query");
+                this.logger.log("op_sys_database_info table does not exist, skipping status query");
                 return null;
             }
 
             const result = await queryRunner.query(
                 `
-        SELECT * FROM sys_database_info WHERE environment = ?
+        SELECT * FROM op_sys_database_info WHERE environment = ?
       `,
                 [currentEnv],
             );

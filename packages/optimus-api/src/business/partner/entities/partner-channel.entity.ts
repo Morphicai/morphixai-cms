@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm";
 import { ChannelStatus } from "../enums/channel-status.enum";
 
-@Entity("biz_partner_channel")
+@Entity("op_biz_partner_channel")
 @Index(["partnerId", "channelCode"], { unique: true })
 export class PartnerChannelEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })

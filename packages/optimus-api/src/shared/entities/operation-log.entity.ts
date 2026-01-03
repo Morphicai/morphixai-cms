@@ -5,7 +5,7 @@ import { ApiProperty } from "@nestjs/swagger";
  * 系统操作日志实体
  * 用于记录所有管理员操作的审计日志
  */
-@Entity("sys_operation_log")
+@Entity("op_sys_operation_log")
 @Index(["module", "action"])
 @Index(["userId"])
 @Index(["createDate"])

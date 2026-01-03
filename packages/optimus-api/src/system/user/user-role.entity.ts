@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity("sys_user_role")
+@Entity("op_sys_user_role")
 export class UserRoleEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     id: number;

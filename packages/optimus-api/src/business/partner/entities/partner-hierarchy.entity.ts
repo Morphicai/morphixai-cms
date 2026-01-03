@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from "typeorm";
 
-@Entity("biz_partner_hierarchy")
+@Entity("op_biz_partner_hierarchy")
 @Index(["parentPartnerId", "level"])
 @Index(["childPartnerId", "level", "isActive"]) // 复合索引已包含 childPartnerId，无需单独创建索引
 export class PartnerHierarchyEntity {

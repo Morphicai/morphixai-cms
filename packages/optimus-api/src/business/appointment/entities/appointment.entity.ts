@@ -4,7 +4,7 @@ import { ApiProperty } from "@nestjs/swagger";
 /**
  * 预约记录实体
  */
-@Entity("biz_appointment")
+@Entity("op_biz_appointment")
 export class AppointmentEntity {
     @ApiProperty({ description: "预约记录ID" })
     @PrimaryGeneratedColumn({ type: "bigint" })

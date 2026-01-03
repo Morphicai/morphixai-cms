@@ -3,7 +3,7 @@ import { PartnerStatus } from "../enums/partner-status.enum";
 import { StarLevel } from "../enums/star-level.enum";
 import { UserSource } from "../../../shared/interfaces/user-identity.interface";
 
-@Entity("biz_partner_profile")
+@Entity("op_biz_partner_profile")
 export class PartnerProfileEntity {
     @PrimaryGeneratedColumn({ type: "bigint", name: "partner_id" })
     partnerId: string;

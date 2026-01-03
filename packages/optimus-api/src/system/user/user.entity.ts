@@ -9,7 +9,7 @@ export enum UserDeleted {
     YES = 0,
 }
 
-@Entity("sys_user")
+@Entity("op_sys_user")
 export class UserEntity {
     @ApiProperty({ type: String, description: "id" })
     @PrimaryGeneratedColumn({ type: "bigint" })
@@ -47,7 +47,7 @@ export class UserEntity {
     public phoneNum: string;
 
     @ApiProperty({ type: String, description: "邮箱" })
-    @Column({ type: "varchar", comment: "邮箱地址", default: "" })
+    @Column({ type: "varchar", length: 255, comment: "邮箱地址", default: "" })
     public email: string;
 
     @ApiProperty({ type: String, description: "所属状态: 1-有效，0-禁用" })
@@ -68,16 +68,17 @@ export class UserEntity {
     })
     public isDeleted: UserDeleted;
 
-    @UpdateDateColumn({
+    @Column({
         type: "timestamp",
         name: "deleted_date",
+        nullable: true,
         select: false,
         comment: "删除时间",
     })
-    deletedDate: Date;
+    deletedDate: Date | null;
 
     @ApiProperty({ type: String, description: "头像url" })
-    @Column({ type: "varchar", comment: "头像地址" })
+    @Column({ type: "varchar", length: 255, default: "", comment: "头像地址" })
     public avatar: string;
 
     @ApiProperty({ type: Number, description: "帐号类型：0-超管， 1-普通用户" })

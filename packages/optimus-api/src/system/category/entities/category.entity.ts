@@ -11,7 +11,7 @@ import {
 import { ApiProperty } from "@nestjs/swagger";
 import { ArticleEntity } from "../../article/entities/article.entity";
 
-@Entity("sys_category")
+@Entity("op_sys_category")
 export class CategoryEntity {
     @ApiProperty({ description: "分类ID" })
     @PrimaryGeneratedColumn({ type: "bigint" })

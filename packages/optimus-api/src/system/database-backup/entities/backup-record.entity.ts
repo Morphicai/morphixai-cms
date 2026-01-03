@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 /**
  * 数据库备份记录实体
  */
-@Entity("sys_database_backup")
+@Entity("op_sys_database_backup")
 export class BackupRecordEntity {
     @PrimaryGeneratedColumn()
     id: number;
