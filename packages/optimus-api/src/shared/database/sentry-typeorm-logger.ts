@@ -167,6 +167,25 @@ export class SentryTypeOrmLogger implements TypeOrmLogger {
             messageStr.includes("Access denied") ||
             messageStr.includes("ETIMEDOUT");
 
+        // 检查是否是索引重复错误（可能通过 log 方法传递）
+        const isDuplicateIndexError =
+            messageStr.includes("Duplicate key name") ||
+            messageStr.includes("duplicate key") ||
+            (messageStr.includes("IDX_") && messageStr.includes("Duplicate"));
+
+        if (isDuplicateIndexError) {
+            // 从错误消息中提取索引名
+            const indexMatch = messageStr.match(/IDX_[\w]+/) || messageStr.match(/['"](\w+)['"]/);
+            const indexName = indexMatch ? indexMatch[0] : "未知索引";
+
+            this.logger.error(`⚠️  索引重复错误（通过 log 方法捕获）`);
+            this.logger.error(`    错误信息: ${messageStr}`);
+            this.logger.error(`    索引名: ${indexName}`);
+            this.logger.error(`    💡 提示: 如果数据库结构已存在，建议设置 DB_SYNCHRONIZE=false 关闭自动同步`);
+            this.logger.error(`    或者手动修复数据库索引，确保实体定义与数据库结构一致`);
+            return;
+        }
+
         // 如果是连接错误，打印详细的连接信息
         if (isConnectionError) {
             this.printConnectionInfo();
