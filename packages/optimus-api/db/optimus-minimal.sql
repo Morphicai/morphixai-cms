@@ -100,33 +100,33 @@ CREATE TABLE IF NOT EXISTS `op_sys_document` (
 BEGIN;
 -- Copyright notice (Built-in)
 INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
-(1, 'copyright', 'home', 'html', '<p>© 2024 Optimus CMS. Built with modern technologies for powerful content management.</p>', '2024-01-01 10:00:00.000000', '1', 'Copyright notice for Optimus CMS', 1, 1, 1);
+(1, 'copyright', 'home', 'html', '<p>© 2024 Optimus CMS. Built with modern technologies for powerful content management.</p>', '2024-01-01 10:00:00.000000', '1', 'Copyright', 1, 1, 1);
 
 -- SEO Configuration (Built-in)
 INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
-(2, 'site_title', 'seo', 'text', 'Optimus CMS - Modern Content Management System', '2024-01-01 10:00:00.000000', '1', 'Site title for SEO', 1, 0, 1),
-(3, 'site_description', 'seo', 'text', 'Optimus CMS is a powerful, full-stack content management system built with NestJS, React, and Next.js. Manage your content, users, and permissions with ease.', '2024-01-01 10:00:00.000000', '1', 'Site meta description for SEO', 1, 0, 1),
-(4, 'site_keywords', 'seo', 'text', 'Optimus CMS, Content Management System, CMS, NestJS, React, Next.js, TypeScript, Web Development', '2024-01-01 10:00:00.000000', '1', 'Site keywords for SEO', 1, 0, 1),
-(5, 'og_image', 'seo', 'url', 'https://example.com/images/optimus-cms-og-image.jpg', '2024-01-01 10:00:00.000000', '1', 'Open Graph image URL for social media sharing', 1, 0, 1),
-(6, 'favicon_url', 'seo', 'url', 'https://example.com/favicon.ico', '2024-01-01 10:00:00.000000', '1', 'Favicon URL', 1, 0, 1);
+(2, 'site_title', 'seo', 'text', 'Optimus CMS - Modern Content Management System', '2024-01-01 10:00:00.000000', '1', 'Site Title', 1, 0, 1),
+(3, 'site_description', 'seo', 'text', 'Optimus CMS is a powerful, full-stack content management system built with NestJS, React, and Next.js. Manage your content, users, and permissions with ease.', '2024-01-01 10:00:00.000000', '1', 'Site Description', 1, 0, 1),
+(4, 'site_keywords', 'seo', 'text', 'Optimus CMS, Content Management System, CMS, NestJS, React, Next.js, TypeScript, Web Development', '2024-01-01 10:00:00.000000', '1', 'Site Keywords', 1, 0, 1),
+(5, 'og_image', 'seo', 'url', 'https://example.com/images/optimus-cms-og-image.jpg', '2024-01-01 10:00:00.000000', '1', 'OG Image', 1, 0, 1),
+(6, 'favicon_url', 'seo', 'url', 'https://example.com/favicon.ico', '2024-01-01 10:00:00.000000', '1', 'Favicon', 1, 0, 1);
 
 -- Site Basic Information (Built-in)
 INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
-(7, 'site_name', 'config', 'text', 'Optimus CMS', '2024-01-01 10:00:00.000000', '1', 'Site name', 1, 0, 1),
-(8, 'site_logo', 'config', 'url', 'https://example.com/images/optimus-cms-logo.png', '2024-01-01 10:00:00.000000', '1', 'Site logo URL', 1, 0, 1),
-(9, 'contact_email', 'config', 'text', 'contact@optimus-cms.com', '2024-01-01 10:00:00.000000', '1', 'Contact email address', 1, 0, 1),
-(10, 'contact_phone', 'config', 'text', '+1 (555) 123-4567', '2024-01-01 10:00:00.000000', '1', 'Contact phone number', 1, 0, 1);
+(7, 'site_name', 'config', 'text', 'Optimus CMS', '2024-01-01 10:00:00.000000', '1', 'Site Name', 1, 0, 1),
+(8, 'site_logo', 'config', 'url', 'https://example.com/images/optimus-cms-logo.png', '2024-01-01 10:00:00.000000', '1', 'Site Logo', 1, 0, 1),
+(9, 'contact_email', 'config', 'text', 'contact@optimus-cms.com', '2024-01-01 10:00:00.000000', '1', 'Contact Email', 1, 0, 1),
+(10, 'contact_phone', 'config', 'text', '+1 (555) 123-4567', '2024-01-01 10:00:00.000000', '1', 'Contact Phone', 1, 0, 1);
 
 -- Legal Documents (Built-in)
 INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
-(11, 'terms_of_service', 'legal', 'html', '<h1>Terms of Service</h1><p>Welcome to Optimus CMS. By accessing and using this platform, you agree to comply with and be bound by the following terms and conditions.</p><h2>1. Acceptance of Terms</h2><p>By using Optimus CMS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p><h2>2. Use License</h2><p>Permission is granted to temporarily use Optimus CMS for personal or commercial purposes. This is the grant of a license, not a transfer of title.</p><h2>3. User Responsibilities</h2><p>Users are responsible for maintaining the confidentiality of their account credentials and for all activities that occur under their account.</p><h2>4. Limitation of Liability</h2><p>Optimus CMS shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the platform.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Terms of Service document', 1, 1, 1),
-(12, 'privacy_policy', 'legal', 'html', '<h1>Privacy Policy</h1><p>Optimus CMS is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our platform.</p><h2>1. Information We Collect</h2><p>We collect information that you provide directly to us, including account information, content you create, and usage data.</p><h2>2. How We Use Your Information</h2><p>We use the information we collect to provide, maintain, and improve Optimus CMS services, process transactions, and communicate with you.</p><h2>3. Data Security</h2><p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p><h2>4. Your Rights</h2><p>You have the right to access, update, or delete your personal information at any time through your account settings.</p><h2>5. Cookies and Tracking</h2><p>Optimus CMS uses cookies and similar tracking technologies to enhance your experience and analyze usage patterns.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Privacy Policy document', 1, 1, 1);
+(11, 'terms_of_service', 'legal', 'html', '<h1>Terms of Service</h1><p>Welcome to Optimus CMS. By accessing and using this platform, you agree to comply with and be bound by the following terms and conditions.</p><h2>1. Acceptance of Terms</h2><p>By using Optimus CMS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p><h2>2. Use License</h2><p>Permission is granted to temporarily use Optimus CMS for personal or commercial purposes. This is the grant of a license, not a transfer of title.</p><h2>3. User Responsibilities</h2><p>Users are responsible for maintaining the confidentiality of their account credentials and for all activities that occur under their account.</p><h2>4. Limitation of Liability</h2><p>Optimus CMS shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the platform.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Terms of Service', 1, 1, 1),
+(12, 'privacy_policy', 'legal', 'html', '<h1>Privacy Policy</h1><p>Optimus CMS is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our platform.</p><h2>1. Information We Collect</h2><p>We collect information that you provide directly to us, including account information, content you create, and usage data.</p><h2>2. How We Use Your Information</h2><p>We use the information we collect to provide, maintain, and improve Optimus CMS services, process transactions, and communicate with you.</p><h2>3. Data Security</h2><p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p><h2>4. Your Rights</h2><p>You have the right to access, update, or delete your personal information at any time through your account settings.</p><h2>5. Cookies and Tracking</h2><p>Optimus CMS uses cookies and similar tracking technologies to enhance your experience and analyze usage patterns.</p><p>Last updated: January 2024</p>', '2024-01-01 10:00:00.000000', '1', 'Privacy Policy', 1, 1, 1);
 
 -- Additional Configuration (JSON format) - Built-in
 INSERT IGNORE INTO `op_sys_document` (`id`, `doc_key`, `source`, `type`, `content`, `create_date`, `user_id`, `description`, `is_public`, `show_on_menu`, `is_built_in`) VALUES 
-(13, 'footer_links', 'config', 'json', '{"links": [{"title": "Home", "url": "/"}, {"title": "About", "url": "/about"}, {"title": "Terms of Service", "url": "/terms"}, {"title": "Privacy Policy", "url": "/privacy"}, {"title": "Contact", "url": "/contact"}]}', '2024-01-01 10:00:00.000000', '1', 'Footer navigation links in JSON format', 1, 0, 1),
-(14, 'social_media', 'config', 'json', '{"platforms": [{"name": "Twitter", "url": "https://twitter.com/optimuscms", "icon": "twitter"}, {"name": "GitHub", "url": "https://github.com/optimus-cms", "icon": "github"}, {"name": "LinkedIn", "url": "https://linkedin.com/company/optimus-cms", "icon": "linkedin"}]}', '2024-01-01 10:00:00.000000', '1', 'Social media links in JSON format', 1, 0, 1),
-(15, 'site_settings', 'config', 'json', '{"theme": {"primaryColor": "#1890ff", "secondaryColor": "#52c41a"}, "features": {"enableComments": true, "enableNotifications": true, "enableAnalytics": true}, "localization": {"defaultLanguage": "en", "supportedLanguages": ["en", "zh-CN"]}}', '2024-01-01 10:00:00.000000', '1', 'Site settings configuration in JSON format', 0, 0, 1);
+(13, 'footer_links', 'config', 'json', '{"links": [{"title": "Home", "url": "/"}, {"title": "About", "url": "/about"}, {"title": "Terms of Service", "url": "/terms"}, {"title": "Privacy Policy", "url": "/privacy"}, {"title": "Contact", "url": "/contact"}]}', '2024-01-01 10:00:00.000000', '1', 'Footer Links', 1, 0, 1),
+(14, 'social_media', 'config', 'json', '{"platforms": [{"name": "Twitter", "url": "https://twitter.com/optimuscms", "icon": "twitter"}, {"name": "GitHub", "url": "https://github.com/optimus-cms", "icon": "github"}, {"name": "LinkedIn", "url": "https://linkedin.com/company/optimus-cms", "icon": "linkedin"}]}', '2024-01-01 10:00:00.000000', '1', 'Social Media', 1, 0, 1),
+(15, 'site_settings', 'config', 'json', '{"theme": {"primaryColor": "#1890ff", "secondaryColor": "#52c41a"}, "features": {"enableComments": true, "enableNotifications": true, "enableAnalytics": true}, "localization": {"defaultLanguage": "en", "supportedLanguages": ["en", "zh-CN"]}}', '2024-01-01 10:00:00.000000', '1', 'Site Settings', 0, 0, 1);
 COMMIT;
 
 -- ----------------------------
@@ -411,12 +411,14 @@ CREATE TABLE IF NOT EXISTS `op_sys_category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章分类表';
 
 -- ----------------------------
--- Records of op_sys_category (Temporary default category for demo article only)
+-- Records of op_sys_category (Built-in categories)
 -- ----------------------------
 BEGIN;
--- Note: This category is only for the demo article. In production, create categories as needed.
+-- Built-in categories for article management
 INSERT IGNORE INTO `op_sys_category` (`id`, `name`, `code`, `description`, `is_built_in`, `config`, `sort_weight`) VALUES 
-(1, 'General', 'general', 'General category for demo content', false, '{}', 0);
+(1, 'News', 'news', 'News and information articles', true, '{"maxCoverImages": 3, "maxVersions": 10}', 100),
+(2, 'Activity', 'activity', 'Activity related articles', true, '{"maxCoverImages": 5, "maxVersions": 15}', 90),
+(3, 'Announcement', 'announcement', 'Announcement and notice articles', true, '{"maxCoverImages": 1, "maxVersions": 5}', 80);
 COMMIT;
 
 -- ----------------------------
@@ -449,9 +451,7 @@ CREATE TABLE IF NOT EXISTS `op_sys_article` (
 -- Records of sys_article (Sample article - Optimus CMS introduction)
 -- ----------------------------
 BEGIN;
--- Note: category_id is required, so a category must be created first if needed
--- For minimal seed data, we'll use a placeholder category_id (1)
--- In production, categories should be created before articles
+-- Demo article using the 'news' category (id=1)
 INSERT IGNORE INTO `op_sys_article` (`id`, `slug`, `status`, `published_at`, `current_version_id`, `published_version_id`, `category_id`, `user_id`, `is_deleted`, `create_date`, `update_date`) VALUES 
 (1, 'welcome-to-optimus-cms', 'published', '2024-01-01 10:00:00', 1, 1, 1, '1', 0, '2024-01-01 10:00:00', '2024-01-01 10:00:00');
 COMMIT;
@@ -798,5 +798,125 @@ CREATE TABLE IF NOT EXISTS `op_biz_client_user_external_account` (
   UNIQUE KEY `idx_user_platform` (`user_id`, `platform`),
   UNIQUE KEY `idx_platform_external` (`platform`, `external_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='客户端用户外部账号表';
+
+-- ----------------------------
+-- Table structure for op_sys_short_link
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_sys_short_link` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `token` varchar(6) NOT NULL COMMENT '6位短链token',
+  `target` text NOT NULL COMMENT '目标内容（支持字符串或JSON格式）',
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `source` enum('admin','system','api') NOT NULL DEFAULT 'admin' COMMENT '来源',
+  `disabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否禁用',
+  `use_count` int NOT NULL DEFAULT '0' COMMENT '使用次数',
+  `last_used_at` timestamp NULL DEFAULT NULL COMMENT '最后使用时间',
+  `extra` json DEFAULT NULL COMMENT '扩展字段（JSON格式）',
+  `created_by` int DEFAULT NULL COMMENT '创建人ID',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注说明',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_token` (`token`),
+  KEY `idx_status` (`status`),
+  KEY `idx_source` (`source`),
+  KEY `idx_created_by` (`created_by`),
+  KEY `idx_disabled` (`disabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='短链表';
+
+-- ----------------------------
+-- Records of op_sys_short_link (No initial data)
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for op_biz_external_task_submission
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_biz_external_task_submission` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `submission_code` varchar(64) NOT NULL COMMENT '提交代码（唯一）',
+  `task_type` enum('SOCIAL_SHARE','CONTENT_CREATION','COMMUNITY_ACTIVITY','FEEDBACK_SUBMIT','DOUYIN_SHORT_VIDEO','DOUYIN_LIVE_30MIN','DOUYIN_LIVE_50MIN','DOUYIN_LIVE_100MIN','MANYI_DRIVER_VERIFY','KUAIDI_COURIER_VERIFY') NOT NULL COMMENT '任务类型',
+  `partner_id` bigint NOT NULL COMMENT '合伙人ID',
+  `uid` varchar(100) NOT NULL COMMENT '用户UID',
+  `task_link` varchar(500) DEFAULT NULL COMMENT '任务链接',
+  `proof_images` json DEFAULT NULL COMMENT '证明图片数组（JSON格式）',
+  `remark` text DEFAULT NULL COMMENT '备注说明',
+  `status` enum('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING' COMMENT '审核状态',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核人ID',
+  `review_time` timestamp NULL DEFAULT NULL COMMENT '审核时间',
+  `review_remark` text DEFAULT NULL COMMENT '审核备注',
+  `points_awarded` int DEFAULT NULL COMMENT '奖励积分',
+  `task_log_id` bigint DEFAULT NULL COMMENT '任务日志ID',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_submission_code` (`submission_code`),
+  KEY `idx_partner_id` (`partner_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_task_type` (`task_type`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='外部任务提交表';
+
+-- ----------------------------
+-- Records of op_biz_external_task_submission (No initial data)
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for op_sys_dictionary_collection
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_sys_dictionary_collection` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `name` varchar(50) NOT NULL COMMENT '集合名称（唯一标识）',
+  `display_name` varchar(100) NOT NULL COMMENT '显示名称',
+  `description` varchar(500) DEFAULT NULL COMMENT '集合描述',
+  `data_type` enum('object','array','string','number','boolean','image','file') NOT NULL DEFAULT 'object' COMMENT '数据类型',
+  `schema` json DEFAULT NULL COMMENT '数据结构定义（JSON Schema）',
+  `access_type` enum('private','public_read','public_write','user_private') NOT NULL DEFAULT 'private' COMMENT '访问类型',
+  `max_items` int NOT NULL DEFAULT '1000' COMMENT '最大条目数',
+  `max_items_per_user` int NOT NULL DEFAULT '100' COMMENT '每个用户最大条目数',
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_name` (`name`),
+  KEY `idx_access_type` (`access_type`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典集合配置表';
+
+-- ----------------------------
+-- Records of op_sys_dictionary_collection (No initial data)
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for op_sys_dictionary
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_sys_dictionary` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `collection` varchar(50) NOT NULL COMMENT '集合名称',
+  `key` varchar(100) NOT NULL COMMENT '字典键',
+  `user_id` int DEFAULT NULL COMMENT '用户ID（仅user_private类型集合使用）',
+  `value` json NOT NULL COMMENT '字典值（JSON格式）',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序顺序',
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注说明',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_collection_key_user` (`collection`, `key`, `user_id`),
+  KEY `idx_collection` (`collection`),
+  KEY `idx_status` (`status`),
+  KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典数据表';
+
+-- ----------------------------
+-- Records of op_sys_dictionary (No initial data)
+-- ----------------------------
+BEGIN;
+COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

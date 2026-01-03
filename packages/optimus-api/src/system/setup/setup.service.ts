@@ -27,7 +27,7 @@ export class SetupService {
     ) {}
 
     /**
-     * 获取系统状态
+     * 获取系统状态（优化版本，快速响应，不阻塞）
      */
     async getStatus(): Promise<SetupStatusDto> {
         const status: SetupStatusDto = {
@@ -42,20 +42,38 @@ export class SetupService {
             appVersion: this.getAppVersion(),
         };
 
-        // 检查数据库连接
+        // 使用 Promise.race 设置超时，避免长时间阻塞
+        const DB_CHECK_TIMEOUT = 2000; // 2秒超时
+
+        // 检查数据库连接（带超时）
         try {
-            await this.connection.query("SELECT 1");
+            const dbCheckPromise = this.connection.query("SELECT 1");
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Database check timeout")), DB_CHECK_TIMEOUT),
+            );
+
+            await Promise.race([dbCheckPromise, timeoutPromise]);
             status.databaseStatus.connected = true;
         } catch (error) {
             status.databaseStatus.connected = false;
-            status.databaseStatus.error = error.message;
+            status.databaseStatus.error = error.message || "Connection check failed";
             this.logger.warn("Database connection check failed:", error.message);
-            return status; // 如果数据库连接失败，直接返回
+            // 数据库连接失败时，直接返回，不继续检查初始化状态
+            return status;
         }
 
-        // 检查是否已初始化
+        // 检查是否已初始化（带超时，简化查询）
         try {
-            const dbInfo = await this.databaseInitializer.getDatabaseInitializationStatus(this.connection);
+            const initCheckPromise = this.checkInitializationStatus();
+            const timeoutPromise = new Promise<null>((resolve) =>
+                setTimeout(() => {
+                    this.logger.warn("Initialization status check timeout, assuming not initialized");
+                    resolve(null);
+                }, DB_CHECK_TIMEOUT),
+            );
+
+            const dbInfo = await Promise.race([initCheckPromise, timeoutPromise]);
+
             if (dbInfo) {
                 status.isInitialized = true;
                 status.systemInfo = {
@@ -65,36 +83,7 @@ export class SetupService {
                     initializedAt: dbInfo.initialized_at,
                 };
             } else {
-                // 检查是否有系统信息表
-                const tableExists = await this.connection.query(`
-                    SELECT COUNT(*) as exists_count
-                    FROM information_schema.tables 
-                    WHERE table_schema = DATABASE() 
-                    AND table_name = 'op_sys_database_info'
-                `);
-                const hasInfoTable = Number(tableExists[0]?.exists_count || 0) > 0;
-
-                if (hasInfoTable) {
-                    // 表存在但没有数据，认为未初始化
-                    status.isInitialized = false;
-                } else {
-                    // 表不存在，检查是否有其他系统表
-                    const userTableExists = await this.connection.query(`
-                        SELECT COUNT(*) as exists_count
-                        FROM information_schema.tables 
-                        WHERE table_schema = DATABASE() 
-                        AND table_name = 'op_sys_user'
-                    `);
-                    const hasUserTable = Number(userTableExists[0]?.exists_count || 0) > 0;
-
-                    if (!hasUserTable) {
-                        // 没有任何系统表，认为未初始化
-                        status.isInitialized = false;
-                    } else {
-                        // 有系统表但没有 sys_database_info 表，认为未初始化
-                        status.isInitialized = false;
-                    }
-                }
+                status.isInitialized = false;
             }
         } catch (error) {
             this.logger.warn("Failed to check initialization status:", error.message);
@@ -102,6 +91,24 @@ export class SetupService {
         }
 
         return status;
+    }
+
+    /**
+     * 检查初始化状态（优化版本，快速查询）
+     */
+    private async checkInitializationStatus(): Promise<DatabaseInfo | null> {
+        try {
+            // 直接查询 op_sys_database_info 表，如果表不存在会抛出错误，捕获后返回 null
+            const currentEnv = this.getCurrentEnvironment();
+            const result = await this.connection.query(
+                `SELECT * FROM op_sys_database_info WHERE environment = ? LIMIT 1`,
+                [currentEnv],
+            );
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            // 表不存在或其他错误，返回 null（表示未初始化）
+            return null;
+        }
     }
 
     /**
@@ -121,11 +128,11 @@ export class SetupService {
 
             // 步骤 2: 创建管理员用户
             this.logger.log("👤 Step 2: Creating admin user...");
-            await this.createAdminUser(queryRunner, dto);
+            const userId = await this.createAdminUser(queryRunner, dto);
 
             // 步骤 3: 设置系统信息
             this.logger.log("⚙️  Step 3: Setting system information...");
-            await this.setSystemInfo(queryRunner, dto);
+            await this.setSystemInfo(queryRunner, dto, userId);
 
             await queryRunner.commitTransaction();
 
@@ -145,13 +152,13 @@ export class SetupService {
     /**
      * 创建管理员用户
      */
-    private async createAdminUser(queryRunner: QueryRunner, dto: InitializeSystemDto): Promise<void> {
+    private async createAdminUser(queryRunner: QueryRunner, dto: InitializeSystemDto): Promise<number> {
         // 检查是否已存在该账号的用户（无论是否删除）
         const existingUser = await queryRunner.query(`SELECT id FROM op_sys_user WHERE account = ?`, [dto.account]);
 
         if (existingUser.length > 0) {
             this.logger.warn(`User with account '${dto.account}' already exists, skipping creation`);
-            return;
+            return existingUser[0].id;
         }
 
         // 生成密码哈希
@@ -178,12 +185,13 @@ export class SetupService {
         await queryRunner.query(`INSERT INTO op_sys_user_role (user_id, role_id) VALUES (?, ?)`, [userId, roleId]);
 
         this.logger.log(`✅ Admin user created: ${dto.account} (ID: ${userId})`);
+        return userId;
     }
 
     /**
      * 设置系统信息
      */
-    private async setSystemInfo(queryRunner: QueryRunner, dto: InitializeSystemDto): Promise<void> {
+    private async setSystemInfo(queryRunner: QueryRunner, dto: InitializeSystemDto, userId: number): Promise<void> {
         // 更新 sys_database_info 表的 metadata 字段，添加站点信息
         const currentEnv = this.getCurrentEnvironment();
         const metadata = {
@@ -199,6 +207,29 @@ export class SetupService {
              WHERE environment = ?`,
             [metadata.siteName, metadata.siteDescription, metadata.initializedBy, metadata.initializedAt, currentEnv],
         );
+
+        // 更新 document 表中的站点名称和站点描述
+        // 如果提供了站点名称，则更新对应的 document
+        if (dto.siteName) {
+            await queryRunner.query(
+                `UPDATE op_sys_document 
+                 SET content = ?, user_id = ?
+                 WHERE doc_key = 'site_name' AND source = 'config'`,
+                [dto.siteName, String(userId)],
+            );
+            this.logger.log(`✅ Site name updated in document: ${dto.siteName}`);
+        }
+
+        // 如果提供了站点描述，则更新对应的 document
+        if (dto.siteDescription) {
+            await queryRunner.query(
+                `UPDATE op_sys_document 
+                 SET content = ?, user_id = ?
+                 WHERE doc_key = 'site_description' AND source = 'seo'`,
+                [dto.siteDescription, String(userId)],
+            );
+            this.logger.log(`✅ Site description updated in document: ${dto.siteDescription}`);
+        }
 
         this.logger.log("✅ System information updated");
     }
