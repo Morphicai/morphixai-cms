@@ -142,18 +142,18 @@ export class RoleService {
 
     async findList(type: UserType, userId: string, search: FindRoleListDto): Promise<ResultData> {
         const { page, size, name } = search;
-        let connection = getConnection().createQueryBuilder("sys_role", "sr");
+        let connection = getConnection().createQueryBuilder("op_sys_role", "sr");
 
         if (type === UserType.SUPER_ADMIN) {
             connection = connection
-                .leftJoinAndSelect("sys_role_leader", "srl", "srl.role_id = sr.id")
-                .leftJoinAndMapMany("sr.leaders", "sys_user", "su", "su.id = srl.leader_id")
+                .leftJoinAndSelect("op_sys_role_leader", "srl", "srl.role_id = sr.id")
+                .leftJoinAndMapMany("sr.leaders", "op_sys_user", "su", "su.id = srl.leader_id")
                 .orderBy("sr.id", "DESC");
         } else {
             connection = connection
-                .leftJoinAndSelect("sys_user_role", "sur", "sur.role_id = sr.id")
-                .leftJoinAndSelect("sys_role_leader", "srl", "srl.role_id = sr.id")
-                .leftJoinAndMapMany("sr.leaders", "sys_user", "su", "su.id = srl.leader_id")
+                .leftJoinAndSelect("op_sys_user_role", "sur", "sur.role_id = sr.id")
+                .leftJoinAndSelect("op_sys_role_leader", "srl", "srl.role_id = sr.id")
+                .leftJoinAndMapMany("sr.leaders", "op_sys_user", "su", "su.id = srl.leader_id")
                 .where("sur.user_id = :userId", { userId });
         }
 

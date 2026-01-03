@@ -38,6 +38,7 @@ import { ContactModule } from "./business/contact/contact.module";
 import { OrderModule } from "./business/order/order.module";
 import { AppointmentModule } from "./business/appointment/appointment.module";
 import { RewardClaimRecordModule } from "./business/reward-claim-record/reward-claim-record.module";
+import { ActivityModule } from "./business/activity/activity.module";
 import { DatabaseBackupModule } from "./system/database-backup/database-backup.module";
 import { DeployWebhookModule } from "./system/deploy-webhook/deploy-webhook.module";
 import { DictionaryModule } from "./system/dictionary/dictionary.module";
@@ -198,6 +199,7 @@ import { join } from "path";
         OrderModule,
         AppointmentModule,
         RewardClaimRecordModule,
+        ActivityModule,
         CaslDemoModule,
         // WebSocket Gateway
         WSModule,

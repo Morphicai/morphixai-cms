@@ -163,8 +163,8 @@ export class DocumentService {
             const docMenus = await getConnection()
                 .createQueryBuilder()
                 .select()
-                .from("sys_document_perm", "dp")
-                .leftJoinAndSelect("sys_document", "d", "dp.document_id = d.id")
+                .from("op_sys_document_perm", "dp")
+                .leftJoinAndSelect("op_sys_document", "d", "dp.document_id = d.id")
                 .having("d.show_on_menu = :status", { status: 1 })
                 .where("dp.role_id IN (:...roleIds) OR dp.user_id = :userId", {
                     userId: id,

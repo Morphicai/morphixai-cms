@@ -109,7 +109,7 @@ export class ContactService extends Nodemailer {
     async findAllFeedback(search: FindContactFeedbackDto): Promise<ResultData> {
         const { size, page } = search;
         const res = await this.feebbackRepo
-            .createQueryBuilder("biz_feedback")
+            .createQueryBuilder("op_biz_feedback")
             .skip(page * size)
             .take(size)
             .getManyAndCount();

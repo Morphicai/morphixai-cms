@@ -98,8 +98,8 @@ export class UserService {
      */
     private getRoleByUserId(userId: string) {
         return getConnection()
-            .createQueryBuilder("sys_role", "role")
-            .leftJoinAndSelect("sys_user_role", "ur", "role.id = ur.role_id")
+            .createQueryBuilder("op_sys_role", "role")
+            .leftJoinAndSelect("op_sys_user_role", "ur", "role.id = ur.role_id")
             .where("ur.user_id = :userId", { userId })
             .getMany();
     }
@@ -497,10 +497,10 @@ export class UserService {
         fullName && (where.fullName = Like(`%${fullName}%`));
 
         const connection = getConnection()
-            .createQueryBuilder("sys_user", "su")
+            .createQueryBuilder("op_sys_user", "su")
             .select(selectFields)
-            .leftJoinAndSelect("sys_user_role", "sur", "sur.user_id = su.id")
-            .leftJoinAndMapMany("su.roles", "sys_role", "sr", "sr.id = sur.role_id");
+            .leftJoinAndSelect("op_sys_user_role", "sur", "sur.user_id = su.id")
+            .leftJoinAndMapMany("su.roles", "op_sys_role", "sr", "sr.id = sur.role_id");
 
         if (roleId) {
             connection.where("sur.role_id = :roleId", { roleId });
@@ -572,20 +572,20 @@ export class UserService {
         let res;
         if (isCorrelation) {
             res = await getConnection()
-                .createQueryBuilder("sys_user", "su")
-                .leftJoinAndSelect("sys_user_role", "ur", "ur.user_id = su.id")
+                .createQueryBuilder("op_sys_user", "su")
+                .leftJoinAndSelect("op_sys_user_role", "ur", "ur.user_id = su.id")
                 .where("su.status = 1 and ur.role_id = :roleId", { roleId })
                 .skip(size * page)
                 .take(size)
                 .getManyAndCount();
         } else {
             res = await getConnection()
-                .createQueryBuilder("sys_user", "su")
+                .createQueryBuilder("op_sys_user", "su")
                 .where((qb: any) => {
                     const subQuery = qb
                         .subQuery()
                         .select(["sur.user_id"])
-                        .from("sys_user_role", "sur")
+                        .from("op_sys_user_role", "sur")
                         .where("sur.role_id = :roleId", { roleId })
                         .getQuery();
                     return `su.status = 1 and su.id not in ${subQuery}`;
