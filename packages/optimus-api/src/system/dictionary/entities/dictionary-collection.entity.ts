@@ -35,7 +35,7 @@ export enum CollectionStatus {
  * 字典集合配置实体
  */
 @Entity("dictionary_collection")
-@Index(["name"])
+// 注意：name 列已使用 unique: true，无需在类级别再次定义索引
 @Index(["accessType"])
 @Index(["status"])
 export class DictionaryCollectionEntity {

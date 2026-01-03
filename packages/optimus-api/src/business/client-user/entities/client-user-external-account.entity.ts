@@ -13,11 +13,11 @@ export class ClientUserExternalAccountEntity {
     id: string;
 
     @Column({ type: "bigint", name: "user_id" })
-    @Index()
+    // 注意：userId 和 platform 已在类级别的复合索引中定义，无需单独创建索引
     userId: string;
 
     @Column({ type: "varchar", length: 50 })
-    @Index()
+    // 注意：platform 已在类级别的复合索引中定义，无需单独创建索引
     platform: string;
 
     @Column({ type: "varchar", length: 255, name: "external_user_id" })

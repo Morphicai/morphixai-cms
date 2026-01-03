@@ -103,7 +103,7 @@ const targetTransformer: ValueTransformer = {
  * 短链实体
  */
 @Entity("short_link")
-@Index(["token"], { unique: true })
+// 注意：token 列已使用 unique: true，无需在类级别再次定义唯一索引
 @Index(["status"])
 @Index(["source"])
 @Index(["createdBy"])

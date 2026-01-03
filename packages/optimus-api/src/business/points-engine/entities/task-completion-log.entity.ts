@@ -3,7 +3,7 @@ import { TaskType } from "../enums/task-type.enum";
 import { TaskStatus } from "../enums/task-status.enum";
 
 @Entity("biz_task_completion_log")
-@Index(["partnerId"])
+// 注意：复合索引已包含 partnerId，无需单独为 partnerId 创建索引
 @Index(["taskCode", "partnerId", "eventId"], { unique: true })
 export class TaskCompletionLogEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })

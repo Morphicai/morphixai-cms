@@ -10,16 +10,16 @@ export class ClientUserEntity {
     @PrimaryGeneratedColumn({ type: "bigint", name: "user_id" })
     userId: string;
 
+    // 注意：unique: true 会自动创建唯一索引，无需额外的 @Index()
     @Column({ type: "varchar", length: 50, unique: true, nullable: true })
-    @Index()
     username: string | null;
 
+    // 注意：unique: true 会自动创建唯一索引，无需额外的 @Index()
     @Column({ type: "varchar", length: 100, unique: true, nullable: true })
-    @Index()
     email: string | null;
 
+    // 注意：unique: true 会自动创建唯一索引，无需额外的 @Index()
     @Column({ type: "varchar", length: 20, unique: true, nullable: true })
-    @Index()
     phone: string | null;
 
     @Column({ type: "varchar", length: 255, nullable: true, name: "password_hash" })

@@ -2,8 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 
 
 @Entity("biz_partner_hierarchy")
 @Index(["parentPartnerId", "level"])
-@Index(["childPartnerId"])
-@Index(["childPartnerId", "level", "isActive"])
+@Index(["childPartnerId", "level", "isActive"]) // 复合索引已包含 childPartnerId，无需单独创建索引
 export class PartnerHierarchyEntity {
     @PrimaryGeneratedColumn({ type: "bigint" })
     id: string;

@@ -31,8 +31,8 @@ export class PartnerProfileEntity {
     @Index()
     username: string;
 
+    // 注意：unique: true 会自动创建唯一索引，无需额外的 @Index()
     @Column({ type: "varchar", length: 32, unique: true, name: "partner_code" })
-    @Index()
     partnerCode: string;
 
     @Column({
