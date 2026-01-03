@@ -8,6 +8,7 @@ import { DatabaseBackupService } from "./database-backup.service";
 import { BackupSchedulerService } from "./backup-scheduler.service";
 import { DatabaseBackupController } from "./database-backup.controller";
 import { BackupRecordEntity } from "./entities/backup-record.entity";
+import { DatabaseInitializerModule } from "../../shared/database/database-initializer.module";
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { BackupRecordEntity } from "./entities/backup-record.entity";
         ScheduleModule.forRoot(),
         OssModule,
         UserModule,
+        DatabaseInitializerModule, // Import DatabaseInitializerModule for initialization status check
     ],
     providers: [DatabaseBackupService, BackupSchedulerService],
     controllers: [DatabaseBackupController],

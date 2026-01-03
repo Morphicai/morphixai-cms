@@ -8,6 +8,7 @@ import { join } from "path";
 import { plainToClass } from "class-transformer";
 
 import { DatabaseInitializerService, DatabaseInfo } from "../../shared/database/database-initializer.service";
+import { InitializationGuard } from "../../shared/guards/initialization.guard";
 import { UserEntity, UserDeleted } from "../user/user.entity";
 import { UserRoleEntity } from "../user/user-role.entity";
 import { RoleEntity } from "../role/entities/role.entity";
@@ -22,6 +23,7 @@ export class SetupService {
         @InjectConnection() private readonly connection: Connection,
         private readonly configService: ConfigService,
         private readonly databaseInitializer: DatabaseInitializerService,
+        private readonly initializationGuard: InitializationGuard,
     ) {}
 
     /**
@@ -126,6 +128,9 @@ export class SetupService {
             await this.setSystemInfo(queryRunner, dto);
 
             await queryRunner.commitTransaction();
+
+            // 清除初始化守卫的缓存，确保后续请求能获取到最新的初始化状态
+            this.initializationGuard.clearCache();
 
             this.logger.log("✅ System initialization completed successfully");
         } catch (error) {

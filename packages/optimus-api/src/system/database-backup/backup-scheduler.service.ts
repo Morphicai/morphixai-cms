@@ -1,7 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron } from "@nestjs/schedule";
+import { InjectConnection } from "@nestjs/typeorm";
+import { Connection } from "typeorm";
 import { DatabaseBackupService } from "./database-backup.service";
+import { DatabaseInitializerService } from "../../shared/database/database-initializer.service";
 
 /**
  * 备份调度服务
@@ -14,7 +17,12 @@ export class BackupSchedulerService {
     private readonly backupSchedule: string;
     private readonly cleanupSchedule: string;
 
-    constructor(private readonly backupService: DatabaseBackupService, private readonly configService: ConfigService) {
+    constructor(
+        private readonly backupService: DatabaseBackupService,
+        private readonly configService: ConfigService,
+        @InjectConnection() private readonly connection: Connection,
+        private readonly databaseInitializer: DatabaseInitializerService,
+    ) {
         // 从环境变量或配置文件读取调度配置
         this.backupEnabled = this.getConfigValue("BACKUP_ENABLED", "backup.enabled", "true") === "true";
         this.backupSchedule = this.getConfigValue("BACKUP_SCHEDULE", "backup.schedule", "0 2 * * *");
@@ -53,6 +61,13 @@ export class BackupSchedulerService {
      */
     @Cron("0 2 * * *")
     async scheduledBackup(): Promise<void> {
+        // 检查系统是否已初始化，如果未初始化则跳过执行
+        const dbInfo = await this.databaseInitializer.getDatabaseInitializationStatus(this.connection);
+        if (!dbInfo) {
+            this.logger.debug("System not initialized, skipping scheduled backup");
+            return;
+        }
+
         // 检查是否启用自动备份
         if (!this.backupEnabled) {
             this.logger.log("Automatic backup is disabled, skipping scheduled backup");
@@ -80,6 +95,13 @@ export class BackupSchedulerService {
      */
     @Cron("0 3 * * *")
     async scheduledCleanup(): Promise<void> {
+        // 检查系统是否已初始化，如果未初始化则跳过执行
+        const dbInfo = await this.databaseInitializer.getDatabaseInitializationStatus(this.connection);
+        if (!dbInfo) {
+            this.logger.debug("System not initialized, skipping scheduled cleanup");
+            return;
+        }
+
         // 检查是否启用自动备份（如果备份都禁用了，清理也应该禁用）
         if (!this.backupEnabled) {
             this.logger.log("Automatic backup is disabled, skipping scheduled cleanup");

@@ -10,6 +10,5 @@ export * from "./utils/article-error-response";
 export * from "./article.service";
 export * from "./article.controller";
 export * from "./article.module";
-export * from "./services/article-scheduler.service";
 export * from "./services/article-operation-log.service";
 export * from "./services/article-validation.service";
