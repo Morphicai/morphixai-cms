@@ -2,7 +2,6 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from "@nes
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { DecryptService } from "./services/decrypt.service";
-import { GameWemadeTokenValidationService } from "./services/token-validation.service";
 import { PaymentCallbackService, PaymentCallbackRawParams } from "./services/payment-callback.service";
 import { ProductHandlerService } from "./services/product-handler.service";
 import { ProductValidatorService } from "./services/product-validator.service";
@@ -27,7 +26,6 @@ export class OrderService {
         @InjectRepository(OrderEntity)
         private readonly orderRepository: Repository<OrderEntity>,
         private readonly decryptService: DecryptService,
-        private readonly tokenValidationService: GameWemadeTokenValidationService,
         private readonly paymentCallbackService: PaymentCallbackService,
         private readonly productHandlerService: ProductHandlerService,
         private readonly productValidatorService: ProductValidatorService,
@@ -146,95 +144,69 @@ export class OrderService {
 
     /**
      * 处理支付回调
-     * 根据 GameWemade SDK 文档：https://sdkadmin.gamewemade.com/docs/index/aid/544
-     * @param params 支付回调原始参数（nt_data, sign, md5Sign）
+     * @param params 支付回调原始参数
      * @returns 处理结果，成功返回 "SUCCESS"，失败返回错误信息
      */
     async handlePaymentCallback(params: PaymentCallbackRawParams): Promise<string> {
         try {
-            // 1. 验证签名、解密并解析支付数据
+            // 1. 验证签名并解析支付数据
             const callbackResult = await this.paymentCallbackService.processCallback(params);
             const paymentData = callbackResult.data;
 
-            // 2. 检查订阅状态（如果是订阅取消，不需要发货）
-            if (paymentData.subscriptionStatus === "2") {
-                this.logger.log(`订单为订阅取消状态，不需要发货: orderNo=${paymentData.order_no}`);
-                return "SUCCESS";
-            }
-
-            // 3. 查找订单（根据我们的订单号 out_order_no）
-            // 注意：order_no 是 SDK 的订单号，out_order_no 是我们下单时传递的订单号
+            // 2. 查找订单（根据我们的订单号）
             const order = await this.orderRepository.findOne({
-                where: { orderNo: paymentData.out_order_no },
+                where: { orderNo: paymentData.orderNo },
             });
 
             if (!order) {
-                this.logger.warn(
-                    `支付回调：订单不存在 out_order_no=${paymentData.out_order_no}, sdk_order_no=${paymentData.order_no}`,
-                );
-                // 根据文档，如果订单不存在，返回非SUCCESS让SDK继续通知
-                throw new NotFoundException(`订单不存在: ${paymentData.out_order_no}`);
+                this.logger.warn(`支付回调：订单不存在 orderNo=${paymentData.orderNo}`);
+                throw new NotFoundException(`订单不存在: ${paymentData.orderNo}`);
             }
 
-            // 4. 检查订单状态（判断是否重复发放道具）
+            // 3. 检查订单状态（判断是否重复发放道具）
             if (order.status !== OrderStatus.PENDING) {
                 this.logger.warn(
-                    `支付回调：订单状态不是待支付 orderNo=${paymentData.order_no}, status=${order.status}`,
+                    `支付回调：订单状态不是待支付 orderNo=${paymentData.orderNo}, status=${order.status}`,
                 );
                 // 如果订单已经支付，直接返回SUCCESS（幂等性处理）
                 if (order.status === OrderStatus.PAID) {
-                    this.logger.log(`订单已支付，重复回调: orderNo=${paymentData.order_no}`);
+                    this.logger.log(`订单已支付，重复回调: orderNo=${paymentData.orderNo}`);
                     return "SUCCESS";
                 }
                 throw new BadRequestException(`订单状态不正确: ${order.status}`);
             }
 
-            // 5. 更新订单状态（支付成功）
-            // 注意：游戏发货金额应以通知中的amount金额为准
-            const paymentAmount = parseFloat(paymentData.amount);
-            if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                throw new BadRequestException(`支付金额无效: ${paymentData.amount}`);
-            }
-
+            // 4. 更新订单状态（支付成功）
             order.status = OrderStatus.PAID;
-            order.amount = paymentAmount; // 使用通知中的amount金额
-            order.channelOrderNo = paymentData.order_no; // 保存 SDK 的订单号
+            order.amount = paymentData.amount; // 使用通知中的amount金额
+            order.payTime = paymentData.payTime;
 
-            // 解析支付时间（格式：2017-02-06 14:22:32）
-            if (paymentData.pay_time) {
-                const payTime = new Date(paymentData.pay_time.replace(/-/g, "/"));
-                if (!isNaN(payTime.getTime())) {
-                    order.payTime = payTime;
-                }
+            // 保存支付平台订单号（如果有）
+            if (paymentData.platformOrderNo) {
+                order.channelOrderNo = paymentData.platformOrderNo;
             }
 
             // 更新扩展参数（如果有）
-            if (paymentData.extras_params) {
-                try {
-                    // extras_params 格式：区服ID|@|角色ID|@|商品ID|玩家ip
-                    order.extrasParams = {
-                        ...order.extrasParams,
-                        extras_params: paymentData.extras_params,
-                    };
-                } catch (error) {
-                    this.logger.warn(`解析extras_params失败: ${error.message}`);
-                }
+            if (paymentData.extrasParams) {
+                order.extrasParams = {
+                    ...order.extrasParams,
+                    ...paymentData.extrasParams,
+                };
             }
 
             await this.orderRepository.save(order);
 
             this.logger.log(
-                `订单支付成功: orderNo=${paymentData.order_no}, uid=${paymentData.uid}, amount=${paymentAmount}`,
+                `订单支付成功: orderNo=${paymentData.orderNo}, uid=${paymentData.uid}, amount=${paymentData.amount}`,
             );
 
-            // 6. 根据产品ID执行不同的处理逻辑（发放道具）
+            // 5. 根据产品ID执行不同的处理逻辑（发放道具）
             await this.processOrderByProduct(order);
 
-            // 7. 返回 SUCCESS（注意：只能返回这7个字符，不能带其他符号）
+            // 6. 返回 SUCCESS（注意：只能返回这7个字符，不能带其他符号）
             return "SUCCESS";
         } catch (error) {
             this.logger.error(`支付回调处理失败: ${error.message}`, error.stack);
-            // 根据文档，返回非SUCCESS让SDK继续通知
             throw error;
         }
     }

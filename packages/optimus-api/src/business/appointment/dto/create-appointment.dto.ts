@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 /**
  * 创建预约记录请求 DTO
- * 注意：uid 会自动从 GameWemadeAuthGuard 中获取，无需在请求体中传递
+ * 注意：uid 会自动从客户端用户认证守卫中获取，无需在请求体中传递
  */
 export class CreateAppointmentDto {
     @ApiProperty({ description: "手机号", example: "13800138000" })

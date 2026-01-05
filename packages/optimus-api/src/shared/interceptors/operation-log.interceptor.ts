@@ -32,14 +32,14 @@ export class OperationLogInterceptor implements NestInterceptor {
         // 记录操作前数据
         const beforeData = logOptions.recordParams !== false ? { ...body, ...params, ...query } : undefined;
 
-        // 获取用户ID：优先使用 JWT 认证的 user.id，其次使用 GameWemade 认证的 gameWemadeUser.uid
+        // 获取用户ID：优先使用 JWT 认证的 user.id，其次使用客户端用户认证的 clientUser.userId
         const getUserId = (): string | undefined => {
             if (user?.id) {
                 return user.id;
             }
-            const gameWemadeUser = (request as any).gameWemadeUser;
-            if (gameWemadeUser?.uid) {
-                return gameWemadeUser.uid;
+            const clientUser = (request as any).clientUser;
+            if (clientUser?.userId) {
+                return clientUser.userId;
             }
             return undefined;
         };
@@ -91,9 +91,9 @@ export class OperationLogInterceptor implements NestInterceptor {
                             if (req.user?.id) {
                                 return req.user.id;
                             }
-                            const gameWemadeUser = (req as any).gameWemadeUser;
-                            if (gameWemadeUser?.uid) {
-                                return gameWemadeUser.uid;
+                            const clientUser = (req as any).clientUser;
+                            if (clientUser?.userId) {
+                                return clientUser.userId;
                             }
                             return undefined;
                         })();

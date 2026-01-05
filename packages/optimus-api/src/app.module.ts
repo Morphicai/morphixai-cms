@@ -10,7 +10,6 @@ import configuration from "./shared/config";
 import { SentryTypeOrmLogger } from "./shared/database/sentry-typeorm-logger";
 
 import { SharedModule } from "./shared/shared.module";
-import { GameWemadeModule } from "./shared/libs/gamewemade/gamewemade.module";
 import { OperationLogModule } from "./shared/modules/operation-log.module";
 import { OperationLogInterceptor } from "./shared/interceptors/operation-log.interceptor";
 import { UnifiedAuthGuard } from "./shared/guards/unified-auth.guard";
@@ -182,7 +181,6 @@ import { join } from "path";
         SharedModule,
 
         // 系统基础模块
-        GameWemadeModule,
         OperationLogModule,
         UserModule,
         AuthModule,
