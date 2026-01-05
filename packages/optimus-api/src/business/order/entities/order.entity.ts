@@ -28,8 +28,8 @@ export class OrderEntity {
     @Column({ type: "varchar", length: 100, unique: true, name: "order_no", comment: "订单号" })
     public orderNo: string;
 
-    @ApiProperty({ description: "GameWemade 用户ID" })
-    @Column({ type: "varchar", length: 100, comment: "GameWemade 用户ID" })
+    @ApiProperty({ description: "用户ID" })
+    @Column({ type: "varchar", length: 100, comment: "用户ID" })
     public uid: string;
 
     @ApiProperty({ description: "产品ID" })

@@ -26,7 +26,7 @@ export class AppointmentService {
     /**
      * 创建预约记录
      * @param createDto 创建预约记录DTO
-     * @param uidFromGuard 从 GameWemadeAuthGuard 中获取的 UID
+     * @param uidFromGuard 从客户端用户认证守卫中获取的 UID
      * @returns 创建结果
      */
     async create(createDto: CreateAppointmentDto, uidFromGuard?: string): Promise<ResultData> {

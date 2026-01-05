@@ -15,7 +15,7 @@ import {
     CLIENT_USER_SIGNATURE_HEADER,
     CLIENT_USER_TIMESTAMP_HEADER,
 } from "../decorators/require-client-user-auth.decorator";
-import { generateSign } from "../libs/gamewemade/utils/sign";
+import { generateSign } from "../utils/sign.util";
 import { UserIdentity, UserSource } from "../interfaces/user-identity.interface";
 
 /**

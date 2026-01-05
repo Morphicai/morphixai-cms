@@ -23,7 +23,7 @@ export class AppointmentController {
     constructor(private readonly appointmentService: AppointmentService) {}
 
     @Post("/create")
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "创建预约记录（需要客户端用户认证）" })
     @ApiResult(AppointmentEntity)
     @OperationLog({

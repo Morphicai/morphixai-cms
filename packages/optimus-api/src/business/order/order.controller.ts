@@ -19,7 +19,7 @@ export class OrderController {
 
     @Post("create-with-auth")
     @HttpCode(200)
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "创建订单 - 使用客户端用户认证（从 Headers 获取 uid 和签名）" })
     @ApiBody({ type: CreateOrderWithAuthDto })
     @ApiResult(CreateOrderResponseDto)
@@ -41,23 +41,47 @@ export class OrderController {
         schema: {
             type: "object",
             properties: {
-                nt_data: {
+                orderNo: {
                     type: "string",
-                    description: "加密的支付数据（编码后的密文），使用callbackkey解码后为XML格式",
-                    example: "@171@174@188@127@182@163@148@179...",
+                    description: "订单号（我们的订单号）",
+                    example: "ord_1701345625_829117_a3f9",
+                },
+                uid: {
+                    type: "string",
+                    description: "用户ID",
+                    example: "123456",
+                },
+                amount: {
+                    type: "number",
+                    description: "支付金额（单位：元）",
+                    example: 99.99,
+                },
+                payTime: {
+                    type: "string",
+                    description: "支付时间（ISO 8601 格式）",
+                    example: "2024-01-01T12:00:00Z",
+                },
+                platformOrderNo: {
+                    type: "string",
+                    description: "支付平台订单号（可选）",
+                    example: "PLATFORM_ORDER_123",
                 },
                 sign: {
                     type: "string",
-                    description: "签名（编码后的密文）",
-                    example: "@171@174@188@127@182@163@148@179...",
+                    description: "签名（HMAC-SHA256）",
+                    example: "abc123...",
                 },
-                md5Sign: {
+                timestamp: {
                     type: "string",
-                    description: "MD5签名（编码后的密文），用于验证签名",
-                    example: "@171@174@188@127@182@163@148@179...",
+                    description: "时间戳（秒或毫秒）",
+                    example: "1701345625",
+                },
+                extrasParams: {
+                    type: "object",
+                    description: "扩展参数（可选）",
                 },
             },
-            required: ["nt_data", "sign", "md5Sign"],
+            required: ["orderNo", "uid", "amount", "payTime", "sign", "timestamp"],
         },
     })
     @ApiResponse({
@@ -87,7 +111,7 @@ export class OrderController {
 
     @Get("list")
     @HttpCode(200)
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "查询用户订单列表（从 Headers 获取 uid 和签名）" })
     @ApiQuery({ name: "status", required: false, enum: ["pending", "paid", "confirmed"], description: "订单状态" })
     @ApiQuery({ name: "productId", required: false, description: "产品ID" })
@@ -104,7 +128,7 @@ export class OrderController {
 
     @Post(":orderNo/confirm")
     @HttpCode(200)
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "确认收货（从 Headers 获取 uid 和签名）" })
     @ApiParam({ name: "orderNo", description: "订单号" })
     @ApiResult(ConfirmReceiptResponseDto)

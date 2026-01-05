@@ -6,7 +6,6 @@ import { OrderService } from "./order.service";
 import { AdminOrderService } from "./admin-order.service";
 import { OrderEntity } from "./entities/order.entity";
 import { DecryptService } from "./services/decrypt.service";
-import { GameWemadeTokenValidationService } from "./services/token-validation.service";
 import { PaymentCallbackService } from "./services/payment-callback.service";
 import { ProductHandlerService } from "./services/product-handler.service";
 import { ProductValidatorService } from "./services/product-validator.service";
@@ -27,7 +26,6 @@ import { UserModule } from "../../system/user/user.module";
         OrderService,
         AdminOrderService,
         DecryptService,
-        GameWemadeTokenValidationService,
         PaymentCallbackService,
         ProductHandlerService,
         ProductValidatorService,
@@ -43,7 +41,6 @@ import { UserModule } from "../../system/user/user.module";
     exports: [
         OrderService,
         DecryptService,
-        GameWemadeTokenValidationService,
         PaymentCallbackService,
         ProductHandlerService,
         ProductValidatorService,

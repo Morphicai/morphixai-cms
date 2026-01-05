@@ -28,7 +28,7 @@ export class RewardClaimRecordController {
     constructor(private readonly rewardClaimRecordService: RewardClaimRecordService) {}
 
     @Post()
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "创建奖励发放记录（需要客户端用户认证）" })
     @ApiResult(RewardClaimRecordInfoDto)
     @OperationLog({
@@ -47,7 +47,7 @@ export class RewardClaimRecordController {
     }
 
     @Put("status")
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "更新奖励发放状态（需要客户端用户认证）" })
     @ApiResult(RewardClaimRecordInfoDto)
     @OperationLog({
@@ -66,7 +66,7 @@ export class RewardClaimRecordController {
     }
 
     @Get("my")
-    @ClientUserAuth() // 使用统一的客户端用户认证，支持 GameWemade 签名
+    @ClientUserAuth() // 使用统一的客户端用户认证
     @ApiOperation({ summary: "查询用户奖励发放记录（需要客户端用户认证）" })
     @ApiResult(RewardClaimRecordListResponseDto)
     async getMyRecords(@Query() queryDto: QueryMyRewardClaimRecordDto, @Req() req: Request): Promise<ResultData> {
