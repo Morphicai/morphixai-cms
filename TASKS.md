@@ -12,6 +12,13 @@
 
 进度看 `openspec/changes/platform-closed-loop/tasks.md` 的勾选状态。
 
+## 待拍板
+
+- 权限码漂移：库存 `NewsManagement`/`ActivityManagement`，routes.js 对应节点 code 是
+  `NewsArticles`/`ActivityArticles`——以哪边为准定了才能给这两个模块打 @Perm
+- mysql2 2.2.5 → 3.x 升级：升完 `idleTimeout` 生效，可移除连接池保鲜心跳
+  （pool-keepalive.service.ts 注释里写了）
+
 ## 已明确推迟（闭环前不碰）
 
 - antd v4→v5 弃用 API 清理
