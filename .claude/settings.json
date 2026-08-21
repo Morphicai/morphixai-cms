@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(cd *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(docker compose*)",
+      "Bash(docker ps*)",
+      "Bash(docker logs*)",
+      "Read(*)",
+      "Edit(*)",
+      "Write(packages/**)",
+      "Write(scripts/**)",
+      "Write(CLAUDE.md)",
+      "Write(TASKS.md)",
+      "Glob(*)",
+      "Grep(*)"
+    ],
+    "deny": []
+  }
+}
