@@ -80,6 +80,8 @@ export const COMPONENT_MAP = {
   ExternalTaskReview: React.lazy(() => import('../pages/external-task-review')), // 外部任务审核管理页面
   // 商品管理组件
   ProductManagement: React.lazy(() => import('../pages/product')), // 商品管理页面
+  // 翻译工作台组件
+  TranslationWorkbench: React.lazy(() => import('../pages/translation')), // 翻译工作台(内嵌独立多语言平台)
   // 系统安装组件
   Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
 };
@@ -232,6 +234,20 @@ export const SYSTEM_ROUTES = [
     ],
   },
   // 3. 内容管理
+  // 翻译管理
+  {
+    id: 'translation_management',
+    name: '翻译管理',
+    code: 'TranslationManagement',
+    type: MENU_TYPES.MENU,
+    path: '/translation',
+    component: 'TranslationWorkbench',
+    icon: 'TranslationOutlined',
+    orderNum: 45,
+    parentId: null,
+    exact: true,
+    description: '多语言文案翻译工作台',
+  },
   {
     id: 'content_management',
     name: '内容管理',
@@ -555,6 +571,9 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     public: true, // 标记为公开页面，不需要登录
+    // 安装页只在未初始化时由 App 强制跳转进入,不需要出现在侧边栏——
+    // 已初始化的系统常年挂着"系统安装"只会吓人
+    hidden: true,
     description: '系统安装和初始化页面',
   },
 
@@ -790,6 +809,9 @@ export async function getMenuTree(userPermissions = []) {
   function filterMenus(menus) {
     return menus
       .filter(menu => {
+        // 标记为 hidden 的路由不进侧边栏(路由本身仍可达)
+        if (menu.hidden) return false;
+
         // 如果是超级管理员，显示所有菜单
         if (userPermissions.includes('*')) return true;
 

@@ -29,8 +29,8 @@ import { DocumentModule } from "./system/document/document.module";
 import { ArticleModule } from "./system/article/article.module";
 import { CategoryModule } from "./system/category/category.module";
 import { ArticleVersionModule } from "./system/article-version/article-version.module";
+import { AiModule } from "./system/ai/ai.module";
 import { WSModule } from "./system/ws/ws.module";
-import { CaslDemoModule } from "./system/casl-demo/casl-demo.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
 import { ContactModule } from "./business/contact/contact.module";
@@ -166,6 +166,18 @@ import { join } from "path";
                     retryAttempts: 3, // 减少重试次数到 3 次
                     retryDelay: 3000, // 每次重试间隔 3 秒
                     logger: new SentryTypeOrmLogger(), // 使用自定义 Logger 捕获错误
+                    extra: {
+                        // 容器化 MySQL 走宿主机端口转发（localhost:3306）时，闲置连接会被
+                        // 转发层静默掐断：服务端 processlist 里仍是 Sleep，客户端写入却永远
+                        // 无响应，池里整批死连接，恢复访问后连 SELECT 1 都超时。
+                        // 真正的解法是 DATABASE_HOST 直连容器地址绕开转发层（见 CLAUDE.md
+                        // 启动要点）。下面的参数只是兜底——注意 idleTimeout 要 mysql2>=2.3
+                        // 才认，当前锁的 2.2.5 会静默忽略它，升驱动前别指望它生效。
+                        enableKeepAlive: true,
+                        keepAliveInitialDelay: 10000,
+                        idleTimeout: 60000,
+                        connectionLimit: 10,
+                    },
                     ...dbConfig,
                 } as TypeOrmModuleOptions;
             },
@@ -192,13 +204,13 @@ import { join } from "path";
         ArticleModule,
         CategoryModule,
         ArticleVersionModule,
+        AiModule,
         // 业务功能模块
         ContactModule,
         OrderModule,
         AppointmentModule,
         RewardClaimRecordModule,
         ActivityModule,
-        CaslDemoModule,
         // WebSocket Gateway
         WSModule,
         // 定时任务

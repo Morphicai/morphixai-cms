@@ -67,12 +67,16 @@ const axiosInstance = axios.create({
         
         return transformed;
       } catch (error) {
-        console.error('❌ [Axios Transform] 解析失败:', error);
+        // 上游不是 JSON 时(典型:代理转发失败返回纯文本 504),别把它包装成
+        // "解析失败"——那会把"后端不通"伪装成前端 bug,排障方向直接带偏。
+        // 原文放进 msg,一眼看到真实原因。
+        const raw = typeof dataStr === 'string' ? dataStr.trim() : '';
+        console.error('❌ [Axios Transform] 上游返回非 JSON:', raw.substring(0, 200) || error);
         return {
           success: false,
           code: -100,
           data: null,
-          msg: "请求失败",
+          msg: raw ? raw.substring(0, 300) : '请求失败',
         };
       }
     },

@@ -54,14 +54,30 @@ module.exports = {
       webpackConfig.resolve.extensions.push(".ts", ".tsx");
       // table-engine babel processing removed
       addToBabel("common", webpackConfig);
-      
+
       // 在生产环境中移除 React Refresh 插件
       if (process.env.NODE_ENV === 'production') {
         webpackConfig.plugins = webpackConfig.plugins.filter(
           plugin => plugin.constructor.name !== 'ReactRefreshPlugin'
         );
       }
-      
+
+      // harness-fe 运行时观测：开发期把本后台作为被观测应用接入本机 solo 网关，
+      // 便于用 MCP 工具直接看页面 console/network/异常和源码定位（data-morphix-loc）。
+      // 插件自身在生产构建零注入，这里再加一道环境判断，HARNESS_FE=0 可显式关掉。
+      if (process.env.NODE_ENV !== 'production' && process.env.HARNESS_FE !== '0') {
+        const { harnessFE } = require('@harness-fe/webpack');
+        webpackConfig.plugins.push(
+          harnessFE({
+            projectId: 'optimus-admin',
+            // solo 网关（Open 模式：仅回环、免令牌），固定端口 47951，
+            // 与团队网关 47950 隔离，harness CLI/MCP 会自动拉起并复用
+            mcpUrl: 'ws://127.0.0.1:47951/ws',
+            overlay: true,
+          })
+        );
+      }
+
       return webpackConfig;
     },
   },

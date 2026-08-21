@@ -13,9 +13,11 @@ import { UpdateDocumentDto } from "./dto/update-document.dto";
 import { FindAllDocumentDto } from "./dto/find-all-document.dto";
 
 import { DocumentEntity } from "./entities/document.entity";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("文案中心")
 @ApiBearerAuth()
+@Perm("DocumentManagement")
 @Controller("document")
 export class DocumentController {
     constructor(private readonly documentService: DocumentService) {}

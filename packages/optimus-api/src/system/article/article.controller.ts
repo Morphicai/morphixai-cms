@@ -9,8 +9,10 @@ import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { ResultData } from "../../shared/utils/result";
 import { ArticleOperationLogService } from "./services/article-operation-log.service";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("文章管理")
+@Perm("ContentManagement")
 @Controller("article")
 @UseGuards(JwtAuthGuard)
 export class ArticleController {

@@ -98,7 +98,11 @@ const Routers = ({ shouldUpdate }) => {
         setIsCheckingSetup(true);
         const response = await setupApi.getStatus();
         if (response.success && response.data) {
-          const initialized = response.data.isInitialized;
+          // 数据库检查失败时后端也会返回 isInitialized:false，那是"暂时查不到库"，
+          // 不是"没装过"。这种情况绝不能把人押去安装页——按已初始化处理，
+          // 让具体页面自己暴露连接错误。
+          const dbConnected = response.data.databaseStatus?.connected !== false;
+          const initialized = response.data.isInitialized || !dbConnected;
           setIsInitialized(initialized);
 
           // 如果未初始化且当前不在 setup 页面，自动跳转

@@ -16,7 +16,7 @@ import { pathToRegexp } from 'path-to-regexp';
 import { AuthMode } from '../enums/auth-mode.enum';
 import { AUTH_MODE_KEY } from '../decorators/auth-mode.decorator';
 import { ALLOW_ANONYMOUS } from '../decorators/allow-anonymous.decorator';
-import { ALLOW_NO_PERM } from '../decorators/perm.decorator';
+import { ALLOW_NO_PERM, PERM_CODE_KEY } from '../decorators/perm.decorator';
 import { SUPER_ADMIN_KEY } from '../decorators/super-admin.decorator';
 import { CHECK_POLICIES_KEY } from '../decorators/use-ability.decorator';
 import { UserType } from '../enums/user.enum';
@@ -242,8 +242,25 @@ export class UnifiedAuthGuard implements CanActivate {
       return;
     }
 
-    // 这里可以扩展更多的角色权限检查逻辑
-    // 例如检查用户是否有访问当前路由的权限
+    // 路由级权限码校验：只对挂了 @Perm 的接口生效，方法级声明优先于类级。
+    // 权限码与前端菜单显隐同源（op_sys_role_menu.permission_code），user.perms
+    // 在 validateUser 时已查好，这里不再查库。没挂 @Perm 的接口维持原行为——
+    // 全面"默认拒绝"要等长尾接口梳理完，现在一刀切只会误伤没排查过的接口。
+    const requiredPerm = this.reflector.getAllAndOverride<string>(PERM_CODE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!requiredPerm) {
+      return;
+    }
+    const perms: string[] = Array.isArray(user.perms) ? user.perms : [];
+    if (!perms.includes(requiredPerm)) {
+      // 上线初期误配权限码全靠这行日志定位，别删
+      this.logger.warn(
+        `权限拒绝: user=${user.id}(${user.account}) route=${request.method} ${request.url} 需要=${requiredPerm}`,
+      );
+      throw new ForbiddenException('无权访问该接口');
+    }
   }
 
   /**
