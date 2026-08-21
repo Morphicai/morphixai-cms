@@ -30,7 +30,6 @@ import { ArticleModule } from "./system/article/article.module";
 import { CategoryModule } from "./system/category/category.module";
 import { ArticleVersionModule } from "./system/article-version/article-version.module";
 import { WSModule } from "./system/ws/ws.module";
-import { CaslDemoModule } from "./system/casl-demo/casl-demo.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
 import { ContactModule } from "./business/contact/contact.module";
@@ -210,7 +209,6 @@ import { join } from "path";
         AppointmentModule,
         RewardClaimRecordModule,
         ActivityModule,
-        CaslDemoModule,
         // WebSocket Gateway
         WSModule,
         // 定时任务

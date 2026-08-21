@@ -38,9 +38,11 @@ import { RetryHandler } from "./utils/error-handler";
 import { TemporaryUrlService } from "./services/temporary-url.service";
 import { StoragePathUtils } from "./utils/storage-path.utils";
 import { OssProxyUrlUtils } from "./utils/oss-proxy-url.utils";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("文件存储相关")
 @ApiBearerAuth()
+@Perm("Files")
 @Controller("files")
 @ApiExtraModels(ResultData, OssEntity)
 @UseFilters(StorageExceptionFilter)

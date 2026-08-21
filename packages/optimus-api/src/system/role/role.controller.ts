@@ -13,10 +13,12 @@ import { UpdateRoleDto } from "./dto/update-role.dto";
 import { CreateRoleLeadersDto } from "./dto/create-role-leaders.dto";
 import { RemoveRoleLeadersDto } from "./dto/remove-role-leaders.dto";
 import { FindRoleListDto } from "./dto/find-role-list.dto";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("角色模块")
 @ApiExtraModels(RoleEntity)
 @ApiBearerAuth()
+@Perm("PermRoles")
 @Controller("role")
 @UseInterceptors(OperationLogInterceptor)
 export class RoleController {

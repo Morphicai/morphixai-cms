@@ -3,8 +3,10 @@ import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { PermService } from "./perm.service";
 import { ResultData } from "../../shared/utils/result";
 import { AllowNoPerm } from "../../shared/decorators/perm.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("权限管理")
+@Perm("PermissionManagement")
 @Controller("perm")
 export class PermController {
     constructor(private readonly permService: PermService) {}

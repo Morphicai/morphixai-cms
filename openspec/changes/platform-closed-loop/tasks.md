@@ -1,19 +1,19 @@
 ## 1. 固化现状（前置，独立于新功能）
 
-- [ ] 1.1 现有 6 处未提交改动分三个 commit 提交：观测集成（craco.config.js + package.json + pnpm-lock）、数据库连接稳定性修复（app.module.ts）、初始化状态误判修复（App.js）
-- [ ] 1.2 启动要点写入仓库文档：数据库经容器域名直连（.env 不入库故必须成文）、common 包需先构建、包管理器必须用 package.json 锁定版本、开发环境验证码为直通
-- [ ] 1.3 TASKS.md 重写为本迭代计划，清掉 3 月过时内容
+- [x] 1.1 现有 6 处未提交改动分三个 commit 提交：观测集成（craco.config.js + package.json + pnpm-lock）、数据库连接稳定性修复（app.module.ts）、初始化状态误判修复（App.js）
+- [x] 1.2 启动要点写入仓库文档：数据库经容器域名直连（.env 不入库故必须成文）、common 包需先构建、包管理器必须用 package.json 锁定版本、开发环境验证码为直通
+- [x] 1.3 TASKS.md 重写为本迭代计划，清掉 3 月过时内容
 
 ## 2. 路由级权限（route-permission）
 
-- [ ] 2.1 新增 `@Perm(<码>)` 装饰器（shared/decorators/，setMetadata 方法级优先）
-- [ ] 2.2 `UnifiedAuthGuard.validateRolePermissions` 填空：读装饰器元数据 → 无标注放行 → 查 `findUserPermissionCodes` 比对 → 不含则 403；拒绝时 warn 日志（userId/路由/所需码）
-- [ ] 2.3 导出 role 1/2/3 当前权限码清单，人工核对与真实使用一致后再打标
-- [ ] 2.4 存量控制器按 19 个权限码打标（article/category → ContentManagement，user/role/perm → PermissionManagement 系列，其余对照菜单码）
-- [ ] 2.5 收紧双前缀路由：`/api/api/...` 返回 404
-- [ ] 2.6 删除 casl-demo 模块与 shared/examples 控制器，CaslAbilityFactory 保留不注册
-- [ ] 2.7 验收：仅持 Dashboard 码的账号 curl 文章接口得 403、持码账号得 200、超管全通、无标注接口行为不变；补一个守卫单测覆盖这四种情形
-- [ ] 2.8 输出无 @Perm 标注路由清单脚本（下一轮收紧的输入，不在本轮处理）
+- [x] 2.1 新增 `@Perm(<码>)` 装饰器（shared/decorators/，setMetadata 方法级优先）
+- [x] 2.2 `UnifiedAuthGuard.validateRolePermissions` 填空：读装饰器元数据 → 无标注放行 → 查 `findUserPermissionCodes` 比对 → 不含则 403；拒绝时 warn 日志（userId/路由/所需码）
+- [x] 2.3 导出 role 1/2/3 当前权限码清单，人工核对与真实使用一致后再打标（发现漂移：库存 NewsManagement/ActivityManagement，routes.js 对应节点 code 为 NewsArticles/ActivityArticles——这两个模块暂缓打标，需决定以哪边为准）
+- [x] 2.4 存量控制器按 19 个权限码打标（article/category → ContentManagement，user/role/perm → PermissionManagement 系列，其余对照菜单码）
+- [x] 2.5 收紧双前缀路由：实测后端本就 404，"宽容"是 UI 代理层改写的假象；真正的问题是 dashboard 两处调用把 /api 写进路径（也是工作台统计一直为空的成因），已改为相对路径
+- [x] 2.6 删除 casl-demo 模块与 shared/examples 控制器，CaslAbilityFactory 保留不注册
+- [x] 2.7 验收：仅持 Dashboard 码的账号 curl 文章接口得 403、持码账号得 200、超管全通、无标注接口行为不变；补一个守卫单测覆盖这四种情形
+- [x] 2.8 输出无 @Perm 标注路由清单脚本（下一轮收紧的输入，不在本轮处理）
 
 ## 3. 智能辅助写作（ai-writing-assist）
 

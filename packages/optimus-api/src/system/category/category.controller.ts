@@ -18,8 +18,10 @@ import { CreateCategoryDto, UpdateCategoryDto, FindAllCategoryDto } from "./dto"
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { ResultData } from "../../shared/utils/result";
 import { CategoryEntity } from "./entities/category.entity";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("分类管理")
+@Perm("ContentManagement")
 @Controller("category")
 @UseGuards(JwtAuthGuard)
 export class CategoryController {

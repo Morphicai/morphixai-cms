@@ -6,8 +6,10 @@ import { UpdateVersionDto } from "./dto/update-version.dto";
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { ResultData } from "../../shared/utils/result";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("文章版本管理")
+@Perm("ContentManagement")
 @Controller("article/:articleId/version")
 @UseGuards(JwtAuthGuard)
 export class ArticleVersionController {

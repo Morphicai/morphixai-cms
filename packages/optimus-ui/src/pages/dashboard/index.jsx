@@ -29,7 +29,7 @@ const Dashboard = () => {
         // 获取用户统计数据
         const userResponse = await request({
           type: 'get',
-          url: '/api/user/list',
+          url: '/user/list',
           data: { page: 1, pageSize: 1 }, // 只获取总数
           showTip: false // 不显示错误提示，静默处理
         });
@@ -37,7 +37,7 @@ const Dashboard = () => {
         // 获取角色统计数据
         const roleResponse = await request({
           type: 'get',
-          url: '/api/role/list',
+          url: '/role/list',
           data: { page: 1, pageSize: 1 }, // 只获取总数
           showTip: false // 不显示错误提示，静默处理
         });

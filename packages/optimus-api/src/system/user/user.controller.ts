@@ -27,10 +27,12 @@ import { FindUserListDto } from "./dto/find-user-list.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateOrUpdateRoleUsersDto } from "./dto/createupdate-role-users.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("用户账号相关")
 @ApiBearerAuth()
 @ApiExtraModels(ResultData, UserEntity)
+@Perm("PermUsers")
 @Controller("user")
 @UseInterceptors(OperationLogInterceptor)
 export class UserController {
