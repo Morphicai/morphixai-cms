@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Layout, Button, Space, Modal, Spin, message } from 'antd';
 import { SaveOutlined, SendOutlined, ArrowLeftOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import ArticleForm from '../components/ArticleForm';
+import AiAssistButton from '../components/AiAssistButton';
 import VersionPanel from '../components/VersionPanel';
 import useArticleEditor from '../hooks/useArticleEditor';
 import useNavigateBack from '../../../shared/hooks/useNavigateBack';
@@ -178,6 +179,7 @@ const ArticleEditor = () => {
           {/* 底部操作按钮 */}
           <div className="article-editor-actions">
             <Space size="middle">
+              <AiAssistButton article={article} onChange={handleFieldChange} />
               <Button
                 icon={<SaveOutlined />}
                 onClick={handleSave}

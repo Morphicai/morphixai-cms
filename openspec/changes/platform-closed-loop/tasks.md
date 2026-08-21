@@ -17,9 +17,9 @@
 
 ## 3. 智能辅助写作（ai-writing-assist）
 
-- [ ] 3.1 新增 system/ai 模块：AiService（原生 fetch 调 OpenAI 兼容 chat/completions，baseUrl/model/apiKey 全走环境变量，缺配置返回明确错误）
-- [ ] 3.2 `POST /api/ai/assist`（动作 summary/polish/continue + 原文），挂 `@Perm('ContentManagement')`，按用户内存限频每分钟 6 次超限 429
-- [ ] 3.3 文章编辑器加「智能辅助」入口：三个动作、结果预览、用户采纳才写入正文
+- [x] 3.1 新增 system/ai 模块：AiService（原生 fetch 调 OpenAI 兼容 chat/completions，baseUrl/model/apiKey 全走环境变量，缺配置返回明确错误）
+- [x] 3.2 `POST /api/ai/assist`（动作 summary/polish/continue + 原文），挂 `@Perm('ContentManagement')`，按用户内存限频每分钟 6 次超限 429
+- [x] 3.3 文章编辑器加「智能辅助」入口：三个动作、结果预览、用户采纳才写入正文
 - [ ] 3.4 验收：真实生成一篇摘要并保存为文章；无 key 环境返回配置提示；限频生效
 
 ## 4. 翻译工作台入口（translation-workbench-entry）

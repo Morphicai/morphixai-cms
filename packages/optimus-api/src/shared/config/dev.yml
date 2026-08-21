@@ -76,3 +76,9 @@ backup:
     encryptionAlgorithm: "aes-256-cbc"
     # 默认加密密钥（生产环境应通过环境变量 BACKUP_ENCRYPTION_SECRET 覆盖）
     defaultEncryptionSecret: "default-backup-encryption-secret-key-change-in-production"
+
+# 智能辅助(文章模块)。密钥只从环境变量来,这个文件里永远不要出现真实 key
+ai:
+    baseUrl: ${AI_BASE_URL:https://llm.onerouter.pro/v1}
+    model: ${AI_MODEL:google/gemini-3.1-flash-lite}
+    apiKey: ${ONEROUTER_API_KEY:}

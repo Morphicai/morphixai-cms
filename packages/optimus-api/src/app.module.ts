@@ -29,6 +29,7 @@ import { DocumentModule } from "./system/document/document.module";
 import { ArticleModule } from "./system/article/article.module";
 import { CategoryModule } from "./system/category/category.module";
 import { ArticleVersionModule } from "./system/article-version/article-version.module";
+import { AiModule } from "./system/ai/ai.module";
 import { WSModule } from "./system/ws/ws.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
@@ -203,6 +204,7 @@ import { join } from "path";
         ArticleModule,
         CategoryModule,
         ArticleVersionModule,
+        AiModule,
         // 业务功能模块
         ContactModule,
         OrderModule,
