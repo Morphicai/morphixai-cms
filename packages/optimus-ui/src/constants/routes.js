@@ -571,6 +571,9 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     public: true, // 标记为公开页面，不需要登录
+    // 安装页只在未初始化时由 App 强制跳转进入,不需要出现在侧边栏——
+    // 已初始化的系统常年挂着"系统安装"只会吓人
+    hidden: true,
     description: '系统安装和初始化页面',
   },
 
@@ -806,6 +809,9 @@ export async function getMenuTree(userPermissions = []) {
   function filterMenus(menus) {
     return menus
       .filter(menu => {
+        // 标记为 hidden 的路由不进侧边栏(路由本身仍可达)
+        if (menu.hidden) return false;
+
         // 如果是超级管理员，显示所有菜单
         if (userPermissions.includes('*')) return true;
 
