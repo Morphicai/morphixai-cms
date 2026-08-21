@@ -82,6 +82,9 @@ export const COMPONENT_MAP = {
   ProductManagement: React.lazy(() => import('../pages/product')), // 商品管理页面
   // 翻译工作台组件
   TranslationWorkbench: React.lazy(() => import('../pages/translation')), // 翻译工作台(内嵌独立多语言平台)
+  // 动态表单组件
+  FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
+  FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
   // 系统安装组件
   Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
 };
@@ -234,6 +237,35 @@ export const SYSTEM_ROUTES = [
     ],
   },
   // 3. 内容管理
+  // 表单管理(动态表单:定义/数据/智能生成)
+  {
+    id: 'form_management',
+    name: '表单管理',
+    code: 'FormManagement',
+    type: MENU_TYPES.MENU,
+    path: '/form',
+    component: 'FormManagement',
+    icon: 'FormOutlined',
+    orderNum: 44,
+    parentId: null,
+    exact: true,
+    description: '动态表单定义与数据收集',
+  },
+  // 公开填报页:免登录,不进菜单
+  {
+    id: 'form_fill',
+    name: '表单填报',
+    code: 'FormFill',
+    type: MENU_TYPES.MENU,
+    path: '/f/:slug',
+    component: 'FormFill',
+    orderNum: 999,
+    parentId: null,
+    exact: true,
+    public: true,
+    hidden: true,
+    description: '动态表单公开填报页',
+  },
   // 翻译管理
   {
     id: 'translation_management',

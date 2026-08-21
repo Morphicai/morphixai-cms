@@ -2,7 +2,16 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：platform-closed-loop（2026-08-21 启动）
+## 当前迭代：dynamic-form-foundation（2026-08-21 启动，同日完成开发验收）
+
+无代码方向第一块地基——动态表单：schema 定义 → 渲染 → 免登录填报 → 数据落库，
+全程零代码改动；智能生成 schema 草稿可用。提案与任务见
+`openspec/changes/dynamic-form-foundation/`。
+
+**遗留项（上公网前必须做）**：公开填报接口目前只有 IP 限频 + 体积上限两道闸，
+暴露到公网前要加验证码或一次性 token。
+
+## 上一迭代：platform-closed-loop（2026-08-21 完成，已合 main）
 
 平台闭环三件事，完整提案与任务清单见 `openspec/changes/platform-closed-loop/`：
 
