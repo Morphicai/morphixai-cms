@@ -318,8 +318,8 @@ INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUE
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (3, 1, 'PermUsers');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (4, 1, 'PermRoles');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (5, 1, 'ContentManagement');
-INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (6, 1, 'NewsManagement');
-INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (7, 1, 'ActivityManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (6, 1, 'NewsArticles');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (7, 1, 'ActivityArticles');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (8, 1, 'DocumentManagement');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (9, 1, 'Files');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (10, 1, 'UserProfile');
@@ -327,8 +327,8 @@ INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUE
 -- 运营角色拥有内容管理权限
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (11, 2, 'Dashboard');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (12, 2, 'ContentManagement');
-INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (13, 2, 'NewsManagement');
-INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (14, 2, 'ActivityManagement');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (13, 2, 'NewsArticles');
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (14, 2, 'ActivityArticles');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (15, 2, 'DocumentManagement');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (16, 2, 'Files');
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (17, 2, 'UserProfile');
