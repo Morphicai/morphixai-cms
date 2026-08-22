@@ -172,12 +172,12 @@ import { join } from "path";
                         // 转发层静默掐断：服务端 processlist 里仍是 Sleep，客户端写入却永远
                         // 无响应，池里整批死连接，恢复访问后连 SELECT 1 都超时。
                         // 双保险：DATABASE_HOST 直连容器地址绕开转发层（见 CLAUDE.md
-                        // 启动要点）+ idleTimeout 让闲置连接活不过 60s，死连接来不及积累。
-                        // maxIdle 必须小于 connectionLimit，否则 mysql2 不启动闲置回收。
+                        // 启动要点）+ PoolKeepaliveService 池医生兜底。
+                        // 别配 maxIdle/idleTimeout 开 mysql2 自带的闲置回收——3.23.4 实测
+                        // 满池并发后回收器会把池搞挂（回收不完整,之后 checkout 永久排队),
+                        // 复现与结论见 pool-keepalive.service.ts 头注释。
                         enableKeepAlive: true,
                         keepAliveInitialDelay: 10000,
-                        idleTimeout: 60000,
-                        maxIdle: 2,
                         connectionLimit: 10,
                     },
                     ...dbConfig,
