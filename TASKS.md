@@ -23,10 +23,7 @@
 
 ## 待拍板
 
-- 权限码漂移：库存 `NewsManagement`/`ActivityManagement`，routes.js 对应节点 code 是
-  `NewsArticles`/`ActivityArticles`——以哪边为准定了才能给这两个模块打 @Perm
-- mysql2 2.2.5 → 3.x 升级：升完 `idleTimeout` 生效，可移除连接池保鲜心跳
-  （pool-keepalive.service.ts 注释里写了）
+（暂无——权限码漂移与 mysql2 升级已于 2026-08-22 处理完毕，见 Completed）
 
 ## 已明确推迟（闭环前不碰）
 
@@ -38,6 +35,8 @@
 
 ## Completed
 
+- [x] 权限码漂移修复（以 routes.js 为准，NewsArticles/ActivityArticles，seed SQL + 存量库同步改名）
+- [x] mysql2 2.2.5 → 3.23.4（idleTimeout+maxIdle 生效，闲置连接 60s 内回收，池医生已删除）
 - [x] harness-fe 运行时观测集成（optimus-ui，projectId=optimus-admin）
 - [x] 数据库连接稳定性（容器域名直连，见 CLAUDE.md 启动要点 3）
 - [x] 数据库失联不再误跳安装页（App.js）

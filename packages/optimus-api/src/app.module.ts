@@ -171,12 +171,13 @@ import { join } from "path";
                         // 容器化 MySQL 走宿主机端口转发（localhost:3306）时，闲置连接会被
                         // 转发层静默掐断：服务端 processlist 里仍是 Sleep，客户端写入却永远
                         // 无响应，池里整批死连接，恢复访问后连 SELECT 1 都超时。
-                        // 真正的解法是 DATABASE_HOST 直连容器地址绕开转发层（见 CLAUDE.md
-                        // 启动要点）。下面的参数只是兜底——注意 idleTimeout 要 mysql2>=2.3
-                        // 才认，当前锁的 2.2.5 会静默忽略它，升驱动前别指望它生效。
+                        // 双保险：DATABASE_HOST 直连容器地址绕开转发层（见 CLAUDE.md
+                        // 启动要点）+ idleTimeout 让闲置连接活不过 60s，死连接来不及积累。
+                        // maxIdle 必须小于 connectionLimit，否则 mysql2 不启动闲置回收。
                         enableKeepAlive: true,
                         keepAliveInitialDelay: 10000,
                         idleTimeout: 60000,
+                        maxIdle: 2,
                         connectionLimit: 10,
                     },
                     ...dbConfig,
