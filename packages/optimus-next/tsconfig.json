@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "@harness-fe/react-jsx",
     "incremental": true,
     "plugins": [
       {

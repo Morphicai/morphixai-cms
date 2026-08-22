@@ -23,6 +23,10 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@harness-fe/next": "^4.0.0",
+    "@harness-fe/node-runtime": "^4.5.1",
+    "@harness-fe/react-jsx": "^4.0.0",
+    "@harness-fe/runtime": "^4.5.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

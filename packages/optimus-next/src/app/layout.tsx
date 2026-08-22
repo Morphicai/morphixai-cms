@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { HarnessScript } from '@harness-fe/next';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { AuthProvider } from '../components/auth/AuthProvider';
@@ -103,6 +104,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col bg-background text-foreground">
+        {/* harness-fe 运行时观测：C 端门户接入本机 solo daemon(47729,与
+            optimus-ui 同一个,agent 侧才能在一处看到两个前端)。mcpUrl 的 /ws
+            路径必须显式写——组件默认值不带路径,与 daemon 的 WS 端点对不上。
+            Server Component 同时注册 node-runtime,SSR 与浏览器事件落同一
+            session 时间线。生产构建下自动 render null,零注入。 */}
+        <HarnessScript
+          projectId="optimus-portal"
+          displayName="Optimus C端门户"
+          mcpUrl="ws://127.0.0.1:47729/ws"
+        />
         <ThemeProvider defaultTheme="auto" storageKey="optimus-theme">
           <AuthProvider>
             <LayoutClient>

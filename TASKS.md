@@ -50,3 +50,10 @@ DynamicContent 接通字典公开集合（首页文案后台可配已实测）�
 - [x] harness-fe 运行时观测集成（optimus-ui，projectId=optimus-admin）
 - [x] 数据库连接稳定性（容器域名直连，见 CLAUDE.md 启动要点 3）
 - [x] 数据库失联不再误跳安装页（App.js）
+
+## harness-fe 上游待修（本项目已用显式配置绕过）
+
+- `@harness-fe/react-jsx@4.0.0` 的 .d.ts 漏导出 JSX namespace，jsxImportSource
+  下 TS 全量报错——本项目用 `src/types/harness-react-jsx.d.ts` augmentation 兜住
+- webpack/next 插件注入的默认 mcpUrl 不带 `/ws` 路径，与 daemon WS 端点对不上，
+  不显式配 mcpUrl 就静默连不上（runtime-client 自己的默认值反而是对的）

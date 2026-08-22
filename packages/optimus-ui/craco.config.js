@@ -62,7 +62,7 @@ module.exports = {
         );
       }
 
-      // harness-fe 运行时观测：开发期把本后台作为被观测应用接入本机 solo 网关，
+      // harness-fe 运行时观测：开发期把本后台作为被观测应用接入本机 solo daemon，
       // 便于用 MCP 工具直接看页面 console/network/异常和源码定位（data-morphix-loc）。
       // 插件自身在生产构建零注入，这里再加一道环境判断，HARNESS_FE=0 可显式关掉。
       if (process.env.NODE_ENV !== 'production' && process.env.HARNESS_FE !== '0') {
@@ -70,9 +70,10 @@ module.exports = {
         webpackConfig.plugins.push(
           harnessFE({
             projectId: 'optimus-admin',
-            // solo 网关（Open 模式：仅回环、免令牌），固定端口 47951，
-            // 与团队网关 47950 隔离，harness CLI/MCP 会自动拉起并复用
-            mcpUrl: 'ws://127.0.0.1:47951/ws',
+            // 端口 47729 是 harness solo daemon 的默认端口；/ws 路径必须显式带上——
+            // 插件注入的默认 mcpUrl 不带路径，而 daemon 的 WS 端点在 /ws，
+            // 裸端口握手会静默挂起（插件与 runtime 两包的默认值不一致）
+            mcpUrl: 'ws://127.0.0.1:47729/ws',
             overlay: true,
           })
         );

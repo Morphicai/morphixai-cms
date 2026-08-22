@@ -371,6 +371,18 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
     devDependencies:
+      '@harness-fe/next':
+        specifier: ^4.0.0
+        version: 4.0.0(@harness-fe/node-runtime@4.5.1)(@harness-fe/runtime@4.5.2)(next@16.1.0)(react@19.2.3)
+      '@harness-fe/node-runtime':
+        specifier: ^4.5.1
+        version: 4.5.1
+      '@harness-fe/react-jsx':
+        specifier: ^4.0.0
+        version: 4.0.0(react@19.2.3)
+      '@harness-fe/runtime':
+        specifier: ^4.5.2
+        version: 4.5.2
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.18
@@ -3916,10 +3928,46 @@ packages:
     dev: true
     optional: true
 
+  /@harness-fe/next@4.0.0(@harness-fe/node-runtime@4.5.1)(@harness-fe/runtime@4.5.2)(next@16.1.0)(react@19.2.3):
+    resolution: {integrity: sha512-9EFtQzYFxYFmIwYhPKms4yU0d3pEQPdj2kA2b+D0EKVihLFOwW3GKpF/rnpkzBqcpLwCJcZqPMWdoYVTHjWJjg==}
+    peerDependencies:
+      '@harness-fe/node-runtime': ^4.0.0
+      '@harness-fe/runtime': ^4.0.0
+      next: ^13.0.0 || ^14.0.0 || ^15.0.0
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@harness-fe/node-runtime':
+        optional: true
+    dependencies:
+      '@harness-fe/node-runtime': 4.5.1
+      '@harness-fe/runtime': 4.5.2
+      next: 16.1.0(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
+      react: 19.2.3
+    dev: true
+
+  /@harness-fe/node-runtime@4.5.1:
+    resolution: {integrity: sha512-q4lmaY7KLx3OuWeMaHlCvWqJ3BcRbaaTRHqUqq12pN5XZC/YmUw3Bjw3qaluUb4w4c6Koul+PGoQBv3gNlUDxg==}
+    peerDependencies:
+      ws: ^8.21.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+    dependencies:
+      '@harness-fe/protocol': 4.5.1
+    dev: true
+
   /@harness-fe/protocol@4.5.1:
     resolution: {integrity: sha512-FAPkssC/joM715lnox+8/4ZV0it/oJ0QCtN+k7esUgNWbJzJYlD/Z9NWBIo7szpgfZdW6PybmyTtbT0LInYn3Q==}
     dependencies:
       zod: 4.4.3
+    dev: true
+
+  /@harness-fe/react-jsx@4.0.0(react@19.2.3):
+    resolution: {integrity: sha512-lGneRxDf7GU5fwEH7on3fBjomzKHzVkv+QZYHSDbeujDmVrJpDq+bZP3qk4hitNiKcufZ8dmSi98coNy2PG0pg==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    dependencies:
+      react: 19.2.3
     dev: true
 
   /@harness-fe/runtime@4.5.2:
@@ -4033,7 +4081,6 @@ packages:
     resolution: {integrity: sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw==}
     engines: {node: '>=18'}
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-darwin-arm64@0.34.5:
@@ -4044,7 +4091,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-darwin-x64@0.34.5:
@@ -4055,7 +4101,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-darwin-x64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-libvips-darwin-arm64@1.2.4:
@@ -4063,7 +4108,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-darwin-x64@1.2.4:
@@ -4071,7 +4115,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-arm64@1.2.4:
@@ -4080,7 +4123,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-arm@1.2.4:
@@ -4089,7 +4131,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-ppc64@1.2.4:
@@ -4098,7 +4139,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-riscv64@1.2.4:
@@ -4107,7 +4147,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-s390x@1.2.4:
@@ -4116,7 +4155,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linux-x64@1.2.4:
@@ -4125,7 +4163,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linuxmusl-arm64@1.2.4:
@@ -4134,7 +4171,6 @@ packages:
     os: [linux]
     libc: [musl]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-libvips-linuxmusl-x64@1.2.4:
@@ -4143,7 +4179,6 @@ packages:
     os: [linux]
     libc: [musl]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-linux-arm64@0.34.5:
@@ -4155,7 +4190,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-arm64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linux-arm@0.34.5:
@@ -4167,7 +4201,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-arm': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linux-ppc64@0.34.5:
@@ -4179,7 +4212,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-ppc64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linux-riscv64@0.34.5:
@@ -4191,7 +4223,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-riscv64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linux-s390x@0.34.5:
@@ -4203,7 +4234,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-s390x': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linux-x64@0.34.5:
@@ -4215,7 +4245,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linux-x64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linuxmusl-arm64@0.34.5:
@@ -4227,7 +4256,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linuxmusl-arm64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-linuxmusl-x64@0.34.5:
@@ -4239,7 +4267,6 @@ packages:
     requiresBuild: true
     optionalDependencies:
       '@img/sharp-libvips-linuxmusl-x64': 1.2.4
-    dev: false
     optional: true
 
   /@img/sharp-wasm32@0.34.5:
@@ -4249,7 +4276,6 @@ packages:
     requiresBuild: true
     dependencies:
       '@emnapi/runtime': 1.7.1
-    dev: false
     optional: true
 
   /@img/sharp-win32-arm64@0.34.5:
@@ -4258,7 +4284,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-win32-ia32@0.34.5:
@@ -4267,7 +4292,6 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@img/sharp-win32-x64@0.34.5:
@@ -4276,7 +4300,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@infisical/sdk@4.0.6(@aws-sdk/client-sso-oidc@3.940.0):
@@ -5394,7 +5417,6 @@ packages:
 
   /@next/env@16.1.0:
     resolution: {integrity: sha512-Dd23XQeFHmhf3KBW76leYVkejHlCdB7erakC2At2apL1N08Bm+dLYNP+nNHh0tzUXfPQcNcXiQyacw0PG4Fcpw==}
-    dev: false
 
   /@next/eslint-plugin-next@16.1.0:
     resolution: {integrity: sha512-sooC/k0LCF4/jLXYHpgfzJot04lZQqsttn8XJpTguP8N3GhqXN3wSkh68no2OcZzS/qeGwKDFTqhZ8WofdXmmQ==}
@@ -5408,7 +5430,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-darwin-x64@16.1.0:
@@ -5417,7 +5438,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-linux-arm64-gnu@16.1.0:
@@ -5427,7 +5447,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-linux-arm64-musl@16.1.0:
@@ -5437,7 +5456,6 @@ packages:
     os: [linux]
     libc: [musl]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-linux-x64-gnu@16.1.0:
@@ -5447,7 +5465,6 @@ packages:
     os: [linux]
     libc: [glibc]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-linux-x64-musl@16.1.0:
@@ -5457,7 +5474,6 @@ packages:
     os: [linux]
     libc: [musl]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-win32-arm64-msvc@16.1.0:
@@ -5466,7 +5482,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@next/swc-win32-x64-msvc@16.1.0:
@@ -5475,7 +5490,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1:
@@ -7494,7 +7508,6 @@ packages:
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
     dependencies:
       tslib: 2.8.1
-    dev: false
 
   /@tailwindcss/node@4.1.18:
     resolution: {integrity: sha512-DoR7U1P7iYhw16qJ49fgXUlry1t4CpXeErJHnQ44JgTSKMaZUdf17cfn5mHchfJ4KRBZRFA/Coo+MUF5+gOaCQ==}
@@ -10348,7 +10361,6 @@ packages:
 
   /client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
-    dev: false
 
   /clipboardy@2.3.0:
     resolution: {integrity: sha512-mKhiIL2DrQIsuXMgBgnfEHOZOryC7kY7YO//TN6c63wlEm3NG5tz+YgY5rVi29KCmq/QQjKYvM7a19+MDOTHOQ==}
@@ -16084,7 +16096,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
-    dev: false
 
   /nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -17555,7 +17566,6 @@ packages:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
-    dev: false
 
   /postcss@8.5.26:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
@@ -18489,7 +18499,6 @@ packages:
     dependencies:
       react: 19.2.3
       scheduler: 0.27.0
-    dev: false
 
   /react-error-overlay@6.1.0:
     resolution: {integrity: sha512-SN/U6Ytxf1QGkw/9ve5Y+NxBbZM6Ht95tuXNMKs8EJyFa/Vy/+Co3stop3KBHARfn/giv+Lj1uUnTfOJ3moFEQ==}
@@ -18653,7 +18662,6 @@ packages:
   /react@19.2.3:
     resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /reactcss@1.2.3(react@18.3.1):
     resolution: {integrity: sha512-KiwVUcFu1RErkI97ywr8nvx8dNOpT03rbnma0SSalTYjkrPYaEajR4a/MRt6DZ46K6arDRbWMNHF+xH7G7n/8A==}
@@ -19202,7 +19210,6 @@ packages:
 
   /scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
-    dev: false
 
   /schema-utils@2.7.0:
     resolution: {integrity: sha512-0ilKFI6QQF5nxDZLFn2dMjvc4hjg/Wkg7rHd3jK6/A4a1Hl9VFdQWvgB1UMGoU94pad1P/8N7fMcEnLnSiju8A==}
@@ -19525,7 +19532,6 @@ packages:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    dev: false
     optional: true
 
   /shebang-command@1.2.0:
@@ -20154,7 +20160,6 @@ packages:
       '@babel/core': 7.28.5
       client-only: 0.0.1
       react: 19.2.3
-    dev: false
 
   /stylehacks@5.1.1(postcss@8.5.6):
     resolution: {integrity: sha512-sBpcd5Hx7G6seo7b1LkpttvTz7ikD0LlH5RmdcBNb6fFR0Fl7LQwHDFr300q4cwUqi+IYrFGmsIHieMBfnN/Bw==}
