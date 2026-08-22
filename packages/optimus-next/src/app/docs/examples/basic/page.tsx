@@ -269,7 +269,7 @@ console.log('图片 URL:', url);`}
   // 处理特定错误
   if (error.message.includes('token')) {
     // Token 过期，重新登录
-    window.location.href = '/login';
+    window.location.href = '/auth';
   }
 }`}
             </pre>

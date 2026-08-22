@@ -887,9 +887,13 @@ CREATE TABLE IF NOT EXISTS `op_sys_dictionary_collection` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典集合配置表';
 
 -- ----------------------------
--- Records of op_sys_dictionary_collection (No initial data)
+-- Records of op_sys_dictionary_collection
+-- dynamic-content: C 端官网动态文案集合。public_read 让匿名前台可读，
+-- 写入仍只能走管理端——这是首页文案后台可配的数据源
 -- ----------------------------
 BEGIN;
+INSERT IGNORE INTO `op_sys_dictionary_collection` (`id`, `name`, `display_name`, `description`, `data_type`, `access_type`, `status`) VALUES
+(1, 'dynamic-content', '官网动态文案', 'C端官网可配置文案（首页 Hero 等），前台匿名只读', 'object', 'public_read', 'active');
 COMMIT;
 
 -- ----------------------------
@@ -914,9 +918,14 @@ CREATE TABLE IF NOT EXISTS `op_sys_dictionary` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典数据表';
 
 -- ----------------------------
--- Records of op_sys_dictionary (No initial data)
+-- Records of op_sys_dictionary
+-- 首页 Hero 初始文案：值与前端 defaultValue 一致，导入后视觉零变化，
+-- 后台改这两条即可验证"文案后台可配"闭环
 -- ----------------------------
 BEGIN;
+INSERT IGNORE INTO `op_sys_dictionary` (`collection`, `key`, `value`, `remark`) VALUES
+('dynamic-content', 'hero.title', '{"type": "text", "value": "Build Something Amazing"}', '首页主标题'),
+('dynamic-content', 'hero.subtitle', '{"type": "text", "value": "The best way to build modern web applications"}', '首页副标题');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

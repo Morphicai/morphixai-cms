@@ -25,7 +25,7 @@ export default function PricingPage() {
         '基础监控功能'
       ],
       cta: '立即开始',
-      href: '/auth/register'
+      href: '/auth'
     },
     {
       name: '专业版',
@@ -46,7 +46,7 @@ export default function PricingPage() {
       ],
       limitations: [],
       cta: '选择专业版',
-      href: '/contact'
+      href: 'mailto:contact@morphixai.com'
     },
     {
       name: '企业版',
@@ -70,7 +70,7 @@ export default function PricingPage() {
       ],
       limitations: [],
       cta: '联系销售',
-      href: '/contact'
+      href: 'mailto:contact@morphixai.com'
     }
   ];
 
@@ -227,10 +227,10 @@ export default function PricingPage() {
                   如果您有特殊需求或需要更大规模的解决方案，我们的销售团队将为您提供定制化的企业方案。
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/contact">
+                  <Link href="mailto:contact@morphixai.com">
                     <Button>联系销售团队</Button>
                   </Link>
-                  <Link href="/docs/enterprise">
+                  <Link href="/docs">
                     <Button variant="outline">了解企业方案</Button>
                   </Link>
                 </div>
@@ -272,7 +272,7 @@ export default function PricingPage() {
               <p className="mb-4 text-muted-foreground">
                 还有其他问题？
               </p>
-              <Link href="/contact">
+              <Link href="mailto:contact@morphixai.com">
                 <Button variant="outline">联系我们</Button>
               </Link>
             </div>

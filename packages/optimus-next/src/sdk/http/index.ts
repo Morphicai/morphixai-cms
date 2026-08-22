@@ -3,8 +3,8 @@
  */
 
 export { BaseHttpService, httpService } from './BaseHttpService';
-export { TokenService } from './TokenService';
+export { UserSessionService, userSessionService } from './UserSessionService';
 export { RequestDeduplication } from './RequestDeduplication';
 
 export type { HttpConfig, RequestOptions } from './BaseHttpService';
-
+export type { ClientUserInfo } from './UserSessionService';

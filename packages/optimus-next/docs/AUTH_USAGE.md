@@ -1,176 +1,59 @@
-# Authentication Usage Guide
+# 认证使用说明（optimus-next C 端）
 
-## Overview
+## 一句话模型
 
-This project provides a complete user authentication solution, including:
-- Automatic login state management
-- Password encryption during transmission
-- JWT Token automatic refresh
-- User information automatic retrieval
+**token 全程住在 httpOnly cookie 里，前端任何代码都不碰 token。**
+登录、续期、登出时由后台（client-user 模块）签发和清除 cookie，
+Next.js 的 `/api` 代理负责把 Set-Cookie 转发到浏览器。前端只关心"用户是谁"，
+不关心"凭证是什么"。
 
-## Password Encryption
-
-### Client-side Encryption
-
-All passwords are automatically encrypted before transmission:
-
-```typescript
-import { UniversalClientUserService } from '@/lib/universal-api';
-
-// Login - password is automatically encrypted
-const response = await UniversalClientUserService.login({
-  username: 'testuser',
-  password: 'mypassword123' // Automatically encrypted before transmission
-});
-
-// Register - password is automatically encrypted
-const response = await UniversalClientUserService.register({
-  username: 'newuser',
-  email: 'user@example.com',
-  password: 'mypassword123', // Automatically encrypted before transmission
-  nickname: 'New User'
-});
+```
+浏览器 ──同源 /api/* ──> Next 代理(route.ts) ──> optimus-api /client-user/*
+        cookie 自动带       透传 cookie             login/refresh/logout
+                            转发 Set-Cookie          写/清 httpOnly cookie
 ```
 
-### Backend Decryption
+## 组件里怎么用
 
-The backend automatically decrypts received passwords:
+唯一入口是 `components/auth/AuthProvider` 的 `useAuth()`（已挂在根 layout 上）：
 
-```typescript
-// Middleware automatically handles decryption
-// In Controller, received password is already plaintext
-@Post('login')
-async login(@Body() dto: LoginDto) {
-  // dto.password is already decrypted plaintext
-  const user = await this.clientUserService.login(dto);
-  // ...
-}
-```
+```tsx
+import { useAuth } from '@/components/auth/AuthProvider';
 
-## User Authentication State Management
-
-### Using AuthProvider
-
-Wrap the application root component with `AuthProvider`:
-
-```typescript
-// app/layout.tsx
-import { AuthProvider } from '@/contexts/AuthContext';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-### Using useAuthContext Hook
-
-Get user authentication state in components:
-
-```typescript
-'use client';
-
-import { useAuthContext } from '@/contexts/AuthContext';
-
-export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading, logout } = useAuthContext();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+function MyComponent() {
+  const { user, isAuthenticated, login, register, logout, openLogin } = useAuth();
 
   if (!isAuthenticated) {
-    return <div>Please login first</div>;
+    return <button onClick={openLogin}>登录</button>; // 弹出登录 Modal
   }
-
-  return (
-    <div>
-      <h1>Welcome, {user?.nickname || user?.username}</h1>
-      <p>Email: {user?.email}</p>
-      <button onClick={logout}>Logout</button>
-    </div>
-  );
+  return <span>你好，{user?.nickname || user?.username}</span>;
 }
 ```
 
-## Token Management
+- `login(username, password)`：密码经 `encryptPasswordFields`（@optimus/common，
+  与后台共享的 AES 实现）加密后提交；成功后响应体里的用户信息直接进状态
+- `register(...)`：注册接口不发 token（后台如此设计），Provider 内部注册成功后
+  自动串一次 login，用户无需二次输入
+- `logout()`：调后台 `/client-user/logout` 清 cookie，再清本地缓存，跳 `/auth`
+- `user` 的来源：登录响应 + `/client-user/me` 校验；localStorage 里的
+  `clientUserInfo` 只是首屏乐观缓存，**不含 token，也不是登录态依据**
 
-### Automatic Refresh
+## 发认证请求
 
-Token is automatically refreshed, no manual handling required:
+什么都不用做。所有经 `optimusSDK.http`（或 `lib/api.ts`）发出的请求都走同源
+`/api` 代理，cookie 自动携带，后台守卫自己从 cookie 读 token。
 
-```typescript
-// useAuth Hook automatically:
-// 1. Checks if token is about to expire
-// 2. Automatically calls refresh interface
-// 3. Updates user information
-// 4. Checks every 5 minutes
-```
+401 时 SDK 会凭 refresh cookie 自动调一次 `/client-user/refresh` 并重放原请求；
+refresh 也失败说明真没登录，请求按失败返回，页面自行决定跳 `/auth`。
 
-### Manual Refresh
+## 登录页路径
 
-If manual refresh of user information is needed:
+只有一个：`/auth`。历史上代码里出现过 `/login`、`/auth/login`，都不存在，
+已全部清理——新代码跳登录一律 `/auth`。
 
-```typescript
-const { refreshUser } = useAuthContext();
+## 后台侧约定（client-user 模块）
 
-// Manually refresh user information
-await refreshUser();
-```
-
-## Security Best Practices
-
-### 1. Password Encryption
-
-- ✅ All passwords automatically encrypted before transmission
-- ✅ Uses AES symmetric encryption
-- ✅ Keys stored in environment variables
-
-### 2. Token Security
-
-- ✅ Stored in HTTP-Only Cookie
-- ✅ Automatic expiration and refresh mechanism
-- ✅ Supports cross-domain sharing (same main domain)
-
-### 3. Environment Variables
-
-```bash
-# Client encryption key
-NEXT_PUBLIC_CRYPTO_SECRET=your-client-crypto-key
-
-# Server encryption key
-CRYPTO_SECRET=your-server-crypto-key
-```
-
-⚠️ **Note**: Production environment must use strong keys, do not use default values!
-
-## API Interfaces
-
-### Get Current User Information
-
-```typescript
-// Get complete user information (query database)
-const profile = await UniversalClientUserService.getProfile();
-
-// Get basic information (parsed from JWT, faster)
-const currentUser = await UniversalClientUserService.getCurrentUser();
-```
-
-### Refresh Token
-
-```typescript
-const response = await UniversalClientUserService.refreshToken();
-```
-
-### Logout
-
-```typescript
-const response = await UniversalClientUserService.logout();
-```
+- 双 JWT 与管理员体系完全隔离：`CLIENT_USER_JWT_SECRET`（access 2h）+
+  refresh 7d，cookie 名 `clientAccessToken` / `clientRefreshToken`
+- `/client-user/refresh` 从 cookie 读 refreshToken，POST 空 body 即可
+- 密码字段服务端自动尝试解密，解密失败按明文处理（兼容 curl 手工调试）

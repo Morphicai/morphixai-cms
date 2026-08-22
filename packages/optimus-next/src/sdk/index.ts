@@ -3,7 +3,8 @@
  * 提供所有 SDK 功能的统一访问点
  */
 
-import { BaseHttpService, TokenService, httpService } from './http';
+import { BaseHttpService, httpService, userSessionService } from './http';
+import type { ClientUserInfo } from './http';
 import { StorageService, localStorage, sessionStorage } from './storage';
 import { DynamicContentSDK, dynamicContentSDK } from './business/DynamicContentSDK';
 import { ArticleSDK, articleSDK } from './business/ArticleSDK';
@@ -11,7 +12,6 @@ import { ArticleSDK, articleSDK } from './business/ArticleSDK';
 export class OptimusClientSDK {
   // HTTP 服务
   public readonly http: BaseHttpService;
-  public readonly token: TokenService;
 
   // 存储服务
   public readonly localStorage: StorageService;
@@ -22,15 +22,11 @@ export class OptimusClientSDK {
   public readonly article: ArticleSDK;
 
   constructor() {
-    // 初始化 HTTP 服务
     this.http = httpService;
-    this.token = httpService.getTokenService();
 
-    // 初始化存储服务
     this.localStorage = localStorage;
     this.sessionStorage = sessionStorage;
 
-    // 初始化业务 SDK
     this.dynamicContent = dynamicContentSDK;
     this.article = articleSDK;
   }
@@ -50,26 +46,45 @@ export class OptimusClientSDK {
   }
 
   /**
-   * 获取当前登录用户
+   * 读缓存的当前用户（乐观值，权威判定用 fetchCurrentUser）
    */
-  getCurrentUser() {
-    return this.token.getCurrentUser();
+  getCurrentUser(): ClientUserInfo | null {
+    return userSessionService.getUser();
   }
 
   /**
-   * 检查是否已登录
+   * 向后台确认登录态并刷新本地缓存。
+   * token 在 httpOnly cookie 里前端读不到，所以"是否登录"只能问接口。
    */
-  isLoggedIn() {
-    return this.token.isLoggedIn();
+  async fetchCurrentUser(): Promise<ClientUserInfo | null> {
+    try {
+      const response = await this.http.get<{ code: number; data: ClientUserInfo }>(
+        '/client-user/me',
+        { skipDedup: true }
+      );
+      if (response?.code === 200 && response.data) {
+        userSessionService.setUser(response.data);
+        return response.data;
+      }
+    } catch {
+      // 401 且续期失败会走到这里：确实没登录
+    }
+    userSessionService.clearUser();
+    return null;
   }
 
   /**
-   * 登出
+   * 登出：后台清 httpOnly cookie，本地清用户缓存
    */
-  logout() {
-    this.token.clearTokens();
+  async logout() {
+    try {
+      await this.http.post('/client-user/logout');
+    } catch {
+      // 即使接口失败（如 token 已过期）也继续清本地态
+    }
+    userSessionService.clearUser();
     if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
+      window.location.href = '/auth';
     }
   }
 }
@@ -84,4 +99,3 @@ export * from './business';
 
 // 默认导出
 export default optimusSDK;
-

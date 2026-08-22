@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiParam } from "@nestjs/swagger";
 import { DictionaryService } from "./dictionary.service";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
+import { AnonymousAuth } from "../../shared/decorators/auth-mode.decorator";
 import { DictionaryCollectionResponseDto } from "./dto/dictionary.dto";
 
 /**
@@ -22,6 +23,10 @@ class PublicCreateDictionaryDto {
 }
 
 @ApiTags("C端公开数据")
+// 匿名放行是刻意的：这个 controller 生来就是给 C 端裸访问的，真正的门禁在
+// service 层按集合 accessType 判（public_read/public_write 之外一律拒）。
+// 之前漏了这个装饰器，统一守卫按管理员模式拦成 401，"公开"接口从没公开过。
+@AnonymousAuth()
 @Controller("/api/dictionary")
 export class PublicDictionaryController {
     constructor(private readonly dictionaryService: DictionaryService) {}

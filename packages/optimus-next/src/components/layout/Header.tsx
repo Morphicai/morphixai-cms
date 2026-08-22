@@ -34,13 +34,16 @@ export default function Header() {
       return (
         <img
           src={user.avatar}
-          alt={user.nickname || user.username}
+          alt={user.nickname || user.username || user.email || 'user'}
           className={`${sizeClasses[size]} rounded-full object-cover`}
         />
       );
     }
 
-    const initial = (user.nickname || user.username).charAt(0).toUpperCase();
+    // 纯邮箱注册的用户 nickname/username 都是 null，兜底到邮箱前缀，
+    // 否则这里 charAt 崩掉的是挂在根布局上的 Header——整站白屏
+    const displayName = user.nickname || user.username || user.email?.split('@')[0] || 'U';
+    const initial = displayName.charAt(0).toUpperCase();
     return (
       <div className={`${sizeClasses[size]} bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center`}>
         <span className="text-primary-600 dark:text-primary-400 font-medium">
@@ -106,7 +109,7 @@ export default function Header() {
                 >
                   <UserAvatar />
                   <span className="font-medium text-black dark:text-white text-sm">
-                    {user.nickname || user.username}
+                    {user.nickname || user.username || user.email?.split('@')[0]}
                   </span>
                 </button>
 
@@ -124,7 +127,7 @@ export default function Header() {
                             <UserAvatar size="sm" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-black dark:text-white truncate">
-                                {user.nickname || user.username}
+                                {user.nickname || user.username || user.email?.split('@')[0]}
                               </p>
                               {user.email && (
                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -144,7 +147,7 @@ export default function Header() {
                         </Link>
                         
                         <Link
-                          href="/settings"
+                          href="/profile"
                           className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/50 font-medium transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
@@ -246,7 +249,7 @@ export default function Header() {
                     <UserAvatar size="sm" />
                     <div>
                       <div className="text-sm font-semibold text-black dark:text-white">
-                        {user.nickname || user.username}
+                        {user.nickname || user.username || user.email?.split('@')[0]}
                       </div>
                       {user.email && (
                         <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -263,7 +266,7 @@ export default function Header() {
                     Profile
                   </Link>
                   <Link
-                    href="/settings"
+                    href="/profile"
                     className="block text-base font-medium text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
