@@ -22,5 +22,6 @@ module.exports = {
         "**/game-management/**/*.spec.ts",
         "**/points-engine/**/*.spec.ts",
         "**/guards/**/*.spec.ts",
+        "**/form/**/*.spec.ts",
     ],
 };

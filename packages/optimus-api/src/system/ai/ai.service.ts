@@ -22,6 +22,14 @@ export class AiService {
     };
 
     async assist(action: AssistAction, text: string): Promise<ResultData> {
+        return this.complete(`${this.prompts[action]}\n\n${text}`);
+    }
+
+    /**
+     * 通用补全:一段 prompt 进、一段文本出。assist 和表单生成等都走这里,
+     * 模型接入(配置/超时/错误语义)只维护一份。
+     */
+    async complete(prompt: string): Promise<ResultData> {
         const baseUrl = this.config.get<string>("ai.baseUrl");
         const model = this.config.get<string>("ai.model");
         const apiKey = this.config.get<string>("ai.apiKey");
@@ -31,8 +39,10 @@ export class AiService {
             return ResultData.fail(500, "模型服务未配置（需要 AI_BASE_URL / AI_MODEL / 模型密钥环境变量）");
         }
 
-        try {
-            const resp = await fetch(`${baseUrl}/chat/completions`, {
+        // 连接建立偶发超过 undici 固定的 10s connect timeout(本机网络经 VPN 时会漂),
+        // curl 同一时刻能通。零依赖的务实解法:连接类失败自动重试一次。
+        const doFetch = () =>
+            fetch(`${baseUrl}/chat/completions`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -40,10 +50,19 @@ export class AiService {
                 },
                 body: JSON.stringify({
                     model,
-                    messages: [{ role: "user", content: `${this.prompts[action]}\n\n${text}` }],
+                    messages: [{ role: "user", content: prompt }],
                 }),
                 signal: AbortSignal.timeout(60000),
             });
+
+        try {
+            let resp: Response;
+            try {
+                resp = await doFetch();
+            } catch (first: any) {
+                this.logger.warn(`模型连接失败将重试一次: ${first?.cause?.message ?? first?.message}`);
+                resp = await doFetch();
+            }
 
             if (!resp.ok) {
                 const body = await resp.text();
@@ -57,7 +76,7 @@ export class AiService {
                 this.logger.warn(`模型返回无内容: ${JSON.stringify(data).slice(0, 200)}`);
                 return ResultData.fail(502, "模型返回为空，请重试");
             }
-            return ResultData.ok({ action, result: String(content).trim() });
+            return ResultData.ok({ result: String(content).trim() });
         } catch (e: any) {
             this.logger.warn(`模型调用异常: ${e?.message}`);
             return ResultData.fail(502, "模型服务连接失败，请稍后重试");

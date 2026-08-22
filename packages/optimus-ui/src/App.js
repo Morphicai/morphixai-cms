@@ -156,7 +156,8 @@ const Routers = ({ shouldUpdate }) => {
   if (!isLogin) {
     // 检查当前路径是否为公开页面
     const currentPath = location.hash.replace('#', '') || '/';
-    if (currentPath === '/help' || currentPath === '/setup') {
+    // /f/<slug> 是动态表单的公开填报页——不登录才发得出问卷,这里必须放行
+    if (currentPath === '/help' || currentPath === '/setup' || currentPath.startsWith('/f/')) {
       return <PublicRoutes />;
     }
     return <Login />;
