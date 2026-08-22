@@ -34,6 +34,11 @@ export class ClientUserController {
             }
         }
 
+        // 明文长度校验放在解密之后——DTO 层的 MaxLength 校验的是密文，管不了这里
+        if (dto.password.length < 6 || dto.password.length > 20) {
+            return ResultData.fail(400, "密码长度需为 6-20 个字符");
+        }
+
         const registerIp = req.ip || (req as any).connection?.remoteAddress;
         const user = await this.clientUserService.register(dto, registerIp);
 

@@ -21,10 +21,14 @@ export class RegisterDto {
     @Matches(/^1[3-9]\d{9}$/, { message: "手机号格式不正确" })
     phone?: string;
 
-    @ApiProperty({ description: "密码（6-20个字符）" })
+    @ApiProperty({ description: "密码（明文 6-20 字符；客户端会 AES 加密后传输，密文约 44-64 字符）" })
     @IsString()
     @MinLength(6)
-    @MaxLength(20)
+    // 上限按"密文"给：前端 encryptPasswordFields 加密后是 base64，40+ 字符。
+    // 之前写 20 是按明文想的，结果 ValidationPipe 跑在 controller 解密之前，
+    // 所有走加密链路的注册全被 400 拒掉——加密注册从来没成功过。
+    // 明文的 6-20 约束在 controller 解密后补验。
+    @MaxLength(128)
     password: string;
 
     @ApiPropertyOptional({ description: "昵称" })

@@ -3,6 +3,7 @@ import "./instrument";
 
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import * as Sentry from "@sentry/nestjs";
 
@@ -148,6 +149,10 @@ async function bootstrap() {
     // 日志
     app.use(express.json({ limit: "50mb" }));
     app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+    // client-user 的登录态整个建立在 httpOnly cookie 上（controller 写、守卫读、
+    // refresh 从 cookie 取 refreshToken），没有这行 req.cookies 永远是 undefined，
+    // C 端 cookie 认证等于全线失效——它缺席了很久，别再删
+    app.use(cookieParser());
     app.use(logger);
     // 使用全局拦截器打印出参
     app.useGlobalInterceptors(new TransformInterceptor());
