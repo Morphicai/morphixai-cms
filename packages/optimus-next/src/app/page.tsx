@@ -131,6 +131,8 @@ export default function Home() {
       {/* Hero Section */}
       <Hero
         variant="centered"
+        titleKey="hero.title"
+        subtitleKey="hero.subtitle"
         ctaPrimaryText="Get Started"
         ctaPrimaryHref="/docs/getting-started"
         ctaSecondaryText="View Docs"

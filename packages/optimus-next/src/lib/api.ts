@@ -65,8 +65,8 @@ function handleAuthError() {
   
   if (typeof window !== 'undefined') {
     const currentPath = window.location.pathname;
-    if (currentPath !== '/login' && currentPath !== '/register') {
-      window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+    if (currentPath !== '/auth') {
+      window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
     }
   }
 }

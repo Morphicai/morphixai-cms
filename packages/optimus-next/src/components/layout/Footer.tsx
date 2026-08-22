@@ -5,12 +5,15 @@ import { Button } from '../Button';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  // 链接只指向真实存在的路由：demo 页生产环境被 middleware 拦掉了，
+  // 官网页脚不能给出会 404 的入口；/about /help /contact 这类页面没建，
+  // 建了再回来加链接，别先占坑
   const footerSections = [
     {
       title: 'Products',
       links: [
-        { name: 'API Services', href: '/api-examples' },
-        { name: 'Business Demo', href: '/business-demo' },
+        { name: 'Products', href: '/products' },
+        { name: 'Use Cases', href: '/use-cases' },
         { name: 'Pricing', href: '/pricing' },
       ],
     },
@@ -18,21 +21,21 @@ export default function Footer() {
       title: 'Resources',
       links: [
         { name: 'Documentation', href: '/docs' },
-        { name: 'API Reference', href: '/docs/api' },
+        { name: 'API Reference', href: '/docs/api/auth' },
         { name: 'Getting Started', href: '/docs/getting-started' },
       ],
     },
     {
       title: 'Support',
       links: [
-        { name: 'Help Center', href: '/help' },
-        { name: 'Contact Us', href: '/contact' },
+        { name: 'Help Center', href: '/docs' },
+        { name: 'Contact Us', href: 'mailto:contact@morphixai.com' },
       ],
     },
     {
       title: 'Company',
       links: [
-        { name: 'About Us', href: '/about' },
+        { name: 'Blog', href: '/blog' },
         { name: 'News', href: '/news' },
       ],
     },

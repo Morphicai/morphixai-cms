@@ -138,70 +138,8 @@ export class ArticleSDK {
     }
   }
 
-  /**
-   * 获取推荐文章
-   * @param articleId 当前文章 ID（用于排除）
-   * @param limit 返回数量
-   */
-  async getRecommended(articleId?: string, limit = 5): Promise<Article[]> {
-    try {
-      const response = await this.httpService.get<{ data: Article[] }>(
-        '/public/articles/recommended',
-        {
-          params: {
-            exclude: articleId,
-            limit,
-          },
-        }
-      );
-
-      return response.data || [];
-    } catch (error) {
-      console.error('Failed to get recommended articles:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 获取热门文章
-   * @param limit 返回数量
-   * @param days 统计天数
-   */
-  async getPopular(limit = 10, days = 7): Promise<Article[]> {
-    try {
-      const response = await this.httpService.get<{ data: Article[] }>(
-        '/public/articles/popular',
-        {
-          params: { limit, days },
-        }
-      );
-
-      return response.data || [];
-    } catch (error) {
-      console.error('Failed to get popular articles:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 获取最新文章
-   * @param limit 返回数量
-   */
-  async getLatest(limit = 10): Promise<Article[]> {
-    try {
-      const response = await this.httpService.get<{ data: Article[] }>(
-        '/public/articles/latest',
-        {
-          params: { limit },
-        }
-      );
-
-      return response.data || [];
-    } catch (error) {
-      console.error('Failed to get latest articles:', error);
-      return [];
-    }
-  }
+  // 推荐/热门/最新/计浏览量四个方法已移除：后端 public/articles 没有这些路由
+  //（/recommended 还会被 @Get(":id") 当成 id 吞掉），要做得先在后端立项
 
   /**
    * 搜索文章
@@ -216,20 +154,6 @@ export class ArticleSDK {
       ...options,
       keyword,
     });
-  }
-
-  /**
-   * 增加文章浏览量
-   * @param id 文章 ID
-   */
-  async incrementView(id: string): Promise<boolean> {
-    try {
-      await this.httpService.post(`/public/articles/${id}/view`);
-      return true;
-    } catch (error) {
-      console.error(`Failed to increment view for article: ${id}`, error);
-      return false;
-    }
   }
 }
 
