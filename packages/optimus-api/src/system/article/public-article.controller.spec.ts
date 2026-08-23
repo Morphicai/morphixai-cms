@@ -9,8 +9,7 @@ describe("PublicArticleController", () => {
     let service: ArticleService;
 
     const mockArticleService = {
-        findAll: jest.fn(),
-        search: jest.fn(),
+        findAllForPublic: jest.fn(),
         findOne: jest.fn(),
         findBySlug: jest.fn(),
         findOneForPublic: jest.fn(),
@@ -100,13 +99,13 @@ describe("PublicArticleController", () => {
                 totalPages: 1,
             };
 
-            mockArticleService.findAll.mockResolvedValue(mockResult);
+            mockArticleService.findAllForPublic.mockResolvedValue(mockResult);
 
             const result = await controller.findPublished(query);
 
             expect(result.code).toBe(200);
             expect(result.data).toEqual(mockResult);
-            expect(mockArticleService.findAll).toHaveBeenCalledWith({
+            expect(mockArticleService.findAllForPublic).toHaveBeenCalledWith({
                 ...query,
                 status: "published",
             });
@@ -127,11 +126,11 @@ describe("PublicArticleController", () => {
                 totalPages: 1,
             };
 
-            mockArticleService.findAll.mockResolvedValue(mockResult);
+            mockArticleService.findAllForPublic.mockResolvedValue(mockResult);
 
             await controller.findPublished(query);
 
-            expect(mockArticleService.findAll).toHaveBeenCalledWith({
+            expect(mockArticleService.findAllForPublic).toHaveBeenCalledWith({
                 ...query,
                 status: "published",
             });
@@ -154,14 +153,16 @@ describe("PublicArticleController", () => {
                 totalPages: 1,
             };
 
-            mockArticleService.search.mockResolvedValue(mockResult);
+            mockArticleService.findAllForPublic.mockResolvedValue(mockResult);
 
             const result = await controller.searchPublished(keyword, query);
 
             expect(result.code).toBe(200);
             expect(result.data).toEqual(mockResult);
-            expect(mockArticleService.search).toHaveBeenCalledWith(keyword, {
+            // 搜索复用 findAllForPublic,keyword 并入查询对象
+            expect(mockArticleService.findAllForPublic).toHaveBeenCalledWith({
                 ...query,
+                keyword,
                 status: "published",
             });
         });
