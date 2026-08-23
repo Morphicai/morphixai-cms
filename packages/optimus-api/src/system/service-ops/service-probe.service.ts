@@ -7,6 +7,7 @@ import { DictionaryEntity, DictionaryStatus } from "../dictionary/entities/dicti
 /** services-registry 集合每行的形状(form 协议 schema 管录入,这里只做运行时防御) */
 interface RegisteredService {
     name: string;
+    /** 服务 API 根,可含路径前缀(如 http://host:8084/api);各 *Path 直接串接其后 */
     baseUrl: string;
     healthPath?: string;
     metricsPath?: string;
@@ -80,8 +81,10 @@ export class ServiceProbeService implements OnApplicationBootstrap {
             checkedAt: new Date().toISOString(),
         };
         const started = Date.now();
+        // 字符串拼接而不是 new URL:baseUrl 可含路径前缀,new URL 的绝对路径会把它吃掉
+        const root = svc.baseUrl.replace(/\/$/, "");
         try {
-            const res = await this.fetchWithTimeout(new URL(svc.healthPath || "/health", svc.baseUrl).href);
+            const res = await this.fetchWithTimeout(`${root}${svc.healthPath || "/health"}`);
             base.latencyMs = Date.now() - started;
             base.ok = res.ok;
             if (!res.ok) base.error = `health HTTP ${res.status}`;
@@ -93,7 +96,7 @@ export class ServiceProbeService implements OnApplicationBootstrap {
         // metrics 是可选的锦上添花,拉不到不影响 ok 判定
         if (svc.metricsPath) {
             try {
-                const res = await this.fetchWithTimeout(new URL(svc.metricsPath, svc.baseUrl).href);
+                const res = await this.fetchWithTimeout(`${root}${svc.metricsPath}`);
                 if (res.ok) base.metrics = await res.json();
             } catch { /* 静默:health 过了就算活着 */ }
         }

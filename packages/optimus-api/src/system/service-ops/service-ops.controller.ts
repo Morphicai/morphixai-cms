@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
-import { Perm } from "../../shared/decorators/perm.decorator";
+import { AllowNoPerm, Perm } from "../../shared/decorators/perm.decorator";
 import { ResultData } from "../../shared/utils/result";
 import { ServiceEventService } from "./service-event.service";
 import { ServiceProbeService } from "./service-probe.service";
+import { ServiceEntry, ServiceRegistryService } from "./service-registry.service";
 
 /**
  * 服务治理接入面。
@@ -18,7 +19,60 @@ export class ServiceOpsController {
     constructor(
         private readonly events: ServiceEventService,
         private readonly probe: ServiceProbeService,
+        private readonly registry: ServiceRegistryService,
     ) {}
+
+    // ---- 服务目录:唯一接入面。注意路由顺序,具名子路径要在 :key 参数路由之前 ----
+
+    @Get("services")
+    @Perm("ServiceOps")
+    @ApiOperation({ summary: "完整服务目录(治理视角)" })
+    async listServices(): Promise<ResultData> {
+        return ResultData.ok(await this.registry.list());
+    }
+
+    @Get("services/entries")
+    @AllowNoPerm()
+    @ApiOperation({ summary: "embed 入口条目(登录即可;前端据 permCode 过滤菜单,真正的门在子应用后端)" })
+    async entries(): Promise<ResultData> {
+        return ResultData.ok(await this.registry.listEmbedEntries());
+    }
+
+    @Get("services/tool-providers")
+    @Perm("AgentConsole")
+    @ApiOperation({ summary: "Agent 工具提供方(最小披露:key/baseUrl/toolsPath)" })
+    async toolProviders(): Promise<ResultData> {
+        return ResultData.ok(await this.registry.listToolProviders());
+    }
+
+    @Post("services")
+    @Perm("ServiceOps")
+    @ApiOperation({ summary: "登记服务" })
+    async register(@Body() body: { key?: string } & ServiceEntry, @Req() req: Request): Promise<ResultData> {
+        const { key, ...entry } = body ?? {};
+        await this.registry.upsert(String(key ?? ""), entry as ServiceEntry, this.by(req));
+        return ResultData.ok({ key });
+    }
+
+    @Put("services/:key")
+    @Perm("ServiceOps")
+    @ApiOperation({ summary: "更新服务登记" })
+    async updateService(@Param("key") key: string, @Body() entry: ServiceEntry, @Req() req: Request): Promise<ResultData> {
+        await this.registry.upsert(key, entry, this.by(req));
+        return ResultData.ok({ key });
+    }
+
+    @Delete("services/:key")
+    @Perm("ServiceOps")
+    @ApiOperation({ summary: "下线服务登记" })
+    async removeService(@Param("key") key: string, @Req() req: Request): Promise<ResultData> {
+        await this.registry.remove(key, this.by(req));
+        return ResultData.ok({ key });
+    }
+
+    private by(req: Request): string {
+        return String((req as any).user?.account ?? "");
+    }
 
     @Get("services/status")
     @Perm("ServiceOps")
