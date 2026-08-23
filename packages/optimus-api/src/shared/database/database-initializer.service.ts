@@ -30,8 +30,10 @@ export class DatabaseInitializerService {
      * 判断依据：op_sys_database_info 表是否存在或强制初始化
      */
     async shouldInitializeDatabase(connection: Connection, forceInit = false): Promise<boolean> {
+        // queryRunner 必须无条件 release：这个方法在启动路径被调用,漏一个连接
+        // 就是池里永久少一个
+        const queryRunner = connection.createQueryRunner();
         try {
-            const queryRunner = connection.createQueryRunner();
             const currentEnv = this.getCurrentEnvironment();
             const dbName = this.configService.get("db.mysql.database");
 
@@ -77,6 +79,8 @@ export class DatabaseInitializerService {
                 `Check failed, defaulting to ${shouldInit ? "initialize" : "skip"} for ${currentEnv} environment`,
             );
             return shouldInit;
+        } finally {
+            await queryRunner.release();
         }
     }
 
@@ -459,8 +463,11 @@ export class DatabaseInitializerService {
      * 获取数据库初始化状态
      */
     async getDatabaseInitializationStatus(connection: Connection): Promise<DatabaseInfo | null> {
+        // 初始化守卫每 5s 缓存过期就调一次这里。之前 queryRunner 建了不还,
+        // 等于按 5s/个 的速度漏干连接池——池空后本查询超时,catch 返回 null,
+        // 守卫把"已初始化"的系统判成未初始化,全接口 403。release 必须无条件执行
+        const queryRunner = connection.createQueryRunner();
         try {
-            const queryRunner = connection.createQueryRunner();
             const currentEnv = this.getCurrentEnvironment();
 
             // 先检查 op_sys_database_info 表是否存在
@@ -490,6 +497,8 @@ export class DatabaseInitializerService {
         } catch (error) {
             this.logger.warn("Could not get database initialization status:", error.message);
             return null;
+        } finally {
+            await queryRunner.release();
         }
     }
 }

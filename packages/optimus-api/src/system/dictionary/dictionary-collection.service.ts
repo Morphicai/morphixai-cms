@@ -9,6 +9,7 @@ import {
     CollectionInfoDto,
     CollectionListResponseDto,
 } from "./dto/dictionary-collection.dto";
+import { validateSchema as validateFormSchema, FormSchema } from "../form/schema-validator";
 
 /**
  * 字典集合配置服务
@@ -25,6 +26,21 @@ export class DictionaryCollectionService {
     /**
      * 创建集合
      */
+    /**
+     * 集合 schema 采用表单协议(fields 数组)时,建/改集合先验 schema 本身合法,
+     * 坏定义不落库——否则行写入的校验就建立在流沙上。
+     * 旧的 properties 形状(简化 JSON Schema)不在此拦,由 dictionary.service
+     * 的行写入兼容分支继续处理。
+     */
+    private assertSchemaValid(schema: unknown): void {
+        if (!schema || typeof schema !== "object") return;
+        if (!Array.isArray((schema as Record<string, unknown>).fields)) return; // 旧形状,放行
+        const errors = validateFormSchema(schema as FormSchema);
+        if (errors.length > 0) {
+            throw new BadRequestException(`schema 不合法: ${errors[0]}`);
+        }
+    }
+
     async create(dto: CreateCollectionDto): Promise<CollectionInfoDto> {
         const existing = await this.collectionRepository.findOne({
             where: { name: dto.name },
@@ -33,6 +49,8 @@ export class DictionaryCollectionService {
         if (existing) {
             throw new BadRequestException(`集合已存在: ${dto.name}`);
         }
+
+        this.assertSchemaValid(dto.schema);
 
         const collection = this.collectionRepository.create(dto);
         const saved = await this.collectionRepository.save(collection);
@@ -52,6 +70,7 @@ export class DictionaryCollectionService {
             throw new NotFoundException("集合不存在");
         }
 
+        this.assertSchemaValid(dto.schema);
         Object.assign(collection, dto);
         const saved = await this.collectionRepository.save(collection);
 

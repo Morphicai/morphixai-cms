@@ -928,4 +928,31 @@ INSERT IGNORE INTO `op_sys_dictionary` (`collection`, `key`, `value`, `remark`) 
 ('dynamic-content', 'hero.subtitle', '{"type": "text", "value": "The best way to build modern web applications"}', '首页副标题');
 COMMIT;
 
+-- ----------------------------
+-- Records: DataCollections 权限码 + site-features 集合(entity-schema-crud 迭代)
+-- site-features: 官网首页 Features 卡片的数据源,后台可配,前端失败回退硬编码
+-- ----------------------------
+BEGIN;
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (60, 1, 'DataCollections'), (61, 2, 'DataCollections');
+INSERT IGNORE INTO `op_sys_dictionary_collection` (`id`, `name`, `display_name`, `description`, `data_type`, `schema`, `access_type`, `status`) VALUES
+(2, 'site-features', '官网Features', '首页功能卡片列表,schema 为表单协议', 'object', '{"title": "官网 Features", "fields": [{"key": "fid", "label": "标识", "type": "text", "required": true, "unique": true}, {"key": "icon", "label": "图标(lucide 组件名)", "type": "text", "required": true}, {"key": "title", "label": "标题", "type": "text", "required": true}, {"key": "description", "label": "描述", "type": "textarea", "required": true}, {"key": "status", "label": "状态标记", "type": "text", "placeholder": "如 Coming Soon,留空即已上线"}]}', 'public_read', 'active');
+INSERT IGNORE INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`) VALUES
+('site-features', 'ai-driven', '{"fid": "ai-driven", "icon": "Zap", "title": "AI-Driven CMS", "description": "Leverage AI technology to automatically generate pages, modules, and content. Provides intelligent content recommendations and code assistance to significantly improve development efficiency."}', 0),
+('site-features', 'micro-frontend', '{"fid": "micro-frontend", "icon": "Layout", "title": "Micro-Frontend Architecture", "description": "Support modular development with unified base management. Support dynamic loading and hot-swapping for more efficient team collaboration."}', 10),
+('site-features', 'dynamic-content', '{"fid": "dynamic-content", "icon": "FileText", "title": "Dynamic Content Center", "description": "Backend configurable content management system supporting multiple content types including text, HTML, images, and links. Works with React components to separate content from presentation."}', 20),
+('site-features', 'short-link', '{"fid": "short-link", "icon": "Link2", "title": "Short Link System", "description": "Built-in short link and short token support. Provides URL shortening, access statistics, QR code generation, and more. Suitable for marketing and temporary authorization scenarios."}', 30),
+('site-features', 'visual-editor', '{"fid": "visual-editor", "icon": "Edit3", "title": "Visual Editor", "description": "Drag-and-drop page builder integrated with dynamic content and short link system. Built-in React component library allows non-technical staff to quickly create pages."}', 40),
+('site-features', 'roundtable', '{"fid": "roundtable", "icon": "Users", "title": "Roundtable Development", "description": "Expose key interfaces through SDK, support third-party developers to extend functionality while protecting core code. Enable a secure ecosystem."}', 50),
+('site-features', 'tech-1', '{"fid": "tech-1", "icon": "Code2", "title": "Modern Tech Stack", "description": "NestJS + React + Next.js + TypeScript with Monorepo architecture and complete type safety."}', 60),
+('site-features', 'tech-2', '{"fid": "tech-2", "icon": "Shield", "title": "Enterprise-Grade Security", "description": "JWT authentication, RBAC permission control, data encryption, and audit logs to meet enterprise security compliance requirements."}', 70),
+('site-features', 'tech-3', '{"fid": "tech-3", "icon": "Gauge", "title": "High-Performance Architecture", "description": "Event-driven architecture, cache optimization, request deduplication, and CDN acceleration ensure efficient and stable system operation."}', 80),
+('site-features', 'tech-4', '{"fid": "tech-4", "icon": "Database", "title": "Flexible Data Storage", "description": "Support for MySQL and PostgreSQL. Integrated with Aliyun OSS/MinIO for file storage. Easy to scale."}', 90),
+('site-features', 'future-1', '{"fid": "future-1", "icon": "Sparkles", "title": "AI Low-Code/No-Code", "description": "AI-powered visual development platform enabling rapid application building with minimal coding. Intelligent component generation and workflow automation.", "status": "Coming Soon"}', 100),
+('site-features', 'future-2', '{"fid": "future-2", "icon": "Key", "title": "Third-Party Auth Integration", "description": "Seamless integration with Supabase, Auth0, Firebase, and other leading authentication providers for flexible identity management.", "status": "Coming Soon"}', 110),
+('site-features', 'future-3', '{"fid": "future-3", "icon": "Workflow", "title": "N8N Workflow Automation", "description": "Built-in N8N integration for powerful workflow automation, data synchronization, and business process orchestration.", "status": "Coming Soon"}', 120),
+('site-features', 'future-4', '{"fid": "future-4", "icon": "Puzzle", "title": "MCP Protocol Support", "description": "Support for Model Context Protocol (MCP) enabling advanced AI model integration and context-aware intelligent features.", "status": "Coming Soon"}', 130),
+('site-features', 'future-5', '{"fid": "future-5", "icon": "Boxes", "title": "Strapi Integration", "description": "Compatible with Strapi headless CMS for flexible content management and API-first architecture.", "status": "Coming Soon"}', 140),
+('site-features', 'future-6', '{"fid": "future-6", "icon": "CreditCard", "title": "Stripe Payment Integration", "description": "Full-featured Stripe integration for subscriptions, one-time payments, invoicing, and comprehensive payment management.", "status": "Coming Soon"}', 150);
+COMMIT;
+
 SET FOREIGN_KEY_CHECKS = 1;
