@@ -10,4 +10,12 @@ module.exports = function (app) {
       router: () => { },
     }),
   );
+  // agent-service 是独立进程,同源代理免 CORS;pathRewrite 剥掉前缀
+  app.use(
+    createProxyMiddleware("/agent-api", {
+      changeOrigin: true,
+      target: process.env.AGENT_SERVICE_URL || "http://localhost:8087",
+      pathRewrite: { "^/agent-api": "" },
+    }),
+  );
 };

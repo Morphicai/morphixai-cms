@@ -2,25 +2,38 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：i18n-foundation（2026-08-23 完成开发验收）
+## 当前迭代：agent-foundation（2026-08-23 完成开发验收）
 
-多语言成为平台能力：`namespace + key → {locale: 文案}` 单表模型
-（不建语言注册表——translations 里有什么 locale 就支持什么）。
+Agent 能力地基——**基座只提供运行时，不实现任何业务**：
 
-- 管理端"多语言管理"：namespace 切换/搜索/动态语言列/编辑，
-  **AI 补全缺失语言**（打包批量调模型，只填缺失、不覆盖人工译文——实测
-  人工填的 "Reach Out" 在补全后原样保留）
-- 公开读 `GET /api/i18n/:namespace?locale=`：缺失回退 zh-CN，404，IP 限频
-- client-sdk 新增 I18nSDK（内存缓存；locale 拼 URL 绕开按 URL 去重的坑）
-- 建表 SQL 在 `db/i18n_tables.sql`（与 form_tables.sql 同惯例）
-
-**踩坑记录**：docker exec 进 mysql 客户端写中文必须带
-`--default-character-set=utf8mb4`，否则 latin1 双重编码存成乱码
-（本次 i18n seed 和 demo-activity-config 的中文都中过招，已修）。
+- **packages/agent-service**（独立 ESM 进程 8087）：pi-agent-core 引擎
+  （与 morphix 生态版本对齐 0.80.10）+ OneRouter 接线（modelBridge 三条实战
+  compat 教训原样继承）。以"外部后端"范式接入平台：server-sdk introspect 鉴权、
+  token 透传（Agent 以发起人身份行动，@Perm 原样生效）——它是上上个迭代
+  扩展面的第一个真实消费者
+- **工具是数据不是代码**：声明式工具定义存 `agent-tools` 数据集合
+  （name/description/params/method/path 模板），基座通用执行器跑它们；
+  加工具=管理后台加一行，业务逻辑住在业务服务的 HTTP 端点里
+  （本次给 optimus-api i18n 补了 missing / translation 两个工具端点）。
+  path 只允许相对路径且 base 钉死平台 API（防 SSRF）
+- 管理端"智能助理"控制台：任务输入/工具清单/轨迹 Timeline/最近运行
+  （轨迹落 agent-service 本地 jsonl，不上库）
+- 端到端实测：「检查 portal 缺法语的键并全部翻译」→ Agent 自主 4 次工具调用
+  10.3s 完成，fr-FR 公开接口出法语；解耦实证：停掉 agent-service，
+  api 与两个前端一切如常
 
 **遗留项**：
-- 与 iframe 版"翻译管理"（独立工作台）并存，工作台后续去留另议
-- 文章/文档的内容变体多语言未做（等文档管理需求真来）
+- 多 Agent 编排/skills/父子委派：下一阶段引 morphix 仓的 agent-framework
+  （同一 pi-agent-core 底座，runner 只暴露 runTask 接缝，届时换壳不换接线）
+- run 是同步等待（≤5min），长任务要改异步 + 轮询
+- 工具集合 agent-tools 谁可编辑=谁能定义 Agent 能力，权限上等同管理员（已 private）
+
+## 上一迭代：i18n-foundation（2026-08-23 完成，已合 main）
+
+多语言平台能力：op_sys_i18n_entry 单表（namespace+key→{locale:文案}），管理页
+（动态语言列+AI 补全只填缺失）、公开读（zh-CN 回退）、client-sdk I18nSDK。
+踩坑：docker exec mysql 写中文必须 --default-character-set=utf8mb4。
+**遗留**：与 iframe 版翻译工作台并存；内容变体多语言未做。
 
 ## 上一迭代：platform-base-sdk（2026-08-23 完成，已合 main）
 

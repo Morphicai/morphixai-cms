@@ -86,6 +86,7 @@ export const COMPONENT_MAP = {
   FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
   DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
   I18nManagement: React.lazy(() => import('../pages/i18n')), // 多语言管理(CMS 自己的文案存储)
+  AgentConsole: React.lazy(() => import('../pages/agent')), // 智能助理(agent-service 控制台)
   FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
   // 外部子应用(iframe 嵌入,协议见 shared/components/IframeApp)。demo-activity 是
   // 嵌入协议的验收样例,模拟"别的团队独立开发的活动管理页"
@@ -303,6 +304,20 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     description: 'namespace/key 维度的多语言文案,支持 AI 补全缺失语言',
+  },
+  // 智能助理:agent-service(独立进程)的控制台,工具在数据集合 agent-tools 里注册
+  {
+    id: 'agent_console',
+    name: '智能助理',
+    code: 'AgentConsole',
+    type: MENU_TYPES.MENU,
+    path: '/agent',
+    component: 'AgentConsole',
+    icon: 'RobotOutlined',
+    orderNum: 43,
+    parentId: null,
+    exact: true,
+    description: '给目标,Agent 自主调用平台工具完成任务;基座零业务,工具注册即能力',
   },
   // 公开填报页:免登录,不进菜单
   {

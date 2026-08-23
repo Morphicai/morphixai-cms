@@ -54,6 +54,23 @@ export class I18nController {
         return ResultData.ok(null);
     }
 
+    @Get("missing")
+    @ApiOperation({ summary: "列出某 locale 缺译文的键(agent 工具端点)" })
+    async missing(
+        @Query("namespace") namespace: string,
+        @Query("locale") locale: string,
+    ): Promise<ResultData> {
+        return ResultData.ok(await this.i18nService.listMissing(namespace, locale));
+    }
+
+    @Put("translation")
+    @ApiOperation({ summary: "按 namespace+key 写单条译文,只补缺失(agent 工具端点)" })
+    async writeTranslation(
+        @Body() dto: { namespace: string; key: string; locale: string; text: string },
+    ): Promise<ResultData> {
+        return ResultData.ok(await this.i18nService.writeTranslation(dto.namespace, dto.key, dto.locale, dto.text));
+    }
+
     @Post("translate")
     @ApiOperation({ summary: "AI 补全缺失语言(只填缺失,不覆盖已有译文)" })
     async translate(
