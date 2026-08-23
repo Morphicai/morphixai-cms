@@ -80,8 +80,6 @@ export const COMPONENT_MAP = {
   ExternalTaskReview: React.lazy(() => import('../pages/external-task-review')), // 外部任务审核管理页面
   // 商品管理组件
   ProductManagement: React.lazy(() => import('../pages/product')), // 商品管理页面
-  // 翻译工作台组件
-  TranslationWorkbench: React.lazy(() => import('../pages/translation')), // 翻译工作台(内嵌独立多语言平台)
   // 动态表单组件
   FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
   DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
@@ -348,20 +346,6 @@ export const SYSTEM_ROUTES = [
     public: true,
     hidden: true,
     description: '动态表单公开填报页',
-  },
-  // 翻译管理
-  {
-    id: 'translation_management',
-    name: '翻译管理',
-    code: 'TranslationManagement',
-    type: MENU_TYPES.MENU,
-    path: '/translation',
-    component: 'TranslationWorkbench',
-    icon: 'TranslationOutlined',
-    orderNum: 45,
-    parentId: null,
-    exact: true,
-    description: '多语言文案翻译工作台',
   },
   {
     id: 'content_management',
