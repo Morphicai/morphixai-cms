@@ -1,98 +1,97 @@
 import { cookies } from "next/headers";
+import SignupPanel from "../components/SignupPanel";
+import { getActivity, getSignups, introspectClient } from "../lib/api";
 
 /**
- * zone 首页(SSR)——同时是三件事的活证明:
- * 1. 独立应用:本页由 zone-activity(8088)渲染,用户经主站 /activity 同域到达
- * 2. 登录态无缝:C 端 cookie(clientAccessToken)经主 zone rewrite 同域直达,
- *    服务端拿它调 introspect 得身份——zone 侧零登录代码
- * 3. 基础能力直通:服务端直连平台 API 读公开数据集合
+ * 活动落地页(真实业务形态的 zone 演示):
+ * - 内容来自 activity-pages 集合(public_read)——运营在管理端改文案,这里 SSR 实时生效
+ * - 报名走 zone 自己的 /activity/api/signup,身份由 cookie 服务端校验
+ * - 报名记录在 activity-signups 集合,管理端数据集合页可直接查看
  */
-const API = (process.env.OPTIMUS_API_URL || "http://localhost:8084/api").replace(/\/$/, "");
-
-interface Identity {
-    active: boolean;
-    user?: { id?: string; username?: string; nickname?: string; email?: string };
-}
-
-async function whoAmI(): Promise<Identity> {
-    const token = (await cookies()).get("clientAccessToken")?.value;
-    if (!token) return { active: false };
-    try {
-        const res = await fetch(`${API}/auth/introspect`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, type: "client" }),
-            cache: "no-store",
-        });
-        const json = await res.json();
-        return json?.data ?? { active: false };
-    } catch {
-        return { active: false };
-    }
-}
-
-async function loadFeatures(): Promise<Array<{ title?: string; fid?: string }>> {
-    try {
-        // 公开集合读口现状是双 api 前缀(存量路径瑕疵,公开接口硬化时统一)
-        const res = await fetch(`${API}/api/dictionary/site-features`, { cache: "no-store" });
-        const json = await res.json();
-        return (json?.data?.items ?? []).map((i: any) => i.value);
-    } catch {
-        return [];
-    }
-}
-
-const card: React.CSSProperties = {
-    background: "#fff", border: "1px solid #E5E7EB", borderRadius: 10, padding: "18px 22px",
-};
+const ACTIVITY_ID = "star-sea-2026";
 
 export default async function ActivityHome() {
-    const [me, features] = await Promise.all([whoAmI(), loadFeatures()]);
+    const token = (await cookies()).get("clientAccessToken")?.value;
+    const [me, activity, signups] = await Promise.all([
+        introspectClient(token),
+        getActivity(ACTIVITY_ID),
+        getSignups(ACTIVITY_ID),
+    ]);
+
+    if (!activity) {
+        return (
+            <main style={{ maxWidth: 720, margin: "80px auto", padding: 24, textAlign: "center", color: "#6B7280" }}>
+                活动配置未找到(activity-pages / {ACTIVITY_ID})——请确认演示数据已导入。
+            </main>
+        );
+    }
+
+    const closed = activity.status === "closed";
+    const mySigned = Boolean(me.active && me.user?.id && signups.some((s) => s.userId === String(me.user!.id)));
+    const rules = (activity.rules ?? "").split("\n").map((r) => r.trim()).filter(Boolean);
 
     return (
-        <main style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px", display: "grid", gap: 16 }}>
-            <div>
-                <div style={{ fontSize: 12, letterSpacing: 2, color: "#B45309", fontWeight: 600 }}>ZONE · /activity</div>
-                <h1 style={{ margin: "6px 0 4px", fontSize: 28 }}>活动中心</h1>
-                <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>
-                    本页由独立应用 zone-activity 渲染(SSR),经主站同域路径到达——你看不出它换了应用,这就是 Multi-Zones。
+        <main>
+            {/* Hero:深空底色呼应"星海",与主站官网风格刻意不同——zone 有自己的视觉主权 */}
+            <section style={{
+                background: "linear-gradient(160deg, #141B33 0%, #2A3358 55%, #3B4E8C 100%)",
+                color: "#fff", padding: "72px 24px 56px",
+            }}>
+                <div style={{ maxWidth: 860, margin: "0 auto" }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
+                        <span style={{
+                            fontSize: 12, letterSpacing: 2, padding: "3px 10px", borderRadius: 999,
+                            background: closed ? "rgba(255,255,255,.18)" : "rgba(74,222,128,.2)",
+                            color: closed ? "#D1D5DB" : "#4ADE80", fontWeight: 600,
+                        }}>
+                            {closed ? "已结束" : "进行中"}
+                        </span>
+                        <span style={{ fontSize: 13, color: "#B7C0DC" }}>{activity.period}</span>
+                    </div>
+                    <h1 style={{ margin: "0 0 12px", fontSize: 40, letterSpacing: 1 }}>{activity.title}</h1>
+                    <p style={{ margin: 0, fontSize: 16, color: "#C9D2EC", maxWidth: 560, lineHeight: 1.8 }}>
+                        {activity.subtitle}
+                    </p>
+                    <div style={{ marginTop: 28 }}>
+                        <SignupPanel activityId={ACTIVITY_ID} loggedIn={me.active} alreadySigned={mySigned} closed={closed} />
+                    </div>
+                </div>
+            </section>
+
+            <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px 64px", display: "grid", gap: 20 }}>
+                <section style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, padding: "22px 26px" }}>
+                    <h2 style={{ margin: "0 0 12px", fontSize: 17 }}>活动规则</h2>
+                    <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, lineHeight: 2, color: "#374151" }}>
+                        {rules.map((r, i) => <li key={i}>{r}</li>)}
+                    </ol>
+                </section>
+
+                <section style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, padding: "22px 26px" }}>
+                    <h2 style={{ margin: "0 0 4px", fontSize: 17 }}>参与名单</h2>
+                    <p style={{ margin: "0 0 14px", fontSize: 13, color: "#9CA3AF" }}>
+                        已有 {signups.length} 人报名{me.active ? "" : "(登录后可加入)"}
+                    </p>
+                    {signups.length === 0 ? (
+                        <p style={{ margin: 0, fontSize: 14, color: "#6B7280" }}>还没有人报名,来当第一个。</p>
+                    ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {signups.map((s) => (
+                                <span key={s.userId} style={{
+                                    fontSize: 13, padding: "4px 12px", borderRadius: 999,
+                                    background: "#EEF1F8", color: "#3B4E8C", fontWeight: 500,
+                                }}>
+                                    {s.nickname}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <p style={{ margin: 0, fontSize: 12.5, color: "#9CA3AF" }}>
+                    本页由独立 zone 应用渲染;活动文案在管理端"数据集合 / activity-pages"维护,改完刷新即生效。
+                    <a href="/" style={{ color: "#3B4E8C", marginLeft: 8 }}>← 返回主站</a>
                 </p>
             </div>
-
-            <section style={card}>
-                <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>① 登录态无缝直通</h2>
-                {me.active ? (
-                    <p style={{ margin: 0, fontSize: 14 }}>
-                        已识别登录用户:<b>{me.user?.nickname || me.user?.username}</b>
-                        <span style={{ color: "#6B7280" }}>(id: {me.user?.id})</span>
-                        —— cookie 同域直达,本 zone 没有写过一行登录代码。
-                    </p>
-                ) : (
-                    <p style={{ margin: 0, fontSize: 14, color: "#6B7280" }}>
-                        当前未登录。去主站 <a href="/auth/login" style={{ color: "#B45309" }}>登录</a> 后回来,
-                        本页将直接识别你的身份(同域 cookie,无需任何跳转授权)。
-                    </p>
-                )}
-            </section>
-
-            <section style={card}>
-                <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>② 平台基础能力直通</h2>
-                <p style={{ margin: "0 0 8px", fontSize: 14, color: "#6B7280" }}>
-                    以下数据实时读自平台数据集合 site-features(共 {features.length} 条):
-                </p>
-                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
-                    {features.slice(0, 5).map((f) => <li key={f.fid}>{f.title}</li>)}
-                </ul>
-            </section>
-
-            <section style={card}>
-                <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>③ 跨 zone 导航</h2>
-                <p style={{ margin: 0, fontSize: 14 }}>
-                    {/* 跨 zone 必须用 a 标签:Link 会对跨 zone 路径做 SPA 预取,必然失败 */}
-                    <a href="/" style={{ color: "#B45309" }}>← 返回主站首页</a>
-                    <span style={{ color: "#6B7280" }}>(跨 zone 是整页导航,这是刻意的边界)</span>
-                </p>
-            </section>
         </main>
     );
 }

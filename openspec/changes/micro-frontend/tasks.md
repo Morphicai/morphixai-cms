@@ -15,6 +15,12 @@
 - [x] 2.3 optimus-next 启动时从目录拉路由表生成 rewrites(每 zone 三条:裸前缀/子路径/静态资产);目录不可达回退空表不阻启动——"管理后台管控"落点:面板登记/启停,重启主 zone 生效
 - [x] 2.4 @optimus/ui-shell 暂不抽——抽象要两个用例,第二个 zone 出现时做
 - [x] 2.5 验收:8086/activity 同域达 zone(页面+静态资产 200);虚构用户 zone_demo_user 登录后 zone 直接识别身份;site-features 集合内容 SSR 渲染;探测面板 6 服务全绿(zone 45ms);撞前缀负例 400;api 151 测全绿;UI 构建过
+- [x] 2.6 真实业务演示:zone 升级为活动落地页"星海创作月"(全虚构文案)——
+  内容存 activity-pages 集合(public_read,运营改文案刷新即生效,实测尾注注入立现);
+  报名走 zone 自己的 route handler(cookie 服务端验身份,userId/nickname 不信任前端),
+  写 activity-signups 集合(public_write+schema),key=活动-用户 → collection+key 唯一
+  即天然一人一报(重复报名幂等返回"已报过名");未登录报名 401;
+  报名行在管理端数据集合页直接可见;浏览器截图验收(hero/徽章/规则/名单胶囊)
 
 ## 后续迭代二:模块标准实现(触发:第一个真实深度集成模块出现)
 
