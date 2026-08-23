@@ -31,7 +31,7 @@ INSERT IGNORE INTO `op_sys_dictionary_collection` (`name`, `display_name`, `desc
 UPDATE `op_sys_dictionary_collection` SET
   `display_name` = '服务目录',
   `description` = '服务探测/动态入口/Agent工具的统一登记处,推荐经服务状态页维护',
-  `schema` = '{"title":"服务目录","fields":[{"key":"name","label":"服务名","type":"text","required":true},{"key":"baseUrl","label":"基础地址","type":"text","required":true},{"key":"healthPath","label":"健康检查路径","type":"text","placeholder":"默认 /health"},{"key":"metricsPath","label":"指标路径","type":"text","placeholder":"可空,如 /metrics-lite"},{"key":"enabled","label":"是否启用","type":"switch"},{"key":"entryType","label":"入口形态","type":"select","options":[{"label":"无入口","value":"none"},{"label":"iframe 嵌入","value":"embed"}]},{"key":"embedUrl","label":"嵌入地址","type":"text","placeholder":"entryType=embed 时必填"},{"key":"menuTitle","label":"菜单标题","type":"text"},{"key":"menuIcon","label":"菜单图标","type":"text","placeholder":"antd 图标名,如 AppstoreOutlined"},{"key":"permCode","label":"权限码","type":"text","placeholder":"空=仅 ServiceOps 可见"},{"key":"toolsPath","label":"Agent工具端点","type":"text","placeholder":"如 /system/agent/tools"}]}'
+  `schema` = '{"title":"服务目录","fields":[{"key":"name","label":"服务名","type":"text","required":true},{"key":"baseUrl","label":"基础地址","type":"text","required":true},{"key":"healthPath","label":"健康检查路径","type":"text","placeholder":"默认 /health"},{"key":"metricsPath","label":"指标路径","type":"text","placeholder":"可空,如 /metrics-lite"},{"key":"enabled","label":"是否启用","type":"switch"},{"key":"entryType","label":"入口形态","type":"select","options":[{"label":"无入口","value":"none"},{"label":"iframe 嵌入","value":"embed"},{"label":"C端路径分区(zone)","value":"zone"}]},{"key":"embedUrl","label":"嵌入地址","type":"text","placeholder":"entryType=embed 时必填"},{"key":"pathPrefix","label":"URL 前缀","type":"text","placeholder":"entryType=zone 时必填,如 /activity"},{"key":"menuTitle","label":"菜单标题","type":"text"},{"key":"menuIcon","label":"菜单图标","type":"text","placeholder":"antd 图标名,如 AppstoreOutlined"},{"key":"permCode","label":"权限码","type":"text","placeholder":"空=仅 ServiceOps 可见"},{"key":"toolsPath","label":"Agent工具端点","type":"text","placeholder":"如 /system/agent/tools"}]}'
 WHERE `name` = 'services-registry';
 
 -- 行插入:uk_collection_key_user 含 user_id,NULL 不参与唯一判定,INSERT IGNORE 对
@@ -62,4 +62,12 @@ INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `re
 SELECT * FROM (SELECT 'services-registry' c, 'demo-activity' k,
   '{"name": "演示活动(外部团队)", "baseUrl": "http://localhost:5190", "healthPath": "/", "enabled": true, "entryType": "embed", "embedUrl": "http://localhost:5190", "menuTitle": "演示活动", "menuIcon": "AppstoreAddOutlined", "permCode": "DemoActivity"}' v, 40 s, '嵌入协议验收样例,examples/demo-activity 下 node serve.mjs 拉起' r) t
 WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='demo-activity');
+
+-- zone-activity: C 端 Multi-Zones 第一个 zone(packages/zone-activity,8088)。
+-- 主 zone(optimus-next)启动时从 /api/public/zone-routes 拉本表生成 rewrites,
+-- 改动 zone 条目后重启 optimus-next 生效
+INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
+SELECT * FROM (SELECT 'services-registry' c, 'zone-activity' k,
+  '{"name": "活动中心(zone)", "baseUrl": "http://localhost:8088", "healthPath": "/activity", "enabled": true, "entryType": "zone", "pathPrefix": "/activity"}' v, 50 s, 'Multi-Zones 样例,基座经 /activity 同域到达' r) t
+WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='zone-activity');
 COMMIT;

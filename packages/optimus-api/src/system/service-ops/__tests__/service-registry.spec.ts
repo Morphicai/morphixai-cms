@@ -65,6 +65,39 @@ describe("ServiceRegistryService 校验", () => {
     });
 });
 
+describe("ServiceRegistryService zone 校验", () => {
+    const ok = { name: "Z", baseUrl: "http://z:1" };
+
+    it("zone 必填 pathPrefix,且需为单段小写路径", async () => {
+        const s = svc();
+        await expect(s.upsert("z", { ...ok, entryType: "zone" } as any, "u")).rejects.toThrow(BadRequestException);
+        await expect(s.upsert("z", { ...ok, entryType: "zone", pathPrefix: "/a/b" } as any, "u")).rejects.toThrow(BadRequestException);
+        await expect(s.upsert("z", { ...ok, entryType: "zone", pathPrefix: "activity" } as any, "u")).rejects.toThrow(BadRequestException);
+    });
+
+    it("pathPrefix 全域唯一,撞车报被谁占用", async () => {
+        const taken = [{ key: "other", sortOrder: 0, value: { name: "O", baseUrl: "http://o", entryType: "zone", pathPrefix: "/activity" } }];
+        const s = svc(mkRepo(taken));
+        await expect(
+            s.upsert("z", { ...ok, entryType: "zone", pathPrefix: "/activity" } as any, "u"),
+        ).rejects.toThrow(/other/);
+        // 同 key 更新自己不算撞车
+        await expect(
+            s.upsert("other", { ...ok, entryType: "zone", pathPrefix: "/activity" } as any, "u"),
+        ).resolves.toBeUndefined();
+    });
+
+    it("listZoneRoutes 只出 enabled 的 zone 条目", async () => {
+        const mixed = [
+            { key: "z1", sortOrder: 0, value: { name: "Z1", baseUrl: "http://z1", entryType: "zone", pathPrefix: "/activity" } },
+            { key: "z2", sortOrder: 1, value: { name: "Z2", baseUrl: "http://z2", entryType: "zone", pathPrefix: "/blog", enabled: false } },
+            { key: "e1", sortOrder: 2, value: { name: "E1", baseUrl: "http://e1", entryType: "embed", embedUrl: "http://e1" } },
+        ];
+        const out = await svc(mkRepo(mixed)).listZoneRoutes();
+        expect(out).toEqual([{ key: "z1", pathPrefix: "/activity", baseUrl: "http://z1" }]);
+    });
+});
+
 describe("ServiceRegistryService 消费视图", () => {
     it("listToolProviders 只出 enabled 且有 toolsPath 的,最小披露三字段", async () => {
         const out = await svc().listToolProviders();

@@ -9,7 +9,22 @@
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
 下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
 
-## 上一迭代：service-registry（2026-08-23 完成，已合 main）
+## 上一迭代：zone-foundation（2026-08-24 完成，已合 main）
+
+C 端 Multi-Zones 落地（微前端三模式的模式二）：
+
+- 目录 entryType 加 `zone`（pathPrefix 单段小写、全域唯一）；`/api/public/zone-routes`
+  匿名读口（消费方是 next server 进程无 token 可带，限频，生产网关可屏蔽收口）
+- **管控落点**：服务状态页登记/启停 zone，optimus-next 启动时从目录拉路由表
+  生成 rewrites（每 zone 三条：裸前缀/子路径/静态资产）；目录不可达回退空表不阻启动
+- packages/zone-activity（8088）：basePath+assetPrefix 两行配置即成 zone；
+  SSR 页实证登录态无缝（clientAccessToken cookie 同域直达，introspect client 分支，
+  zone 零登录代码）与基础能力直通（集合数据直读）
+- 纪律：跨 zone 链接用 a 标签；assetPrefix 约定 = pathPrefix + "-static"
+- 存量瑕疵记录：public-i18n/public-dictionary 实际挂在双 /api 前缀下
+  （controller 路径重复了全局前缀），公开接口硬化时统一；新接口一律裸路径
+
+## 前一迭代：service-registry（2026-08-23 完成，已合 main）
 
 服务目录 = 人与 AI 共用的接入面，探测/动态菜单/Agent 工具三个消费者的唯一事实源：
 
