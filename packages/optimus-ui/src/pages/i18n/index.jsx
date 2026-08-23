@@ -9,7 +9,7 @@ import { i18nApi } from '../../apis/i18n';
  * 多语言管理:namespace + key → 各语言文案。
  * 列是动态的——translations 里出现什么 locale 就长什么列,默认三语起步。
  * "AI 补全"只填缺失的语言,已有译文(人工或上次 AI)不会被覆盖,后端保证。
- * 与 iframe 版"翻译管理"(独立工作台)并存:那个管它自己的项目,这里是 CMS 自己的文案。
+ * 多语言能力只此一个入口(iframe 版"翻译管理"与本页功能撞车,已下线)。
  */
 const BASE_LOCALES = ['zh-CN', 'en-US', 'ja-JP'];
 
