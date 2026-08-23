@@ -16,3 +16,6 @@ export type {
   ArticleListResponse,
 } from './ArticleSDK';
 
+
+export { CollectionSDK, collectionSDK } from './CollectionSDK';
+export type { CollectionItem, CollectionData } from './CollectionSDK';

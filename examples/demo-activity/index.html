@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>演示活动 · 外部子应用</title>
+<style>
+  /* 一个"别的团队"的活动管理页该有的样子:自己的风格,不套基座的 antd */
+  body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 0; padding: 32px; background: #f6f7fb; color: #222; }
+  .card { background: #fff; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); max-width: 720px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 12px; color: #555; }
+  .muted { color: #888; font-size: 13px; }
+  .perm { display: inline-block; background: #eef2ff; color: #4051b5; border-radius: 4px; padding: 2px 8px; margin: 2px 4px 2px 0; font-size: 12px; }
+  button { background: #4051b5; color: #fff; border: 0; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 14px; }
+  button:disabled { opacity: .5; cursor: default; }
+  pre { background: #f4f4f4; border-radius: 6px; padding: 12px; font-size: 12px; overflow: auto; max-height: 240px; }
+  input { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-right: 8px; }
+  .err { color: #c0392b; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>演示活动(外部子应用)</h1>
+    <p class="muted">这个页面模拟"另一个团队独立开发的活动管理页":独立部署、独立技术栈,
+    通过 @optimus/admin-embed 与基座握手继承登录态与权限。</p>
+    <div id="handshake">正在与基座握手…</div>
+  </div>
+
+  <div class="card">
+    <h2>① introspect:把握手拿到的 token 递给平台验证(模拟外部后端的校验动作)</h2>
+    <button id="btn-introspect" disabled>调用 introspect</button>
+    <pre id="introspect-result">(未调用)</pre>
+  </div>
+
+  <div class="card">
+    <h2>② 数据集合:读写活动配置(demo-activity-config,public_write)</h2>
+    <div style="margin-bottom:10px">
+      <input id="cfg-title" placeholder="活动标题(虚构)" />
+      <button id="btn-save" disabled>写入配置</button>
+      <button id="btn-load" disabled>读取配置</button>
+    </div>
+    <pre id="collection-result">(未读取)</pre>
+  </div>
+
+<script src="./admin-embed.js"></script>
+<script>
+(function () {
+  var API = 'http://localhost:8084/api'; // 平台 API;示例直连,真实子应用按自己的部署配
+  var ctx = null;
+
+  function el(id) { return document.getElementById(id); }
+  function show(id, obj) { el(id).textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+
+  OptimusAdminEmbed.init({ baseOrigin: 'http://localhost:8082' })
+    .then(function (c) {
+      ctx = c;
+      var permsHtml = (c.perms || []).map(function (p) { return '<span class="perm">' + p + '</span>'; }).join('');
+      el('handshake').innerHTML =
+        '握手成功。当前管理员:<b>' + ((c.user && (c.user.fullName || c.user.account)) || '未知') + '</b>' +
+        '<div style="margin-top:8px">权限码:' + (permsHtml || '(无)') + '</div>';
+      ['btn-introspect', 'btn-save', 'btn-load'].forEach(function (id) { el(id).disabled = false; });
+    })
+    .catch(function (e) {
+      el('handshake').innerHTML = '<span class="err">' + e.message + '</span><br/>' +
+        '<span class="muted">请从管理后台的"演示活动"菜单打开本页。</span>';
+    });
+
+  el('btn-introspect').onclick = function () {
+    show('introspect-result', '请求中…');
+    fetch(API + '/auth/introspect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: ctx.token, type: 'admin' }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { show('introspect-result', d.data || d); })
+      .catch(function (e) { show('introspect-result', 'ERROR: ' + e.message); });
+  };
+
+  el('btn-load').onclick = function () {
+    show('collection-result', '读取中…');
+    fetch(API + '/api/dictionary/demo-activity-config')
+      .then(function (r) { return r.json(); })
+      .then(function (d) { show('collection-result', d.data || d); })
+      .catch(function (e) { show('collection-result', 'ERROR: ' + e.message); });
+  };
+
+  el('btn-save').onclick = function () {
+    var title = el('cfg-title').value.trim() || '示例活动标题';
+    show('collection-result', '写入中…');
+    fetch(API + '/api/dictionary/demo-activity-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'k' + Date.now().toString(36), value: { title: title, owner: '演示负责人', enabled: true } }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.code !== 200) { show('collection-result', '被拒: ' + d.msg); return; }
+        el('btn-load').click();
+      })
+      .catch(function (e) { show('collection-result', 'ERROR: ' + e.message); });
+  };
+})();
+</script>
+</body>
+</html>
