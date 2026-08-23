@@ -11,6 +11,7 @@
 import React from 'react';
 import * as Icons from '@ant-design/icons';
 import { getMenusFromDocument } from '../apis/document';
+import { serviceOpsApi } from '../apis/serviceOps';
 import storage from '../shared/utils/storage';
 
 // 菜单类型枚举
@@ -85,18 +86,9 @@ export const COMPONENT_MAP = {
   DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
   I18nManagement: React.lazy(() => import('../pages/i18n')), // 多语言管理(CMS 自己的文案存储)
   AgentConsole: React.lazy(() => import('../pages/agent')), // 智能助理(agent-service 控制台)
-  ServiceOps: React.lazy(() => import('../pages/service-ops')), // 服务状态(探测面板+事件流)
+  ServiceOps: React.lazy(() => import('../pages/service-ops')), // 服务状态(探测面板+事件流+目录登记)
+  EmbedApp: React.lazy(() => import('../pages/embed')), // 服务目录动态入口宿主(/embed/:serviceKey)
   FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
-  // 外部子应用(iframe 嵌入,协议见 shared/components/IframeApp)。demo-activity 是
-  // 嵌入协议的验收样例,模拟"别的团队独立开发的活动管理页"
-  DemoActivity: React.lazy(() =>
-    import('../shared/components/IframeApp').then((m) => ({
-      default: m.default({
-        url: process.env.REACT_APP_DEMO_ACTIVITY_URL || 'http://localhost:5190',
-        title: '演示活动',
-      }),
-    }))
-  ),
   // 系统安装组件
   Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
 };
@@ -276,21 +268,7 @@ export const SYSTEM_ROUTES = [
     exact: true,
     description: 'entity schema 驱动的数据增删改查(无代码地基)',
   },
-  // 外部子应用示例:iframe 嵌入 + 握手协议(token/用户/权限穿透)的验收样例
-  {
-    id: 'demo_activity',
-    name: '演示活动',
-    code: 'DemoActivity',
-    type: MENU_TYPES.MENU,
-    path: '/demo-activity',
-    component: 'DemoActivity',
-    icon: 'AppstoreAddOutlined',
-    orderNum: 46,
-    parentId: null,
-    exact: true,
-    description: '外部团队子应用嵌入示例(嵌入协议验收用,可下线)',
-  },
-  // 多语言管理:CMS 自己的文案键值存储。与 iframe 版"翻译管理"(独立工作台)并存
+  // 多语言管理:CMS 自己的文案键值存储,多语言能力唯一入口
   {
     id: 'i18n_management',
     name: '多语言管理',
@@ -331,6 +309,23 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     description: '各服务健康与轻量指标,事件流(agent.run.finished 等)',
+  },
+  // 服务目录动态入口的宿主:菜单项由目录生成(getDynamicServiceMenus),
+  // 都指向这个固定参数化路由。public 指路由可达,权限在页内按目录 permCode 校验,
+  // 真正的门在子应用自己的后端(introspect+hasPerm)
+  {
+    id: 'embed_app',
+    name: '子应用',
+    code: 'EmbedApp',
+    type: MENU_TYPES.MENU,
+    path: '/embed/:serviceKey',
+    component: 'EmbedApp',
+    orderNum: 998,
+    parentId: null,
+    exact: true,
+    public: true,
+    hidden: true,
+    description: '服务目录 embed 入口的通用宿主页',
   },
   // 公开填报页:免登录,不进菜单
   {
@@ -876,11 +871,41 @@ export async function getDynamicDocumentMenus() {
 }
 
 /**
- * 获取完整的菜单配置（包含动态文档菜单项）
+ * 服务目录的动态入口菜单项(仅菜单显示,路由走固定的 /embed/:serviceKey 宿主)。
+ * code 用条目自己的 permCode——getMenuTree 按用户权限过滤,没码的人看不见;
+ * 条目没配 permCode 时缺省从紧,只有 ServiceOps 能看见
+ */
+export async function getDynamicServiceMenus() {
+  try {
+    if (!storage('access-token')) return [];
+    const res = await serviceOpsApi.entries();
+    return (res?.data || []).map((e) => ({
+      id: `svc_${e.key}`,
+      name: e.menuTitle || e.key,
+      code: e.permCode || 'ServiceOps',
+      type: MENU_TYPES.MENU,
+      path: `/embed/${e.key}`,
+      icon: e.menuIcon && Icons[e.menuIcon] ? e.menuIcon : 'AppstoreOutlined',
+      orderNum: 50,
+      parentId: null,
+      isDynamicMenu: true,
+    }));
+  } catch (error) {
+    // 目录接口打不通只影响动态入口,静态菜单照常
+    console.warn('[Routes] 获取服务目录入口失败:', error?.message || error);
+    return [];
+  }
+}
+
+/**
+ * 获取完整的菜单配置（包含动态文档菜单项与服务目录动态入口）
  * @returns {Promise<Array>} 完整的菜单配置数组
  */
 export async function getFullMenuConfig() {
-  const dynamicDocMenus = await getDynamicDocumentMenus();
+  const [dynamicDocMenus, dynamicServiceMenus] = await Promise.all([
+    getDynamicDocumentMenus(),
+    getDynamicServiceMenus(),
+  ]);
 
   // 将动态文档菜单项添加到配置中心的子菜单
   const menusWithDynamic = SYSTEM_ROUTES.map(route => {
@@ -893,7 +918,8 @@ export async function getFullMenuConfig() {
     return route;
   });
 
-  return menusWithDynamic;
+  // 服务目录 embed 条目作为顶层菜单项追加
+  return [...menusWithDynamic, ...dynamicServiceMenus];
 }
 
 /**
