@@ -8,13 +8,13 @@
 - [x] 1.4 Optimus 模块标准 v0 草案:五条契约(产物/manifest/挂载/共享依赖/隔离)+ 不实现的触发条件;nextjs-mf 弃用状态实查存档(design 4)
 - [x] 1.5 可行性与风险表(design 6)
 
-## 后续迭代一:第一个 zone 拆分(触发:确定业务域,建议活动/营销页)
+## 迭代一:第一个 zone(2026-08-24 完成)
 
-- [ ] 2.1 目录 entryType 加 zone + pathPrefix;URL 前缀唯一性校验
-- [ ] 2.2 examples/zone-template(next + assetPrefix + basePath + cookie 身份直通样例)
-- [ ] 2.3 optimus-next rewrites 表 + 跨 zone 链接排查(a 标签)+ Server Actions allowedOrigins
-- [ ] 2.4 @optimus/ui-shell 公共壳包(tokens/页头页脚)
-- [ ] 2.5 zone 入目录:登记/探测/面板;验收:主域路径直达 zone、登录态直通、独立部署互不拖累
+- [x] 2.1 目录 entryType 加 zone + pathPrefix(单段小写、全域唯一,撞车报占用者);GET /api/public/zone-routes 匿名读口(主 zone 消费,限频,生产网关可屏蔽);3 个单测
+- [x] 2.2 packages/zone-activity(Next16,8088,basePath /activity + assetPrefix /activity-static):SSR 页同时证明三件事——独立应用、cookie 登录态直通(introspect client 分支,zone 零登录代码)、平台集合数据直读
+- [x] 2.3 optimus-next 启动时从目录拉路由表生成 rewrites(每 zone 三条:裸前缀/子路径/静态资产);目录不可达回退空表不阻启动——"管理后台管控"落点:面板登记/启停,重启主 zone 生效
+- [x] 2.4 @optimus/ui-shell 暂不抽——抽象要两个用例,第二个 zone 出现时做
+- [x] 2.5 验收:8086/activity 同域达 zone(页面+静态资产 200);虚构用户 zone_demo_user 登录后 zone 直接识别身份;site-features 集合内容 SSR 渲染;探测面板 6 服务全绿(zone 45ms);撞前缀负例 400;api 151 测全绿;UI 构建过
 
 ## 后续迭代二:模块标准实现(触发:第一个真实深度集成模块出现)
 

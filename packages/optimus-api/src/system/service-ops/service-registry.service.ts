@@ -13,8 +13,8 @@ export interface ServiceEntry {
     healthPath?: string;
     metricsPath?: string;
     enabled?: boolean;
-    /** 入口形态:none=无管理界面;embed=iframe 嵌入。zone 是将来的 option,别提前加 */
-    entryType?: "none" | "embed";
+    /** 入口形态:none=无入口;embed=iframe 嵌入管理基座;zone=C 端路径分区(Multi-Zones) */
+    entryType?: "none" | "embed" | "zone";
     embedUrl?: string;
     menuTitle?: string;
     menuIcon?: string;
@@ -22,10 +22,15 @@ export interface ServiceEntry {
     permCode?: string;
     /** Agent 工具声明端点(相对路径) */
     toolsPath?: string;
+    /** zone 专用:该 zone 负责的 URL 前缀(全域唯一),主 zone 据此生成 rewrites */
+    pathPrefix?: string;
 }
 
 const KEY_RE = /^[a-z][a-z0-9-]{0,49}$/;
 const PERM_RE = /^[A-Za-z][A-Za-z0-9]{0,49}$/;
+// 单段小写前缀:/activity 合法,/a/b 不合法——zone 边界是业务域,一段足矣,
+// 多段前缀会让 assetPrefix 约定(prefix + "-static")和唯一性判断复杂化
+const PREFIX_RE = /^\/[a-z][a-z0-9-]{0,49}$/;
 
 /**
  * 服务目录:唯一事实源,探测/菜单/Agent 工具三个消费者读同一份数据。
@@ -71,9 +76,26 @@ export class ServiceRegistryService {
             .map(({ key, baseUrl, toolsPath }) => ({ key, baseUrl, toolsPath: toolsPath! }));
     }
 
+    /** zone 路由表(主 zone 启动时拉取生成 rewrites;匿名接口消费,只出这三个字段) */
+    async listZoneRoutes(): Promise<Array<{ key: string; pathPrefix: string; baseUrl: string }>> {
+        const rows = await this.rows();
+        return rows
+            .map((r) => ({ key: r.key, ...(r.value as ServiceEntry) }))
+            .filter((e) => e.enabled !== false && e.entryType === "zone" && e.pathPrefix)
+            .map(({ key, pathPrefix, baseUrl }) => ({ key, pathPrefix: pathPrefix!, baseUrl }));
+    }
+
     async upsert(key: string, entry: ServiceEntry, by: string): Promise<void> {
         if (!KEY_RE.test(key)) throw new BadRequestException("key 需为小写 slug(≤50字)");
         this.validate(entry);
+        // zone 前缀全域唯一:两个 zone 抢同一段路径,rewrites 只会命中一个,另一个静默失效
+        if (entry.entryType === "zone") {
+            const rows = await this.rows();
+            const clash = rows.find(
+                (r) => r.key !== key && (r.value as ServiceEntry)?.pathPrefix === entry.pathPrefix,
+            );
+            if (clash) throw new BadRequestException(`pathPrefix ${entry.pathPrefix} 已被 ${clash.key} 占用`);
+        }
         const existing = await this.dictRepo.findOne({ where: { collection: REGISTRY_COLLECTION, key } });
         if (existing) {
             existing.value = entry;
@@ -97,12 +119,18 @@ export class ServiceRegistryService {
     private validate(entry: ServiceEntry): void {
         if (!entry.name?.trim()) throw new BadRequestException("name 不能为空");
         this.assertUrl(entry.baseUrl, "baseUrl");
-        if (entry.entryType && !["none", "embed"].includes(entry.entryType)) {
-            throw new BadRequestException("entryType 仅支持 none/embed");
+        if (entry.entryType && !["none", "embed", "zone"].includes(entry.entryType)) {
+            throw new BadRequestException("entryType 仅支持 none/embed/zone");
         }
         if (entry.entryType === "embed") {
             if (!entry.embedUrl) throw new BadRequestException("entryType=embed 时 embedUrl 必填");
             this.assertUrl(entry.embedUrl, "embedUrl");
+        }
+        if (entry.entryType === "zone") {
+            if (!entry.pathPrefix) throw new BadRequestException("entryType=zone 时 pathPrefix 必填");
+            if (!PREFIX_RE.test(entry.pathPrefix)) {
+                throw new BadRequestException("pathPrefix 需为单段小写路径,如 /activity");
+            }
         }
         for (const f of ["healthPath", "metricsPath", "toolsPath"] as const) {
             const v = entry[f];

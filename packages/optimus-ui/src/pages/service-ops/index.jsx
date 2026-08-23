@@ -129,13 +129,26 @@ const RegistryModal = ({ open, initial, onClose, onSaved }) => {
           </Form.Item>
         </Space.Compact>
         <Space.Compact block>
-          <Form.Item name="entryType" label="入口形态" style={{ width: 140 }}>
-            <Select options={[{ value: 'none', label: '无入口' }, { value: 'embed', label: 'iframe 嵌入' }]} />
+          <Form.Item name="entryType" label="入口形态" style={{ width: 170 }}>
+            <Select options={[
+              { value: 'none', label: '无入口' },
+              { value: 'embed', label: 'iframe 嵌入(管理端)' },
+              { value: 'zone', label: 'zone 路径分区(C端)' },
+            ]} />
           </Form.Item>
           <Form.Item noStyle shouldUpdate={(p, c) => p.entryType !== c.entryType}>
             {({ getFieldValue }) => getFieldValue('entryType') === 'embed' && (
               <Form.Item name="embedUrl" label="嵌入地址" rules={[{ required: true }]} style={{ flex: 1, marginLeft: 8 }}>
                 <Input placeholder="子应用页面地址,基座向其 origin 下发 token" />
+              </Form.Item>
+            )}
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(p, c) => p.entryType !== c.entryType}>
+            {({ getFieldValue }) => getFieldValue('entryType') === 'zone' && (
+              <Form.Item name="pathPrefix" label="URL 前缀(生效需重启 C 端主应用)" rules={[
+                { required: true, pattern: /^\/[a-z][a-z0-9-]{0,49}$/, message: '单段小写路径,如 /activity' },
+              ]} style={{ flex: 1, marginLeft: 8 }}>
+                <Input placeholder="如 /activity,全域唯一" />
               </Form.Item>
             )}
           </Form.Item>
@@ -219,10 +232,12 @@ const ServiceOps = () => {
             { title: '服务名', dataIndex: 'name', width: 180, ellipsis: true },
             { title: 'API 根', dataIndex: 'baseUrl', width: 220, ellipsis: true },
             {
-              title: '入口', dataIndex: 'entryType', width: 90,
-              render: (v, row) => (v === 'embed'
-                ? <Tooltip title={row.embedUrl}><Tag color="blue">embed</Tag></Tooltip>
-                : <Typography.Text type="secondary">-</Typography.Text>),
+              title: '入口', dataIndex: 'entryType', width: 130,
+              render: (v, row) => {
+                if (v === 'embed') return <Tooltip title={row.embedUrl}><Tag color="blue">embed</Tag></Tooltip>;
+                if (v === 'zone') return <Tooltip title={row.baseUrl}><Tag color="orange">zone {row.pathPrefix}</Tag></Tooltip>;
+                return <Typography.Text type="secondary">-</Typography.Text>;
+              },
             },
             { title: '权限码', dataIndex: 'permCode', width: 130, render: (v) => (v ? <Typography.Text code>{v}</Typography.Text> : '-') },
             { title: '工具', dataIndex: 'toolsPath', width: 70, render: (v) => (v ? <Tag color="purple">有</Tag> : '-') },
