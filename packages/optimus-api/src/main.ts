@@ -23,6 +23,7 @@ import { TransformInterceptor } from "./shared/libs/log4js/transform.interceptor
 import { HttpExceptionsFilter } from "./shared/libs/log4js/http-exceptions-filter";
 import { ExceptionsFilter } from "./shared/libs/log4js/exceptions-filter";
 import { initializeLogDirectory } from "./shared/utils/log-init";
+import { requestStatsMiddleware } from "./shared/utils/request-stats";
 import { SentryLoggerService } from "./shared/libs/sentry-logger.service";
 
 async function bootstrap() {
@@ -154,6 +155,8 @@ async function bootstrap() {
     // C 端 cookie 认证等于全线失效——它缺席了很久，别再删
     app.use(cookieParser());
     app.use(logger);
+    // 请求量与耗时的进程内采样,/metrics-lite 消费
+    app.use(requestStatsMiddleware);
     // 使用全局拦截器打印出参
     app.useGlobalInterceptors(new TransformInterceptor());
     // 所有异常

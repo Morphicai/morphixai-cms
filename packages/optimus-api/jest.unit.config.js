@@ -25,5 +25,6 @@ module.exports = {
         "**/form/**/*.spec.ts",
         "**/auth/**/*.spec.ts",
         "**/i18n/**/*.spec.ts",
+        "**/service-ops/**/*.spec.ts",
     ],
 };
