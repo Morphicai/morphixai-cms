@@ -55,3 +55,16 @@ describe("validateEntry", () => {
         expect(validateEntry(okSchema, { ...good, hack: 1 }).join()).toContain("未知字段");
     });
 });
+
+describe("unique 扩展属性(数据集合场景)", () => {
+    it("unique: true 是合法 schema", () => {
+        expect(
+            validateSchema({ fields: [{ key: "email", label: "邮箱", type: "text", unique: true }] }),
+        ).toEqual([]);
+    });
+    it("unique 非布尔被拒", () => {
+        expect(
+            validateSchema({ fields: [{ key: "email", label: "邮箱", type: "text", unique: "yes" }] }).join(),
+        ).toContain("unique");
+    });
+});

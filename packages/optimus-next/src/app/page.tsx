@@ -3,7 +3,53 @@ import { Zap, Layout, FileText, Link2, Edit3, Users, Code2, Shield, Gauge, Datab
 import { Hero, FeatureGrid, StatsSection } from '../components/marketing';
 import { Button } from '../components/Button';
 
-export default function Home() {
+
+// ---- site-features 数据源：后台"数据集合"里的 site-features(public_read) ----
+// 服务端直连后端取数(RSC,无 CORS),取不到就用下面的硬编码兜底——
+// 后端全灭时首页和写死的时代一模一样。no-store 保证后台改完刷新即生效,
+// 流量上来再换 revalidate。
+const FEATURE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Zap, Layout, FileText, Link2, Edit3, Users, Code2, Shield, Gauge, Database,
+  Building2, Briefcase, Sparkles, Key, Workflow, Puzzle, Boxes, CreditCard,
+};
+
+interface SiteFeatureRow {
+  fid: string;
+  icon: string;
+  title: string;
+  description: string;
+  status?: string;
+}
+
+async function loadSiteFeatures(): Promise<SiteFeatureRow[] | null> {
+  try {
+    const base = process.env.OPTIMUS_API_URL || 'http://localhost:8084/api';
+    const res = await fetch(`${base}/api/dictionary/site-features`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const items = json?.data?.items;
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const rows = items
+      .map((r: { value?: SiteFeatureRow }) => r.value)
+      .filter((v: SiteFeatureRow | undefined): v is SiteFeatureRow => !!v?.fid && !!v?.title);
+    return rows.length > 0 ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+function toFeature(v: SiteFeatureRow, iconSize: string) {
+  const Icon = FEATURE_ICONS[v.icon] ?? Sparkles;
+  return {
+    id: v.fid,
+    icon: <Icon className={iconSize} />,
+    title: v.title,
+    description: v.description,
+    ...(v.status ? { status: v.status } : {}),
+  };
+}
+
+export default async function Home() {
   // Statistics
   const stats = [
     { id: '1', value: '10K+', label: 'Developers' },
@@ -126,6 +172,15 @@ export default function Home() {
     },
   ];
 
+  // 远端数据按 fid 前缀拆三组,任何一组为空都回退对应硬编码
+  const remote = await loadSiteFeatures();
+  const remoteCore = remote?.filter((v) => !v.fid.startsWith('tech-') && !v.fid.startsWith('future-')) ?? [];
+  const remoteTech = remote?.filter((v) => v.fid.startsWith('tech-')) ?? [];
+  const remoteFuture = remote?.filter((v) => v.fid.startsWith('future-')) ?? [];
+  const finalCore = remoteCore.length > 0 ? remoteCore.map((v) => toFeature(v, 'w-12 h-12')) : coreFeatures;
+  const finalTech = remoteTech.length > 0 ? remoteTech.map((v) => toFeature(v, 'w-10 h-10')) : techFeatures;
+  const finalFuture = remoteFuture.length > 0 ? remoteFuture.map((v) => toFeature(v, 'w-10 h-10')) : futureFeatures;
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -155,7 +210,7 @@ export default function Home() {
           </div>
           
           <FeatureGrid
-            features={coreFeatures}
+            features={finalCore}
             columns={3}
             variant="card"
           />
@@ -175,7 +230,7 @@ export default function Home() {
           </div>
           
           <FeatureGrid
-            features={techFeatures}
+            features={finalTech}
             columns={4}
             variant="default"
           />
@@ -199,7 +254,7 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {futureFeatures.map((feature) => (
+            {finalFuture.map((feature) => (
               <div 
                 key={feature.id} 
                 className="relative group bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 border border-neutral-100 hover:border-indigo-200"

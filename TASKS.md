@@ -2,18 +2,25 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：optimus-next-closure（2026-08-22 完成开发验收）
+## 当前迭代：entity-schema-crud（2026-08-23 完成开发验收）
 
-C 端门户（optimus-next）闭环修复：认证收敛为"同源代理 + httpOnly cookie"单链路、
-DynamicContent 接通字典公开集合（首页文案后台可配已实测）、死代码/死链清理、
-调试页生产隔离。提案与任务见 `openspec/changes/optimus-next-closure/`。
-连带修掉四个"从未工作过"的存量缺陷：后端漏装 cookie-parser、两端 AES 密钥
-不一致、RegisterDto 校验密文长度、profile 页检查一个没人写的 localStorage 键。
+同一份 entity schema 驱动增删改查：字典模块（存储）+ 表单协议（schema 与校验器）+
+SchemaFormRenderer（渲染）三个已验收资产拼装成"数据集合"能力。管理端建集合
+（JSON + 预览 + 智能生成）→ 按 schema 录入/编辑/删除行 → C 端读公开集合。
+首页 features 已切到 site-features 集合（服务端直连取数，后端灭则回退硬编码，实测）。
+提案与任务见 `openspec/changes/entity-schema-crud/`。
+
+连带修掉三个存量缺陷：
+- **validateUniqueness 从未生效**：参数 JSON.stringify 多包一层引号，MySQL 按字面量
+  比较恒不相等——unique 校验一直是空转，本次修复后实测拦截
+- **database-initializer 两处 queryRunner 泄漏**：初始化守卫每 5s 缓存过期查一次库，
+  每查漏一个连接，池干涸后守卫把已初始化系统误判成"未初始化"全接口 403
+  （症状与"数据库挂了"高度相似，先查池再怀疑库）
+- dictionary-collection.service 的校验器 import 缺失（上次会话中断截断）
 
 **遗留项**：
-- ArticleSDK 与 services/articleService 双实现并存（blog 与 news 各用一套调同一接口），待合并
-- profile 页"用户ID"显示 `#` 占位未绑数据（小瑕疵）
-- LoginForm 有一条 caret-color 的 hydration 警告（疑似输入法/扩展注入样式）
+- AI 生成的 schema 倾向把所有字段标 required:true，生成提示词可加"仅关键字段必填"引导
+- 行数据抽屉一次拉 200 行无分页，集合大了要补
 
 ## 数据库连接（2026-08-22 结论，重要）
 
@@ -44,7 +51,9 @@ DynamicContent 接通字典公开集合（首页文案后台可配已实测）�
 
 ## Completed
 
+- [x] entity-schema-crud（schema 驱动数据集合：管理端 CRUD + C 端首页数据源切换，浏览器全流程验收通过）
 - [x] optimus-next 闭环（认证单链路/DynamicContent/清理/隔离，全链路浏览器验收通过）
+  - 遗留小项：ArticleSDK 双实现合并、profile 页用户ID `#` 占位、LoginForm caret-color hydration 警告
 - [x] 权限码漂移修复（以 routes.js 为准，NewsArticles/ActivityArticles，seed SQL + 存量库同步改名）
 - [x] mysql2 2.2.5 → 3.23.4（驱动现代化保留；idleTimeout 方案证伪，池医生回归）
 - [x] harness-fe 运行时观测集成（optimus-ui，projectId=optimus-admin）

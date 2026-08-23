@@ -10,16 +10,18 @@ import {
 } from "./dto/dictionary-collection.dto";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
-import { AllowNoPerm } from "../../shared/decorators/perm.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("字典集合管理")
+// 数据集合的管理面(集合定义+行数据)统一挂 DataCollections 权限码。
+// 原先每个方法 @AllowNoPerm 裸奔——方法级放行会盖掉类级 @Perm,所以全部摘除
+@Perm("DataCollections")
 @Controller("/system/dictionary-collection")
 export class DictionaryCollectionController {
     constructor(private readonly collectionService: DictionaryCollectionService) {}
 
     @Post()
     @HttpCode(200)
-    @AllowNoPerm()
     @ApiOperation({ summary: "创建集合" })
     @ApiBody({ type: CreateCollectionDto })
     @ApiResult(CollectionInfoDto)
@@ -29,7 +31,6 @@ export class DictionaryCollectionController {
     }
 
     @Put(":id")
-    @AllowNoPerm()
     @ApiOperation({ summary: "更新集合" })
     @ApiParam({ name: "id", description: "集合ID" })
     @ApiBody({ type: UpdateCollectionDto })
@@ -40,7 +41,6 @@ export class DictionaryCollectionController {
     }
 
     @Delete(":id")
-    @AllowNoPerm()
     @ApiOperation({ summary: "删除集合" })
     @ApiParam({ name: "id", description: "集合ID" })
     async delete(@Param("id") id: number): Promise<ResultData> {
@@ -49,7 +49,6 @@ export class DictionaryCollectionController {
     }
 
     @Get()
-    @AllowNoPerm()
     @ApiOperation({ summary: "查询集合列表" })
     @ApiQuery({ type: QueryCollectionDto })
     @ApiResult(CollectionListResponseDto)
@@ -59,7 +58,6 @@ export class DictionaryCollectionController {
     }
 
     @Get(":name")
-    @AllowNoPerm()
     @ApiOperation({ summary: "根据名称获取集合" })
     @ApiParam({ name: "name", description: "集合名称" })
     @ApiResult(CollectionInfoDto)

@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { DictionaryEntity, DictionaryStatus } from "./entities/dictionary.entity";
 import { DictionaryCollectionEntity } from "./entities/dictionary-collection.entity";
+import { validateEntry, FormSchema } from "../form/schema-validator";
 import {
     CreateDictionaryDto,
     UpdateDictionaryDto,
@@ -202,8 +203,27 @@ export class DictionaryService {
             return;
         }
 
+        // 表单协议分支（schema.fields 数组）：数据集合的标准协议。
+        // 校验器与表单模块同一个——required/类型/选项/数字范围两端一致；
+        // unique 要查库，纯函数管不了，在这里补
+        if (Array.isArray(collection.schema.fields)) {
+            const errors = validateEntry(collection.schema as FormSchema, value);
+            if (errors.length > 0) {
+                throw new BadRequestException(errors[0]);
+            }
+            for (const field of (collection.schema as FormSchema).fields) {
+                const v = value?.[field.key];
+                if (field.unique && v !== undefined && v !== null && v !== "") {
+                    // field.key 已被协议的 KEY_RE 约束(字母开头的标识符),
+                    // 拼进 JSON_EXTRACT 路径是安全的
+                    await this.validateUniqueness(collection.name, field.key, v, currentId);
+                }
+            }
+            return;
+        }
+
         try {
-            // 使用简单的类型验证
+            // 旧形状(简化 JSON Schema: properties/required)兼容路径，行为不变
             const schema = collection.schema;
 
             // 验证必填字段
@@ -265,11 +285,11 @@ export class DictionaryService {
             .createQueryBuilder("dictionary")
             .where("dictionary.collection = :collection", { collection: collectionName });
 
-        // 使用 JSON 查询语法检查字段值
-        // MySQL: JSON_EXTRACT(value, '$.field') = :value
-        // PostgreSQL: value->>'field' = :value
+        // 使用 JSON 查询语法检查字段值。
+        // 参数必须传原始值：MySQL 比较 JSON 值与 SQL 字符串时按字面量比,
+        // 传 JSON.stringify 的结果(多一层引号)恒不相等——这里曾因此整个失效
         queryBuilder.andWhere(`JSON_EXTRACT(dictionary.value, '$.${field}') = :value`, {
-            value: JSON.stringify(value),
+            value,
         });
 
         // 如果是更新操作，排除当前记录

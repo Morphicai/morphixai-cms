@@ -18,6 +18,9 @@ export interface FormField {
     options?: string[]; // radio/checkbox 用
     min?: number; // number 用
     max?: number;
+    // 集合内该字段值唯一（数据集合场景消费；表单填报不查重，忽略它）。
+    // 唯一性要查库，所以不在本纯函数里校验，由调用方(dictionary.service)实现
+    unique?: boolean;
     [k: `x-${string}`]: unknown;
 }
 
@@ -66,6 +69,9 @@ export function validateSchema(input: unknown): string[] {
             if (typeof field.min === "number" && typeof field.max === "number" && field.min > field.max) {
                 errors.push(`${at} min 不能大于 max`);
             }
+        }
+        if (field.unique !== undefined && typeof field.unique !== "boolean") {
+            errors.push(`${at}.unique 必须是布尔值`);
         }
     });
     return errors;

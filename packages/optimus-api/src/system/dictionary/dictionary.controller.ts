@@ -11,16 +11,16 @@ import {
 } from "./dto/dictionary.dto";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
-import { AllowNoPerm } from "../../shared/decorators/perm.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("字典管理")
+@Perm("DataCollections")
 @Controller("/system/dictionary")
 export class DictionaryController {
     constructor(private readonly dictionaryService: DictionaryService) {}
 
     @Post()
     @HttpCode(200)
-    @AllowNoPerm()
     @ApiOperation({ summary: "创建字典" })
     @ApiBody({ type: CreateDictionaryDto })
     @ApiResult(DictionaryInfoDto)
@@ -30,7 +30,6 @@ export class DictionaryController {
     }
 
     @Put(":id")
-    @AllowNoPerm()
     @ApiOperation({ summary: "更新字典" })
     @ApiParam({ name: "id", description: "字典ID" })
     @ApiBody({ type: UpdateDictionaryDto })
@@ -41,7 +40,6 @@ export class DictionaryController {
     }
 
     @Delete(":id")
-    @AllowNoPerm()
     @ApiOperation({ summary: "删除字典" })
     @ApiParam({ name: "id", description: "字典ID" })
     async delete(@Param("id") id: number): Promise<ResultData> {
@@ -50,7 +48,6 @@ export class DictionaryController {
     }
 
     @Get()
-    @AllowNoPerm()
     @ApiOperation({ summary: "查询字典列表" })
     @ApiQuery({ type: QueryDictionaryDto })
     @ApiResult(DictionaryListResponseDto)
@@ -60,7 +57,6 @@ export class DictionaryController {
     }
 
     @Get("collection/:collection")
-    @AllowNoPerm()
     @ApiOperation({ summary: "按集合获取字典" })
     @ApiParam({ name: "collection", description: "集合名称" })
     @ApiResult(DictionaryCollectionResponseDto)
@@ -70,7 +66,6 @@ export class DictionaryController {
     }
 
     @Get(":collection/:key")
-    @AllowNoPerm()
     @ApiOperation({ summary: "获取字典值" })
     @ApiParam({ name: "collection", description: "集合名称" })
     @ApiParam({ name: "key", description: "字典键" })

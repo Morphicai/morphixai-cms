@@ -84,6 +84,7 @@ export const COMPONENT_MAP = {
   TranslationWorkbench: React.lazy(() => import('../pages/translation')), // 翻译工作台(内嵌独立多语言平台)
   // 动态表单组件
   FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
+  DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
   FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
   // 系统安装组件
   Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
@@ -250,6 +251,19 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     description: '动态表单定义与数据收集',
+  },
+  {
+    id: 'data_collections',
+    name: '数据集合',
+    code: 'DataCollections',
+    type: MENU_TYPES.MENU,
+    path: '/data-collections',
+    component: 'DataCollectionManagement',
+    icon: 'DatabaseOutlined',
+    orderNum: 45,
+    parentId: null,
+    exact: true,
+    description: 'entity schema 驱动的数据增删改查(无代码地基)',
   },
   // 公开填报页:免登录,不进菜单
   {
