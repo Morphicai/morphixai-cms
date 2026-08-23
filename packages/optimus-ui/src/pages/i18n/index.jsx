@@ -73,18 +73,20 @@ const I18nManagement = () => {
     else message.error(res.msg || '保存失败');
   };
 
+  // 补全经 agent-service 完成(翻译只有 Agent 一条路径),同步等结果
   const handleTranslate = async () => {
     const targets = locales.filter((l) => l !== 'zh-CN');
     setTranslating(true);
-    const res = await i18nApi.translate(ns, targets);
-    setTranslating(false);
-    if (res.success) {
-      const { translated, skipped, failed } = res.data || {};
-      if (failed) message.warning(`部分完成(已翻 ${translated}):${failed}`);
-      else message.success(`补全完成:翻译 ${translated} 处,无缺失 ${skipped} 键`);
+    try {
+      const res = await i18nApi.translate(ns, targets);
+      const run = res.data?.data;
+      if (run?.status === 'success') message.success(run.result || '补全完成');
+      else message.warning(run?.result || '任务未完全完成,轨迹见智能助理页');
       load();
-    } else {
-      message.error(res.msg || '补全失败');
+    } catch (e) {
+      message.error(e?.response?.data?.msg || 'agent-service 未启动或执行失败');
+    } finally {
+      setTranslating(false);
     }
   };
 

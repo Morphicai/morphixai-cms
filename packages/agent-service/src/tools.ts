@@ -1,15 +1,16 @@
 /**
- * 声明式工具执行器——基座只提供"让工具跑起来"的机制,不含任何业务。
+ * 工具执行器——基座只提供"让工具跑起来"的机制,不含任何业务。
  *
- * 工具定义是**数据**,存在平台的 agent-tools 数据集合里(private,管理后台可编辑):
- *   { name, description, params: [{key,type,required,description}],
- *     method, path: "/system/i18n/missing?namespace={namespace}&locale={locale}" }
- * 加一个工具 = 在管理后台加一行数据,业务逻辑住在业务服务的 HTTP 端点里,
- * 这个进程永远不用为新业务改代码。
+ * 工具是**业务方的代码**:业务服务在自己的代码里声明贡献哪些工具
+ * (声明与实现同库同版本、过 code review),经工具提供方端点聚合暴露:
+ *   GET {provider}/system/agent/tools →
+ *   [{ name, description, params: [{key,type,required,description}], method, path }]
+ * 基座每次 run 从 TOOL_PROVIDER_URLS(默认 optimus-api)拉清单并执行。
+ * 业务加工具 = 业务代码里注册一条声明 + 一个端点,基座永远不用改。
  *
  * 安全边界:
  * - path 必须是以 "/" 开头的相对路径,base 永远钉在 OPTIMUS_API_URL——
- *   工具只能打平台 API,集合数据被改也造不出 SSRF
+ *   工具只能打平台 API,provider 返回的定义再离谱也造不出 SSRF
  * - 请求透传发起人 token:Agent 以发起人身份行动,权限即发起人权限,
  *   @Perm 原样生效,不存在 service 账号也就造不出越权
  * - execute 抛错即可,pi-agent-core 会把错误回填给模型让它换策略
@@ -18,7 +19,11 @@ import { Type, type TSchema } from "typebox";
 import type { AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
 
 const API_BASE = (process.env.OPTIMUS_API_URL || "http://localhost:8084/api").replace(/\/$/, "");
-const TOOLS_COLLECTION = "agent-tools";
+/** 工具提供方端点,逗号分隔;将来业务方自己的服务也可以加进来 */
+const PROVIDER_URLS = (process.env.TOOL_PROVIDER_URLS || `${API_BASE}/system/agent/tools`)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 export interface ToolParamDef {
     key: string;
@@ -50,27 +55,32 @@ async function callApi(token: string, method: string, path: string, body?: unkno
     return json?.data;
 }
 
-/** 从平台数据集合拉工具定义(发起人 token——读注册表本身也要权限) */
+/** 从各工具提供方端点拉工具清单(发起人 token——读注册表本身也过权限门) */
 export async function loadToolDefs(token: string): Promise<ToolDef[]> {
-    const data: any = await callApi(
-        token,
-        "GET",
-        `/system/dictionary?collection=${TOOLS_COLLECTION}&page=1&pageSize=100`,
-    );
-    const rows: any[] = data?.list ?? data?.items ?? [];
     const defs: ToolDef[] = [];
-    for (const row of rows) {
-        const v = row?.value;
-        if (!v?.name || !v?.description || !v?.path || !v?.method) continue; // 残缺定义直接跳过
-        if (!/^[a-z][a-z0-9_]{1,63}$/.test(v.name)) continue;
-        if (!String(v.path).startsWith("/") || String(v.path).includes("://")) continue; // 只许相对路径
-        defs.push({
-            name: v.name,
-            description: v.description,
-            params: Array.isArray(v.params) ? v.params : [],
-            method: v.method,
-            path: v.path,
+    const seen = new Set<string>();
+    for (const url of PROVIDER_URLS) {
+        const res = await fetch(url, {
+            headers: { Authorization: token },
+            signal: AbortSignal.timeout(10000),
         });
+        const json: any = await res.json().catch(() => null);
+        if (!res.ok || json?.code !== 200) {
+            throw new Error(`工具提供方不可达: ${url} (${json?.msg || res.status})`);
+        }
+        for (const v of json.data ?? []) {
+            if (!v?.name || !v?.description || !v?.path || !v?.method) continue; // 残缺定义直接跳过
+            if (!/^[a-z][a-z0-9_]{1,63}$/.test(v.name) || seen.has(v.name)) continue;
+            if (!String(v.path).startsWith("/") || String(v.path).includes("://")) continue; // 只许相对路径
+            seen.add(v.name);
+            defs.push({
+                name: v.name,
+                description: v.description,
+                params: Array.isArray(v.params) ? v.params : [],
+                method: v.method,
+                path: v.path,
+            });
+        }
     }
     return defs;
 }

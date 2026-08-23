@@ -27,18 +27,22 @@ export interface RunResult {
     toolCalls: number;
 }
 
-const SYSTEM_PROMPT = [
-    "你是 Optimus CMS 平台的运营助理,通过调用工具完成管理员交给你的任务。",
+/**
+ * 基座默认 prompt 只有通用执行原则——"运营助理""翻译语气"这类业务人格
+ * 不属于基础能力,由调用方经 /run 的 system 字段注入。
+ */
+const BASE_PROMPT = [
+    "你通过调用工具完成交给你的任务。",
     "原则:",
     "- 先用查询类工具了解现状,再做写入;不确定就再查,不要凭空猜数据",
-    "- 翻译任务:保持 UI 文案的简洁语气,备注是给你的上下文,不要写进译文",
-    "- 全部完成后,用一段简短中文总结你做了什么(改了哪些键/写了几条)",
+    "- 工具报错时读错误信息调整策略,同样的失败调用不要原样重试",
+    "- 全部完成后,用一段简短中文总结你做了什么",
 ].join("\n");
 
 /** 截断工具结果,轨迹是给人看的,不是数据备份 */
 const clip = (s: string, n = 2000) => (s.length > n ? `${s.slice(0, n)}…(截断,共${s.length}字符)` : s);
 
-export async function runTask(task: string, token: string): Promise<RunResult> {
+export async function runTask(task: string, token: string, system?: string): Promise<RunResult> {
     const started = Date.now();
     const steps: RunStep[] = [];
     let toolCalls = 0;
@@ -62,7 +66,8 @@ export async function runTask(task: string, token: string): Promise<RunResult> {
         streamFn: (model, context, options) =>
             streamSimple(model, context, { ...options, maxTokens: MAX_OUTPUT_TOKENS }),
         initialState: {
-            systemPrompt: SYSTEM_PROMPT,
+            // 调用方注入的业务人格拼在通用原则之后
+            systemPrompt: system?.trim() ? `${BASE_PROMPT}\n\n${system.trim()}` : BASE_PROMPT,
             model: buildModel(),
             thinkingLevel: "off",
         },

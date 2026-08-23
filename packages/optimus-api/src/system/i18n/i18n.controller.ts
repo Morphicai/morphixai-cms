@@ -71,13 +71,4 @@ export class I18nController {
         return ResultData.ok(await this.i18nService.writeTranslation(dto.namespace, dto.key, dto.locale, dto.text));
     }
 
-    @Post("translate")
-    @ApiOperation({ summary: "AI 补全缺失语言(只填缺失,不覆盖已有译文)" })
-    async translate(
-        @Body() dto: { namespace: string; targetLocales: string[]; keys?: string[] },
-    ): Promise<ResultData> {
-        return ResultData.ok(
-            await this.i18nService.translateMissing(dto.namespace, dto.targetLocales, dto.keys),
-        );
-    }
 }

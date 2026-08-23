@@ -2,31 +2,29 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：agent-foundation（2026-08-23 完成开发验收）
+## 当前迭代：agent-tool-protocol（2026-08-23 完成，agent-foundation 三处定位修正）
 
-Agent 能力地基——**基座只提供运行时，不实现任何业务**：
+1. **工具是代码不是数据**：agent-tools 数据集合废弃。工具由业务模块在代码里
+   声明（`i18n.agent-tools.ts` / `dictionary.agent-tools.ts`，声明跟着实现走），
+   经 `GET /system/agent/tools` 聚合暴露；agent-service 从 provider 端点列表
+   拉取（TOOL_PROVIDER_URLS，默认 optimus-api，将来业务方服务可加入）
+2. **翻译单路径**：单轮批量翻译（translateMissing）删除，管理页"AI 补全"
+   按钮底层改为提交 agent-service 任务——"不覆盖人工译文"收敛回
+   writeTranslation 一处实现
+3. **运营语义剥离**：基座 system prompt 只剩通用执行原则，业务人格由
+   /run 的 system 字段注入（i18n 按钮注入翻译助理人格）；控制台页定位为
+   业务消费方
 
-- **packages/agent-service**（独立 ESM 进程 8087）：pi-agent-core 引擎
-  （与 morphix 生态版本对齐 0.80.10）+ OneRouter 接线（modelBridge 三条实战
-  compat 教训原样继承）。以"外部后端"范式接入平台：server-sdk introspect 鉴权、
-  token 透传（Agent 以发起人身份行动，@Perm 原样生效）——它是上上个迭代
-  扩展面的第一个真实消费者
-- **工具是数据不是代码**：声明式工具定义存 `agent-tools` 数据集合
-  （name/description/params/method/path 模板），基座通用执行器跑它们；
-  加工具=管理后台加一行，业务逻辑住在业务服务的 HTTP 端点里
-  （本次给 optimus-api i18n 补了 missing / translation 两个工具端点）。
-  path 只允许相对路径且 base 钉死平台 API（防 SSRF）
-- 管理端"智能助理"控制台：任务输入/工具清单/轨迹 Timeline/最近运行
-  （轨迹落 agent-service 本地 jsonl，不上库）
-- 端到端实测：「检查 portal 缺法语的键并全部翻译」→ Agent 自主 4 次工具调用
-  10.3s 完成，fr-FR 公开接口出法语；解耦实证：停掉 agent-service，
-  api 与两个前端一切如常
+按钮语义说明：补全的目标语言 = 表格现有语言列（补齐矩阵），引入全新语言
+走智能助理自然语言任务或编辑弹窗手填第一条。
 
-**遗留项**：
-- 多 Agent 编排/skills/父子委派：下一阶段引 morphix 仓的 agent-framework
-  （同一 pi-agent-core 底座，runner 只暴露 runTask 接缝，届时换壳不换接线）
-- run 是同步等待（≤5min），长任务要改异步 + 轮询
-- 工具集合 agent-tools 谁可编辑=谁能定义 Agent 能力，权限上等同管理员（已 private）
+## 上一迭代：agent-foundation（2026-08-23 完成，已合 main）
+
+独立 agent-service（ESM 8087，pi-agent-core 引擎+OneRouter 三条 compat 教训）；
+introspect 鉴权 + token 透传（Agent 以发起人身份行动）；轨迹 jsonl+控制台回放；
+端到端实测自主翻译 4 调用 10s 级；停机不影响平台（解耦实证）。
+**遗留**：pi 事件订阅是防御性 any 读取（agent-framework 换壳时消化）；
+run 同步等待 ≤5min；多 Agent 编排待接 agent-framework。
 
 ## 上一迭代：i18n-foundation（2026-08-23 完成，已合 main）
 

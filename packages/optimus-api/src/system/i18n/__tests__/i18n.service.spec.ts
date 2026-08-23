@@ -1,10 +1,10 @@
 /**
- * i18n service 单测:mock repo 与 aiService,钉住三条硬约束——
- * 公开读的 zh-CN 回退、AI 补全不覆盖已有译文、(namespace,key) 入参校验。
+ * i18n service 单测:mock repo,钉住核心约束——
+ * 公开读的 zh-CN 回退、writeTranslation 只补缺失、(namespace,key) 入参校验。
+ * (AI 翻译已全部走 agent-service,单轮批量翻译与其测试一并退役)
  */
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { I18nService } from "../i18n.service";
-import { ResultData } from "../../../shared/utils/result";
 
 const mkRepo = (rows: any[] = []) => ({
     find: jest.fn().mockResolvedValue(rows),
@@ -15,13 +15,7 @@ const mkRepo = (rows: any[] = []) => ({
     createQueryBuilder: jest.fn(),
 });
 
-const mkAi = (result: string | null = null) => ({
-    complete: jest.fn().mockResolvedValue(
-        result === null ? ResultData.fail(502, "模型服务调用失败") : ResultData.ok({ result }),
-    ),
-});
-
-const svc = (repo: any, ai: any = mkAi()) => new I18nService(repo as any, ai as any);
+const svc = (repo: any) => new I18nService(repo as any);
 
 describe("I18nService", () => {
     describe("publicRead", () => {
@@ -55,41 +49,33 @@ describe("I18nService", () => {
         });
     });
 
-    describe("translateMissing", () => {
-        it("只填缺失,不覆盖已有译文", async () => {
-            const rows = [
-                { key: "a", translations: { "zh-CN": "甲" }, remark: null },
-                { key: "b", translations: { "zh-CN": "乙", "en-US": "Manual-B" }, remark: null },
-            ];
-            const repo = mkRepo(rows);
-            const ai = mkAi(JSON.stringify({ a: "Alpha" }));
-            const res = await svc(repo, ai).translateMissing("portal", ["en-US"]);
+});
 
-            expect(res.translated).toBe(1);
-            // 模型只收到缺失的 a,已有人工译文的 b 不在请求里
-            const prompt: string = ai.complete.mock.calls[0][0];
-            expect(prompt).toContain('"a"');
-            expect(prompt).not.toContain("Manual-B");
-            // b 的人工译文原样保留
-            expect(rows[1].translations["en-US"]).toBe("Manual-B");
-            expect(rows[0].translations["en-US"]).toBe("Alpha");
-        });
+describe("agent 工具端点的业务逻辑", () => {
+    const rows = [
+        { key: "a", translations: { "zh-CN": "甲" }, remark: "备注A" },
+        { key: "b", translations: { "zh-CN": "乙", "en-US": "Manual-B" }, remark: null },
+    ];
 
-        it("模型失败带回原因,不抛异常", async () => {
-            const rows = [{ key: "a", translations: { "zh-CN": "甲" }, remark: null }];
-            const res = await svc(mkRepo(rows), mkAi(null)).translateMissing("portal", ["en-US"]);
-            expect(res.failed).toContain("en-US");
-        });
+    it("listMissing 只列缺目标语言且有源文的键", async () => {
+        const out = await svc(mkRepo(rows)).listMissing("portal", "en-US");
+        expect(out).toEqual([{ key: "a", source: "甲", remark: "备注A" }]);
+    });
 
-        it("模型输出裹了 markdown 代码块也能解析", async () => {
-            const rows = [{ key: "a", translations: { "zh-CN": "甲" }, remark: null }];
-            const ai = mkAi('```json\n{"a":"Alpha"}\n```');
-            const res = await svc(mkRepo(rows), ai).translateMissing("portal", ["en-US"]);
-            expect(res.translated).toBe(1);
-        });
+    it("writeTranslation 拒绝覆盖已有译文", async () => {
+        const repo = mkRepo(rows);
+        repo.findOne = jest.fn().mockResolvedValue(rows[1]);
+        await expect(
+            svc(repo).writeTranslation("portal", "b", "en-US", "Overwrite"),
+        ).rejects.toThrow(BadRequestException);
+        expect(rows[1].translations["en-US"]).toBe("Manual-B");
+    });
 
-        it("targetLocales 为空被拒", async () => {
-            await expect(svc(mkRepo()).translateMissing("portal", [])).rejects.toThrow(BadRequestException);
-        });
+    it("writeTranslation 补缺失成功", async () => {
+        const repo = mkRepo(rows);
+        const target = { key: "a", translations: { "zh-CN": "甲" }, remark: null };
+        repo.findOne = jest.fn().mockResolvedValue(target);
+        await svc(repo).writeTranslation("portal", "a", "en-US", "Alpha");
+        expect(target.translations["en-US"]).toBe("Alpha");
     });
 });

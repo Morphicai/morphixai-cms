@@ -2,14 +2,9 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { I18nEntryEntity } from "./entities/i18n-entry.entity";
-import { AiService } from "../ai/ai.service";
-import { ResultData } from "../../shared/utils/result";
 
 /** 回退源语言:键在目标 locale 缺失时用它顶,它也缺就跳过该键 */
 export const DEFAULT_LOCALE = "zh-CN";
-/** 一次 AI 补全最多打包的键数——一次 LLM 调用翻完,不做队列,量大多点几次 */
-const TRANSLATE_BATCH_LIMIT = 50;
-
 const NS_RE = /^[a-z][a-z0-9-]{0,63}$/;
 const KEY_RE = /^[a-zA-Z][a-zA-Z0-9._-]{0,127}$/;
 
@@ -18,7 +13,6 @@ export class I18nService {
     constructor(
         @InjectRepository(I18nEntryEntity)
         private readonly repo: Repository<I18nEntryEntity>,
-        private readonly aiService: AiService,
     ) {}
 
     async listNamespaces(): Promise<{ namespace: string; count: number }[]> {
@@ -124,78 +118,4 @@ export class I18nService {
         return out;
     }
 
-    /**
-     * AI 补全缺失语言。只填缺失的 locale,已有译文(无论人工还是上次 AI 补的)
-     * 一律不碰——AI 是补全者不是覆盖者,人工修订不能被下一次点击冲掉。
-     */
-    async translateMissing(
-        namespace: string,
-        targetLocales: string[],
-        keys?: string[],
-    ): Promise<{ translated: number; skipped: number; failed?: string }> {
-        if (!Array.isArray(targetLocales) || targetLocales.length === 0) {
-            throw new BadRequestException("targetLocales 不能为空");
-        }
-        for (const l of targetLocales) {
-            if (!/^[a-z]{2}(-[A-Z]{2})?$/.test(l)) throw new BadRequestException(`locale 不合法: ${l}`);
-        }
-
-        const rows = await this.repo.find({ where: { namespace } });
-        if (rows.length === 0) throw new NotFoundException("namespace 不存在");
-        const scope = keys?.length ? rows.filter((r) => keys.includes(r.key)) : rows;
-
-        // 找出真正缺译文的 (key, locale) 对,按批上限截断
-        const work: { row: I18nEntryEntity; locales: string[] }[] = [];
-        let taken = 0;
-        for (const row of scope) {
-            const source = row.translations?.[DEFAULT_LOCALE];
-            if (!source) continue; // 连源语言都没有,没法翻
-            const missing = targetLocales.filter((l) => !row.translations?.[l]);
-            if (missing.length === 0) continue;
-            work.push({ row, locales: missing });
-            taken += 1;
-            if (taken >= TRANSLATE_BATCH_LIMIT) break;
-        }
-        if (work.length === 0) return { translated: 0, skipped: scope.length };
-
-        // 按目标语言分别打包一次调用:{ key: 源文 } 进,{ key: 译文 } 出
-        let translated = 0;
-        for (const locale of targetLocales) {
-            const batch = work.filter((w) => w.locales.includes(locale));
-            if (batch.length === 0) continue;
-            const source: Record<string, string> = {};
-            for (const w of batch) {
-                source[w.row.key] = w.row.translations[DEFAULT_LOCALE];
-                if (w.row.remark) source[w.row.key] += ` 备注:${w.row.remark}`;
-            }
-            const prompt = [
-                `把下面 JSON 里每个值从 ${DEFAULT_LOCALE} 翻译成 ${locale},保持 UI 文案的简洁语气。`,
-                '值里 " 备注:" 之后的部分是给译者的上下文,只作参考,不要出现在译文里。',
-                "只输出 JSON 本身(不要 markdown 代码块、不要解释),键名原样保留:",
-                "",
-                JSON.stringify(source),
-            ].join("\n");
-            const res: ResultData = await this.aiService.complete(prompt);
-            if (res.code !== 200) {
-                // 模型失败不让整个操作报废:已完成的语言保留,把失败原因带回去
-                return { translated, skipped: 0, failed: `${locale}: ${res.msg}` };
-            }
-            let parsed: Record<string, unknown>;
-            try {
-                const raw = String((res.data as any)?.result ?? "").replace(/^```(json)?|```$/g, "").trim();
-                parsed = JSON.parse(raw);
-            } catch {
-                return { translated, skipped: 0, failed: `${locale}: 模型输出不是合法 JSON` };
-            }
-            for (const w of batch) {
-                const text = parsed[w.row.key];
-                if (typeof text === "string" && text.trim()) {
-                    w.row.translations = { ...w.row.translations, [locale]: text.trim() };
-                    await this.repo.save(w.row);
-                    translated += 1;
-                }
-            }
-        }
-        return { translated, skipped: scope.length - work.length };
-    }
 }

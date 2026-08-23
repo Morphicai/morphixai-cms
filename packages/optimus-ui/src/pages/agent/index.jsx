@@ -8,8 +8,8 @@ import storage from '../../shared/utils/storage';
 
 /**
  * 智能助理控制台——agent-service(独立进程 8087,经 /agent-api 同源代理)的前端。
- * 基座只提供运行时,工具是"数据集合"里 agent-tools 的注册行:
- * 想让它多会一样本事,去数据集合加一行工具定义,这个页面和基座都不用改。
+ * 基座只提供运行时;工具由业务服务在代码里注册并经 /system/agent/tools 暴露,
+ * 业务加能力时这个页面和基座都不用改。
  * 请求不走全局 axios 实例:agent-service 有自己的鉴权(introspect),
  * 401 时不应触发管理端的 token 刷新流程。
  */
@@ -145,7 +145,7 @@ const AgentConsole = () => {
       <Col span={8}>
         <Card title={<Space><ToolOutlined />可用工具</Space>} size="small">
           <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-            工具是"数据集合 → agent-tools"里的注册行,加一行即多一个能力,基座零代码变更。
+            工具由各业务服务在代码里注册(声明与实现同库),基座只负责让它们跑起来。
           </Typography.Paragraph>
           {tools.length === 0 && !toolsErr && <Empty description="注册表为空" />}
           <Collapse
