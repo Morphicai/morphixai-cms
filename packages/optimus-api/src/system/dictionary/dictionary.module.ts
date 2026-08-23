@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import "./dictionary.agent-tools";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DictionaryEntity } from "./entities/dictionary.entity";
 import { DictionaryCollectionEntity } from "./entities/dictionary-collection.entity";

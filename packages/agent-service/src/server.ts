@@ -55,9 +55,11 @@ app.post("/run", async (req, res) => {
     const task = String(req.body?.task ?? "").trim();
     if (!task) return res.status(400).json({ code: 400, msg: "task 不能为空" });
     if (task.length > 2000) return res.status(400).json({ code: 400, msg: "task 最长 2000 字" });
+    // 业务人格由调用方注入,基座不预设"你是谁"
+    const system = String(req.body?.system ?? "").slice(0, 2000);
 
     // 工具透传发起人 token(注意:runner 里拿到的是裸 token,拼回 Bearer)
-    const result = await runTask(task, `Bearer ${auth.token}`);
+    const result = await runTask(task, `Bearer ${auth.token}`, system);
 
     // 审计留痕:一行一 run,轨迹是给人看的所以已在 runner 里截断过
     const record = { at: new Date().toISOString(), by: auth.user, task, ...result };
