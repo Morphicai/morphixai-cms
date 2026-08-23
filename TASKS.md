@@ -2,25 +2,38 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：entity-schema-crud（2026-08-23 完成开发验收）
+## 当前迭代：platform-base-sdk（2026-08-23 完成开发验收）
 
-同一份 entity schema 驱动增删改查：字典模块（存储）+ 表单协议（schema 与校验器）+
-SchemaFormRenderer（渲染）三个已验收资产拼装成"数据集合"能力。管理端建集合
-（JSON + 预览 + 智能生成）→ 按 schema 录入/编辑/删除行 → C 端读公开集合。
-首页 features 已切到 site-features 集合（服务端直连取数，后端灭则回退硬编码，实测）。
-提案与任务见 `openspec/changes/entity-schema-crud/`。
+基座与共享 SDK——为"其他团队接入同一管理后台/共享登录态"铺的三个薄接入面：
 
-连带修掉三个存量缺陷：
-- **validateUniqueness 从未生效**：参数 JSON.stringify 多包一层引号，MySQL 按字面量
-  比较恒不相等——unique 校验一直是空转，本次修复后实测拦截
-- **database-initializer 两处 queryRunner 泄漏**：初始化守卫每 5s 缓存过期查一次库，
-  每查漏一个连接，池干涸后守卫把已初始化系统误判成"未初始化"全接口 403
-  （症状与"数据库挂了"高度相似，先查池再怀疑库）
-- dictionary-collection.service 的校验器 import 缺失（上次会话中断截断）
+- **`POST /api/auth/introspect`**：外部后端校验平台 token（admin/client 两体系），
+  密钥不出边界；匿名可调（token 即凭据，introspect 不放大权限），IP 限频
+- **`@optimus/client-sdk`**：C 端 SDK 从 optimus-next 抽成 workspace 包
+  （http/session/storage/dynamic-content/article + 新增数据集合读写封装），
+  next 内走 re-export 薄壳无损切换
+- **`@optimus/server-sdk`**：introspect 的零依赖封装（60s 缓存 + hasPerm 便捷判断）
+- **管理端嵌入协议**：`@optimus/admin-embed`（子应用侧，零构建 UMD）+
+  IframeApp 工厂（基座侧）——iframe 子应用经 postMessage 握手继承
+  token/用户/权限/locale/theme，双向 origin 校验，token 不走 URL。
+  `examples/demo-activity` 是协议验收样例（`node serve.mjs` 起 5190）
+
+刻意不做：qiankun/module federation（iframe 够用且成本低一个量级）、
+webhook/app-key 开放平台（无真实消费者）、RS256（introspection 下密钥已不出边界）。
+
+连带修掉一个致命存量缺陷：**database-initializer 两处 queryRunner 泄漏**——
+初始化守卫每 5s 缓存过期查一次库，每查漏一个连接，池干涸后守卫把已初始化系统
+误判成"未初始化"，全接口 403（症状酷似"数据库挂了"，先查池再怀疑库）。
 
 **遗留项**：
-- AI 生成的 schema 倾向把所有字段标 required:true，生成提示词可加"仅关键字段必填"引导
-- 行数据抽屉一次拉 200 行无分页，集合大了要补
+- introspect 的 IP 限频是单进程内存桶，多实例部署时要换共享存储
+- admin-embed 未走 npm 发布流程（workspace 内可用；外部团队真接入时再发）
+
+## 上一迭代：entity-schema-crud（2026-08-23 完成，已合 main）
+
+同一份 entity schema 驱动增删改查：管理端"数据集合"页（建集合/智能生成/行 CRUD），
+C 端首页 features 切到 site-features 集合（后端灭回退硬编码）。
+连带修复：validateUniqueness 参数多包引号从未生效、dictionary-collection import 截断。
+**遗留项**：AI 生成 schema 倾向全字段 required（提示词可引导）；行抽屉无分页（200 行上限）。
 
 ## 数据库连接（2026-08-22 结论，重要）
 

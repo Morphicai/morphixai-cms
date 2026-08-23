@@ -934,6 +934,15 @@ COMMIT;
 -- ----------------------------
 BEGIN;
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (60, 1, 'DataCollections'), (61, 2, 'DataCollections');
+
+-- DemoActivity: 外部子应用嵌入协议的验收示例菜单(platform-base-sdk 迭代,验收后可摘)
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (62, 1, 'DemoActivity'), (63, 2, 'DemoActivity');
+
+-- demo-activity-config: 嵌入示例读写的公开集合(public_write,受 form 协议 schema 校验)
+INSERT IGNORE INTO `op_sys_dictionary_collection` (`id`, `name`, `display_name`, `description`, `data_type`, `schema`, `access_type`) VALUES
+(3, 'demo-activity-config', '演示活动配置', '外部子应用嵌入示例的读写演示数据', 'object',
+ '{"title":"演示活动配置","fields":[{"key":"title","label":"活动标题","type":"text","required":true},{"key":"owner","label":"负责人","type":"text"},{"key":"enabled","label":"是否启用","type":"switch"}]}',
+ 'public_write');
 INSERT IGNORE INTO `op_sys_dictionary_collection` (`id`, `name`, `display_name`, `description`, `data_type`, `schema`, `access_type`, `status`) VALUES
 (2, 'site-features', '官网Features', '首页功能卡片列表,schema 为表单协议', 'object', '{"title": "官网 Features", "fields": [{"key": "fid", "label": "标识", "type": "text", "required": true, "unique": true}, {"key": "icon", "label": "图标(lucide 组件名)", "type": "text", "required": true}, {"key": "title", "label": "标题", "type": "text", "required": true}, {"key": "description", "label": "描述", "type": "textarea", "required": true}, {"key": "status", "label": "状态标记", "type": "text", "placeholder": "如 Coming Soon,留空即已上线"}]}', 'public_read', 'active');
 INSERT IGNORE INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`) VALUES

@@ -20,7 +20,8 @@
     "next": "16.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "@optimus/client-sdk": "workspace:*"
   },
   "devDependencies": {
     "@harness-fe/next": "^4.0.0",

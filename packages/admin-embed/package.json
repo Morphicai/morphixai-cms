@@ -1,0 +1,20 @@
+{
+  "name": "@optimus/admin-embed",
+  "version": "1.0.0",
+  "description": "Optimus 管理后台子应用嵌入 SDK：iframe 握手拿 token/用户/权限。零构建 UMD 单文件，<script> 与 require 皆可用",
+  "author": "Optimus Team <team@example.com>",
+  "license": "ISC",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "scripts": {
+    "build": "echo \"zero-build package\" && exit 0",
+    "test": "echo \"covered by demo-activity acceptance\" && exit 0"
+  }
+}

@@ -23,5 +23,6 @@ module.exports = {
         "**/points-engine/**/*.spec.ts",
         "**/guards/**/*.spec.ts",
         "**/form/**/*.spec.ts",
+        "**/auth/**/*.spec.ts",
     ],
 };

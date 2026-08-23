@@ -1,0 +1,28 @@
+{
+  "name": "@optimus/server-sdk",
+  "version": "1.0.0",
+  "description": "Optimus 服务端 SDK：introspect 封装，外部服务校验平台 token 用，零依赖",
+  "author": "Optimus Team <team@example.com>",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "node --test \"dist/__tests__/*.test.js\""
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

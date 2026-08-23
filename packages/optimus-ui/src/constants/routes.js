@@ -86,6 +86,16 @@ export const COMPONENT_MAP = {
   FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
   DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
   FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
+  // 外部子应用(iframe 嵌入,协议见 shared/components/IframeApp)。demo-activity 是
+  // 嵌入协议的验收样例,模拟"别的团队独立开发的活动管理页"
+  DemoActivity: React.lazy(() =>
+    import('../shared/components/IframeApp').then((m) => ({
+      default: m.default({
+        url: process.env.REACT_APP_DEMO_ACTIVITY_URL || 'http://localhost:5190',
+        title: '演示活动',
+      }),
+    }))
+  ),
   // 系统安装组件
   Setup: React.lazy(() => import('../pages/setup')), // 系统安装页面
 };
@@ -264,6 +274,20 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     description: 'entity schema 驱动的数据增删改查(无代码地基)',
+  },
+  // 外部子应用示例:iframe 嵌入 + 握手协议(token/用户/权限穿透)的验收样例
+  {
+    id: 'demo_activity',
+    name: '演示活动',
+    code: 'DemoActivity',
+    type: MENU_TYPES.MENU,
+    path: '/demo-activity',
+    component: 'DemoActivity',
+    icon: 'AppstoreAddOutlined',
+    orderNum: 46,
+    parentId: null,
+    exact: true,
+    description: '外部团队子应用嵌入示例(嵌入协议验收用,可下线)',
   },
   // 公开填报页:免登录,不进菜单
   {
