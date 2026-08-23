@@ -85,6 +85,7 @@ export const COMPONENT_MAP = {
   // 动态表单组件
   FormManagement: React.lazy(() => import('../pages/form')), // 表单管理
   DataCollectionManagement: React.lazy(() => import('../pages/data-collection')), // 数据集合
+  I18nManagement: React.lazy(() => import('../pages/i18n')), // 多语言管理(CMS 自己的文案存储)
   FormFill: React.lazy(() => import('../pages/form/FillPage')), // 公开填报页(免登录)
   // 外部子应用(iframe 嵌入,协议见 shared/components/IframeApp)。demo-activity 是
   // 嵌入协议的验收样例,模拟"别的团队独立开发的活动管理页"
@@ -288,6 +289,20 @@ export const SYSTEM_ROUTES = [
     parentId: null,
     exact: true,
     description: '外部团队子应用嵌入示例(嵌入协议验收用,可下线)',
+  },
+  // 多语言管理:CMS 自己的文案键值存储。与 iframe 版"翻译管理"(独立工作台)并存
+  {
+    id: 'i18n_management',
+    name: '多语言管理',
+    code: 'I18nManagement',
+    type: MENU_TYPES.MENU,
+    path: '/i18n',
+    component: 'I18nManagement',
+    icon: 'GlobalOutlined',
+    orderNum: 44,
+    parentId: null,
+    exact: true,
+    description: 'namespace/key 维度的多语言文案,支持 AI 补全缺失语言',
   },
   // 公开填报页:免登录,不进菜单
   {

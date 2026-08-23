@@ -31,6 +31,7 @@ import { CategoryModule } from "./system/category/category.module";
 import { ArticleVersionModule } from "./system/article-version/article-version.module";
 import { AiModule } from "./system/ai/ai.module";
 import { FormModule } from "./system/form/form.module";
+import { I18nModule } from "./system/i18n/i18n.module";
 import { WSModule } from "./system/ws/ws.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
@@ -208,6 +209,7 @@ import { join } from "path";
         ArticleVersionModule,
         AiModule,
         FormModule,
+        I18nModule,
         // 业务功能模块
         ContactModule,
         OrderModule,
