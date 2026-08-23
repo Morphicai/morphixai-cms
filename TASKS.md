@@ -62,6 +62,12 @@ examples/demo-activity 全流程验收过。
 
 ## 已明确推迟（闭环前不碰）
 
+- **partner/points-engine 迁出为子服务**：init project 拷入的存量业务线
+  （游戏合伙人/积分引擎），代码挂载但三张 partner 表 0 行、无活跃使用。
+  已决策走服务目录接入（entryType=embed + 自己的权限码 + toolsPath）。
+  其 9 个单测自 init 起就与实现不同步（引用从未存在的 JoinMode/旧签名），
+  已在 jest.unit.config.js testPathIgnorePatterns 屏蔽——**迁移时随行修复**，
+  屏蔽清单就是迁移范围的测试侧对账单
 - antd v4→v5 弃用 API 清理
 - dashboard 统计数据源
 - 无标注接口的"默认拒绝"收紧（platform-closed-loop 产出清单，下一轮做）
