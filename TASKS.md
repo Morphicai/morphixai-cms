@@ -2,38 +2,33 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：platform-base-sdk（2026-08-23 完成开发验收）
+## 当前迭代：i18n-foundation（2026-08-23 完成开发验收）
 
-基座与共享 SDK——为"其他团队接入同一管理后台/共享登录态"铺的三个薄接入面：
+多语言成为平台能力：`namespace + key → {locale: 文案}` 单表模型
+（不建语言注册表——translations 里有什么 locale 就支持什么）。
 
-- **`POST /api/auth/introspect`**：外部后端校验平台 token（admin/client 两体系），
-  密钥不出边界；匿名可调（token 即凭据，introspect 不放大权限），IP 限频
-- **`@optimus/client-sdk`**：C 端 SDK 从 optimus-next 抽成 workspace 包
-  （http/session/storage/dynamic-content/article + 新增数据集合读写封装），
-  next 内走 re-export 薄壳无损切换
-- **`@optimus/server-sdk`**：introspect 的零依赖封装（60s 缓存 + hasPerm 便捷判断）
-- **管理端嵌入协议**：`@optimus/admin-embed`（子应用侧，零构建 UMD）+
-  IframeApp 工厂（基座侧）——iframe 子应用经 postMessage 握手继承
-  token/用户/权限/locale/theme，双向 origin 校验，token 不走 URL。
-  `examples/demo-activity` 是协议验收样例（`node serve.mjs` 起 5190）
+- 管理端"多语言管理"：namespace 切换/搜索/动态语言列/编辑，
+  **AI 补全缺失语言**（打包批量调模型，只填缺失、不覆盖人工译文——实测
+  人工填的 "Reach Out" 在补全后原样保留）
+- 公开读 `GET /api/i18n/:namespace?locale=`：缺失回退 zh-CN，404，IP 限频
+- client-sdk 新增 I18nSDK（内存缓存；locale 拼 URL 绕开按 URL 去重的坑）
+- 建表 SQL 在 `db/i18n_tables.sql`（与 form_tables.sql 同惯例）
 
-刻意不做：qiankun/module federation（iframe 够用且成本低一个量级）、
-webhook/app-key 开放平台（无真实消费者）、RS256（introspection 下密钥已不出边界）。
-
-连带修掉一个致命存量缺陷：**database-initializer 两处 queryRunner 泄漏**——
-初始化守卫每 5s 缓存过期查一次库，每查漏一个连接，池干涸后守卫把已初始化系统
-误判成"未初始化"，全接口 403（症状酷似"数据库挂了"，先查池再怀疑库）。
+**踩坑记录**：docker exec 进 mysql 客户端写中文必须带
+`--default-character-set=utf8mb4`，否则 latin1 双重编码存成乱码
+（本次 i18n seed 和 demo-activity-config 的中文都中过招，已修）。
 
 **遗留项**：
-- introspect 的 IP 限频是单进程内存桶，多实例部署时要换共享存储
-- admin-embed 未走 npm 发布流程（workspace 内可用；外部团队真接入时再发）
+- 与 iframe 版"翻译管理"（独立工作台）并存，工作台后续去留另议
+- 文章/文档的内容变体多语言未做（等文档管理需求真来）
 
-## 上一迭代：entity-schema-crud（2026-08-23 完成，已合 main）
+## 上一迭代：platform-base-sdk（2026-08-23 完成，已合 main）
 
-同一份 entity schema 驱动增删改查：管理端"数据集合"页（建集合/智能生成/行 CRUD），
-C 端首页 features 切到 site-features 集合（后端灭回退硬编码）。
-连带修复：validateUniqueness 参数多包引号从未生效、dictionary-collection import 截断。
-**遗留项**：AI 生成 schema 倾向全字段 required（提示词可引导）；行抽屉无分页（200 行上限）。
+三个薄接入面：introspect（外部后端验 token）、@optimus/client-sdk（C 端抽包）、
+@optimus/server-sdk、iframe 嵌入协议（@optimus/admin-embed + IframeApp）。
+examples/demo-activity 全流程验收过。
+连带修复 database-initializer 两处 queryRunner 泄漏（池干涸→守卫误判未初始化→全站 403）。
+**遗留**：introspect 限频是单进程内存桶；admin-embed 未发 npm。
 
 ## 数据库连接（2026-08-22 结论，重要）
 

@@ -19,3 +19,5 @@ export type {
 
 export { CollectionSDK, collectionSDK } from './CollectionSDK';
 export type { CollectionItem, CollectionData } from './CollectionSDK';
+
+export { I18nSDK, i18nSDK } from './I18nSDK';
