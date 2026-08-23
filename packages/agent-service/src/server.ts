@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { OptimusServerSdk } from "@optimus/server-sdk";
 import { runTask } from "./runner.js";
 import { loadToolDefs } from "./tools.js";
+import { metricsSnapshot, requestStatsMiddleware } from "./metrics.js";
 
 const PORT = Number(process.env.AGENT_SERVICE_PORT || 8087);
 const API_BASE = process.env.OPTIMUS_API_URL || "http://localhost:8084/api";
@@ -19,6 +20,7 @@ const RUNS_DIR = join(dirname(fileURLToPath(import.meta.url)), "../runs");
 const sdk = new OptimusServerSdk({ baseUrl: API_BASE });
 const app = express();
 app.use(express.json({ limit: "64kb" }));
+app.use(requestStatsMiddleware);
 
 /** 鉴权:token 有效且持有 AgentConsole(或超管通配) */
 async function authorize(req: express.Request): Promise<{ ok: boolean; token: string; user?: string }> {
@@ -36,6 +38,33 @@ async function authorize(req: express.Request): Promise<{ ok: boolean; token: st
 }
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+app.get("/metrics-lite", (_req, res) => res.json(metricsSnapshot()));
+
+/**
+ * run 结束发 agent.run.finished 到平台事件通道(outbox)。
+ * 带发起人 token——发事件的权限门与跑 agent 是同一个(AgentConsole)。
+ * fire-and-forget:事件是旁路,发不出去绝不能影响 run 的返回。
+ */
+function emitRunFinished(token: string, record: { status: string; toolCalls: number; durationMs: number; task: string }): void {
+    void fetch(`${API_BASE}/system/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+            source: "agent-service",
+            type: "agent.run.finished",
+            payload: {
+                status: record.status,
+                toolCalls: record.toolCalls,
+                durationMs: record.durationMs,
+                task: record.task.slice(0, 200),
+            },
+        }),
+    }).then(
+        (r) => { if (!r.ok) console.warn(`[warn] 事件上报被拒: HTTP ${r.status}`); },
+        (e) => console.warn(`[warn] 事件上报失败: ${e?.message ?? e}`),
+    );
+}
 
 app.get("/tools", async (req, res) => {
     const auth = await authorize(req);
@@ -67,6 +96,7 @@ app.post("/run", async (req, res) => {
         await mkdir(RUNS_DIR, { recursive: true });
         await appendFile(join(RUNS_DIR, `${record.at.slice(0, 10)}.jsonl`), JSON.stringify(record) + "\n");
     } catch { /* 留痕失败不影响返回 */ }
+    emitRunFinished(auth.token, record);
 
     res.json({ code: 200, data: record });
 });

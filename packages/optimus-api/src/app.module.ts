@@ -33,6 +33,7 @@ import { AiModule } from "./system/ai/ai.module";
 import { FormModule } from "./system/form/form.module";
 import { I18nModule } from "./system/i18n/i18n.module";
 import { AgentToolsModule } from "./system/agent-tools/agent-tools.module";
+import { ServiceOpsModule } from "./system/service-ops/service-ops.module";
 import { WSModule } from "./system/ws/ws.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
@@ -212,6 +213,7 @@ import { join } from "path";
         FormModule,
         I18nModule,
         AgentToolsModule,
+        ServiceOpsModule,
         // 业务功能模块
         ContactModule,
         OrderModule,
