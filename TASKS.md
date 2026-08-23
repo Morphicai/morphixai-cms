@@ -2,7 +2,42 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前迭代：agent-tool-protocol（2026-08-23 完成，agent-foundation 三处定位修正）
+## 当前状态（2026-08-23）：服务端微服务模式闭环
+
+单机规模的微服务模式已成型：multi-service（api/agent/ui/next/demo）+
+服务目录（注册即接入）+ 探测观测 + 事务性事件 outbox。升级路径已存档
+（事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
+下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
+
+## 上一迭代：service-registry（2026-08-23 完成，已合 main）
+
+服务目录 = 人与 AI 共用的接入面，探测/动态菜单/Agent 工具三个消费者的唯一事实源：
+
+- `/system/services` CRUD（门 ServiceOps）：URL 校验（仅 http(s)/禁用户信息段/
+  embed 必填 embedUrl），变更发 service.registered/updated/removed 审计事件
+- 动态入口：目录 entryType=embed 条目 → 菜单项（照抄动态文档菜单模式）→
+  固定宿主路由 /embed/:serviceKey → EmbedFrame 握手。**菜单是页面加载时拉取的,
+  登记后已开页面需刷新**
+- Agent 工具发现改读目录（tool-providers 最小披露），env 兜底；实测改 toolsPath
+  不重启即生效。多 provider 各带自己的 base（baseUrl 语义 = API 根,可含路径前缀,
+  拼接用字符串不用 new URL——绝对路径会吃掉 base 前缀）
+- demo-activity 迁为目录动态接入，routes.js 静态节点下线（零代码接入实证）
+- 踩坑：op_sys_dictionary 唯一键含 user_id,NULL 不判重,INSERT IGNORE 不幂等,
+  seed 一律 NOT EXISTS 守护；集合 seed 不硬编码 id（会被环境后建集合占用）
+
+## 上一迭代：service-ops + 周边（2026-08-23 完成，已合 main）
+
+- 服务治理三件套：op_sys_service_event 事务性 outbox（id 即游标,双读语义）、
+  ServiceProbe 15s 探测（状态内存态）、/metrics-lite 自采样 + 管理端服务状态页
+- agent run 结束自动上报 agent.run.finished（fire-and-forget）
+- 菜单收敛：下线"翻译管理"（与多语言管理撞车,嵌入样例角色由演示活动承担）
+- 单测基线：public-article 测试修复对齐现实现;partner/points-engine 9 个
+  init 即失衡的测试屏蔽（testPathIgnorePatterns,随迁移修复）——全量 148/148 绿,
+  "全量绿"恢复为有效回归信号
+- 环境教训：OrbStack 可能随会话中断自动退出；api 在库死期间启动会留下坏连接池
+  的僵尸进程（症状是"系统尚未初始化"403）,清杀重启即愈
+
+## 前一迭代：agent-tool-protocol（2026-08-23 完成，agent-foundation 三处定位修正）
 
 1. **工具是代码不是数据**：agent-tools 数据集合废弃。工具由业务模块在代码里
    声明（`i18n.agent-tools.ts` / `dictionary.agent-tools.ts`，声明跟着实现走），
@@ -31,7 +66,7 @@ run 同步等待 ≤5min；多 Agent 编排待接 agent-framework。
 多语言平台能力：op_sys_i18n_entry 单表（namespace+key→{locale:文案}），管理页
 （动态语言列+AI 补全只填缺失）、公开读（zh-CN 回退）、client-sdk I18nSDK。
 踩坑：docker exec mysql 写中文必须 --default-character-set=utf8mb4。
-**遗留**：与 iframe 版翻译工作台并存；内容变体多语言未做。
+**遗留**：内容变体多语言未做。（iframe 版翻译工作台已于菜单收敛时下线）
 
 ## 上一迭代：platform-base-sdk（2026-08-23 完成，已合 main）
 
@@ -76,6 +111,10 @@ examples/demo-activity 全流程验收过。
 
 ## Completed
 
+- [x] service-registry（服务目录：注册即接入，探测/菜单/工具统一事实源；demo-activity 零代码迁移实证）
+- [x] service-ops（事件 outbox + 探测面板 + metrics-lite + dev:all；微服务生态调研结论存档于其 proposal）
+- [x] 菜单收敛（下线翻译管理，多语言单入口）
+- [x] 单测基线（public-article 修复 + 失衡测试屏蔽，全量 148/148 绿）
 - [x] entity-schema-crud（schema 驱动数据集合：管理端 CRUD + C 端首页数据源切换，浏览器全流程验收通过）
 - [x] optimus-next 闭环（认证单链路/DynamicContent/清理/隔离，全链路浏览器验收通过）
   - 遗留小项：ArticleSDK 双实现合并、profile 页用户ID `#` 占位、LoginForm caret-color hydration 警告
