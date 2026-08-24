@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import LoginModal from "./LoginModal";
 
 /**
  * 报名交互区(客户端组件)。三态:未登录引导 / 可报名 / 已报名。
+ * 未登录时弹主站共享登录窗(iframe,见 LoginModal),登录完留在本页。
  * 报名请求走同域相对路径,cookie 自动携带,身份校验在 zone 服务端。
  */
 export default function SignupPanel({
@@ -19,6 +21,7 @@ export default function SignupPanel({
 }) {
     const [state, setState] = useState<"idle" | "busy" | "done">(alreadySigned ? "done" : "idle");
     const [msg, setMsg] = useState("");
+    const [loginOpen, setLoginOpen] = useState(false);
 
     const signup = async () => {
         setState("busy");
@@ -48,12 +51,18 @@ export default function SignupPanel({
     }
     if (!loggedIn) {
         return (
-            <a href="/auth/login" style={{
-                display: "inline-block", padding: "10px 28px", borderRadius: 8,
-                background: "#1F2937", color: "#fff", textDecoration: "none", fontSize: 15,
-            }}>
-                登录后报名
-            </a>
+            <>
+                <button
+                    onClick={() => setLoginOpen(true)}
+                    style={{
+                        padding: "10px 28px", borderRadius: 8, border: "none", cursor: "pointer",
+                        background: "#1F2937", color: "#fff", fontSize: 15,
+                    }}
+                >
+                    登录后报名
+                </button>
+                {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+            </>
         );
     }
     if (state === "done") {

@@ -11,6 +11,12 @@ export default function LayoutClient({
 }) {
   const pathname = usePathname();
   const isDocsPage = pathname?.startsWith('/docs');
+  // 嵌入形态页面(被 zone/子应用 iframe 弹层加载),不渲染整站页头页脚
+  const isEmbedPage = pathname?.startsWith('/auth/login-embed');
+
+  if (isEmbedPage) {
+    return <main>{children}</main>;
+  }
 
   return (
     <>
