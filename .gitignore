@@ -8,6 +8,9 @@ node_modules/
 /build
 packages/*/dist
 packages/*/build
+# partner-service 的 embed 管理页是 admin-app/ 源码构建出来的静态产物,
+# 和其它包的 dist/build 一样不入库,`npm run build` 会重新生成
+packages/partner-service/public/admin/
 
 # Logs
 logs

@@ -72,13 +72,12 @@ export const COMPONENT_MAP = {
   // 短链管理组件
   ContentShortLink: React.lazy(() => import('../pages/content/short-link')), // 短链管理页面（内容管理）
   ShortToken: React.lazy(() => import('../pages/system/short-token')), // ShortToken管理页面（系统管理）
-  PartnerDataManagement: React.lazy(() =>
-    import('../pages/system/views/PartnerDataManagement')
-  ), // 合伙人数据管理页面（系统管理）
-  // 合伙人计划组件
-  PartnerManagement: React.lazy(() => import('../pages/partner')), // 合伙人计划管理页面
-  // 外部任务审核组件
-  ExternalTaskReview: React.lazy(() => import('../pages/external-task-review')), // 外部任务审核管理页面
+  // 合伙人计划管理/合伙人数据管理/外部任务审核 三个静态路由已下线,改走
+  // partner-service 的动态 embed 入口(菜单里的"合伙人服务",见
+  // getDynamicServiceMenus)。原 pages/partner、pages/external-task-review、
+  // pages/system/views/PartnerDataManagement 三处组件文件仍保留在磁盘上未删,
+  // 是有意留到迁移收尾统一清理(openspec/changes/extract-partner-service
+  // 的第 6 组),不是遗漏
   // 商品管理组件
   ProductManagement: React.lazy(() => import('../pages/product')), // 商品管理页面
   // 动态表单组件
@@ -515,32 +514,8 @@ export const SYSTEM_ROUTES = [
         exact: true,
         description: '预约记录管理，支持查看和导出',
       },
-      {
-        id: 'partner_management',
-        name: '合伙人计划',
-        code: 'PartnerManagement',
-        type: MENU_TYPES.MENU,
-        path: '/biz/partner',
-        component: 'PartnerManagement',
-        icon: 'TeamOutlined',
-        orderNum: 50,
-        parentId: 'business_data',
-        exact: true,
-        description: '合伙人计划管理，包含团队仪表板、团队成员和渠道管理',
-      },
-      {
-        id: 'external_task_review',
-        name: '外部任务审核',
-        code: 'ExternalTaskReview',
-        type: MENU_TYPES.MENU,
-        path: '/biz/external-task-review',
-        component: 'ExternalTaskReview',
-        icon: 'AuditOutlined',
-        orderNum: 60,
-        parentId: 'business_data',
-        exact: true,
-        description: '外部任务审核管理，包含任务提交审核、统计和查询',
-      },
+      // 合伙人计划、外部任务审核 两个静态路由已下线,改走 partner-service 的
+      // 动态 embed 入口(左侧菜单"合伙人服务"),见 routes.js 顶部说明
     ],
   },
 
@@ -607,19 +582,9 @@ export const SYSTEM_ROUTES = [
         exact: true,
         description: 'ShortToken管理，管理所有来源的短链',
       },
-      {
-        id: 'partner_data_management',
-        name: '合伙人数据管理',
-        code: 'PartnerDataManagement',
-        type: MENU_TYPES.MENU,
-        path: '/sys/partner-data',
-        component: 'PartnerDataManagement',
-        icon: 'TeamOutlined',
-        orderNum: 50,
-        parentId: 'system_management',
-        exact: true,
-        description: '合伙人数据管理，包括缓存刷新和数据清理',
-      },
+      // 合伙人数据管理(刷新缓存/清空所有数据)已下线,这两个按钮和"合伙人
+      // 计划"页工具栏里的是同一份逻辑,现在合并到 partner-service 的 embed
+      // 页里(合伙人管理 tab 工具栏),不再单独占一个系统管理子页面
     ],
   },
 

@@ -5,7 +5,8 @@
   "description": "合伙人/积分/外部任务子服务——第一个从 optimus-api 拆出的真实业务微服务",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
+    "build": "nest build && npm run build:admin-app",
+    "build:admin-app": "npm --prefix admin-app install --no-audit --no-fund && npm --prefix admin-app run build",
     "start": "nest start",
     "dev": "cross-env NODE_ENV=development nest start --watch",
     "test": "jest --passWithNoTests --runInBand --forceExit"
