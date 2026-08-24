@@ -16,15 +16,12 @@ import { HierarchyService } from "./hierarchy.service";
 import { JoinPartnerDto } from "./dto/join-partner.dto";
 import { CreateChannelDto } from "./dto/create-channel.dto";
 import { QueryTeamDto } from "./dto/query-team.dto";
-import { UpdateMiraDto } from "./dto/update-mira.dto";
-import { UpdateStarDto } from "./dto/update-star.dto";
 import { SetUplinkDto } from "./dto/set-uplink.dto";
 import { UpdateTeamNameDto } from "./dto/update-team-name.dto";
 import { ClientUserAuthGuard } from "../../shared/guards/client-user-auth.guard";
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { RequireClientUserAuth } from "../../shared/decorators/require-client-user-auth.decorator";
 import { AllowAnonymous } from "../../shared/decorators/allow-anonymous.decorator";
-import { RequireSuperAdmin } from "../../shared/decorators/super-admin.decorator";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
@@ -612,50 +609,11 @@ export class PartnerController {
     // (见 partner.module.ts)后者优先命中,这里的版本从未被真正调用过,
     // 只是一份无人保护的死代码,留着是隐患:谁调整一下注册顺序它就会复活。
 
-    /**
-     * 更新MIRA积分（积分引擎回调）
-     * POST /api/biz/partner/admin/partners/:partnerId/update-mira
-     * 直接改积分余额,曾经无 @Perm 裸奔——任何后台账号都能任意改任意合伙人的
-     * 积分。这个方法目前没有任何调用方(不是内部服务间调用,是唯一入口),
-     * 收到 @RequireSuperAdmin 而不是普通 @Perm:普通权限码可能被误发给
-     * 运营角色,直接写积分/权益的操作不该有这种误发空间
-     */
-    @Post("admin/partners/:partnerId/update-mira")
-    @UseGuards(JwtAuthGuard)
-    @RequireSuperAdmin()
-    @ApiOperation({ summary: "更新MIRA积分（积分引擎回调，需要JWT认证+超管）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "update_mira",
-        description: "更新合伙人MIRA积分",
-        recordResponse: false,
-    })
-    async updateMira(@Param("partnerId") partnerId: string, @Body() dto: UpdateMiraDto): Promise<ResultData> {
-        await this.partnerService.updateMira(partnerId, dto.totalMira);
-        return ResultData.ok(null, "MIRA积分已更新");
-    }
-
-    /**
-     * 更新星级（积分引擎回调）
-     * POST /api/biz/partner/admin/partners/:partnerId/update-star
-     * 同 update-mira,直接改奖励星级,收到 @RequireSuperAdmin
-     */
-    @Post("admin/partners/:partnerId/update-star")
-    @UseGuards(JwtAuthGuard)
-    @RequireSuperAdmin()
-    @ApiOperation({ summary: "更新星级（积分引擎回调，需要JWT认证+超管）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "update_star",
-        description: "更新合伙人星级",
-        recordResponse: false,
-    })
-    async updateStar(@Param("partnerId") partnerId: string, @Body() dto: UpdateStarDto): Promise<ResultData> {
-        await this.partnerService.updateStar(partnerId, dto.currentStar);
-        return ResultData.ok(null, "星级已更新");
-    }
+    // update-mira/update-star(直接改积分余额/星级的写口)已删——2026-08-24 权限审计
+    // 确认全局零调用方(不是内部服务回调,是从未被任何代码调用过的孤儿接口)。
+    // 积分账本是事件溯源模型(汇总 op_biz_task_completion_log 算余额),这两个
+    // 口子绕过账本直接改字段,是被取代后的设计遗留。真需要"运营手动修正积分"
+    // 时应该补一条修正事件写入账本,而不是恢复这种绕过口子。
 
     /**
      * 获取团队高级统计（C端接口）

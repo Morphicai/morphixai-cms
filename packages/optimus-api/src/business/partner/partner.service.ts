@@ -609,29 +609,7 @@ export class PartnerService {
         this.logger.log(`合伙人 ${partnerId} 的备注已被管理员 ${adminId} 更新`);
     }
 
-    /**
-     * 更新合伙人的MIRA积分（由积分引擎调用）
-     */
-    async updateMira(partnerId: string, totalMira: string): Promise<void> {
-        const profile = await this.getProfileById(partnerId);
-
-        profile.totalMira = totalMira;
-        await this.partnerProfileRepository.save(profile);
-
-        this.logger.log(`合伙人 ${partnerId} 的MIRA积分已更新为: ${totalMira}`);
-    }
-
-    /**
-     * 更新合伙人的星级（由积分引擎调用）
-     */
-    async updateStar(partnerId: string, currentStar: string): Promise<void> {
-        const profile = await this.getProfileById(partnerId);
-
-        profile.currentStar = currentStar as StarLevel;
-        await this.partnerProfileRepository.save(profile);
-
-        this.logger.log(`合伙人 ${partnerId} 的星级已更新为: ${currentStar}`);
-    }
+    // updateMira/updateStar 已删,见 partner.controller.ts 对应删除处的说明
 
     /**
      * 设置上级（支持userId，只能通过 code）
