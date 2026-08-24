@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, HttpCode } from "@nestjs/com
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 import { AllowAnonymous } from "../../shared/decorators/allow-anonymous.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { ResultData } from "../../shared/utils/result";
 
@@ -13,9 +14,13 @@ import { FindContactFeedbackDto } from "./dto/find-contact-feedback.dto";
 import { ContactEntity } from "./entities/contact.entity";
 import { FeedbackEntity } from "./entities/feedback.entity";
 
+// 类级 @Perm 只影响未标 @AllowAnonymous 的方法(create/update/findAllFeedback)——
+// 曾经无任何标注,任何后台账号可篡改官网展示的联系方式(邮箱/电话/地址)或
+// 读全量用户反馈
 @ApiTags("联系我们")
 @ApiBearerAuth()
 @Controller("/m/contact")
+@Perm("ConfigCenter")
 export class ContactController {
     constructor(private readonly contactService: ContactService) {}
 

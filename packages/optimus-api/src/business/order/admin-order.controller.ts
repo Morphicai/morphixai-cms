@@ -7,11 +7,15 @@ import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { RolesGuard } from "../../shared/guards/roles.guard";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
+// 曾经全员无 @Perm(RolesGuard 对无权限码接口也是直接放行),任何后台账号可查
+// 全量订单(用户UID/金额/状态)
 @ApiTags("订单管理（后台）")
 @ApiBearerAuth()
 @Controller("admin/order")
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Perm("OrderManagement")
 export class AdminOrderController {
     constructor(private readonly adminOrderService: AdminOrderService) {}
 

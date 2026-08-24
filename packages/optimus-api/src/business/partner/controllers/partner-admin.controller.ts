@@ -17,15 +17,22 @@ import { ClearPartnerDataDto } from "../dto/clear-partner-data.dto";
 import { ClearAllPartnerDataDto } from "../dto/clear-all-partner-data.dto";
 import { ResultData } from "../../../shared/utils/result";
 import { ForbiddenException } from "@nestjs/common";
+import { Perm } from "../../../shared/decorators/perm.decorator";
+import { RequireSuperAdmin } from "../../../shared/decorators/super-admin.decorator";
 
 /**
  * 合伙人管理后台控制器
  * 提供给管理员使用的接口
+ * 曾经全员无 @Perm(仅 JwtAuthGuard,登录即用),两个清数据方法特意加了
+ * SuperAdminGuard 但冻结/改上级关系这类同样危险的写操作漏了——收权到
+ * PartnerManagement,危险区(清缓存)单独收到更窄的 PartnerDataManagement,
+ * 与前端菜单权限码对齐
  */
 @ApiTags("合伙人管理后台")
 @ApiBearerAuth()
 @Controller("biz/partner/admin")
 @UseGuards(JwtAuthGuard)
+@Perm("PartnerManagement")
 export class PartnerAdminController {
     constructor(
         private readonly partnerService: PartnerService,
@@ -197,6 +204,7 @@ export class PartnerAdminController {
      * 刷新积分缓存
      */
     @Post("cache/refresh")
+    @Perm("PartnerDataManagement")
     @ApiOperation({
         summary: "刷新积分缓存",
         description: "清空所有合伙人的积分缓存，下次查询时会重新计算",
@@ -219,6 +227,7 @@ export class PartnerAdminController {
      */
     @Delete("partners/:partnerId/clear-data")
     @UseGuards(SuperAdminGuard)
+    @RequireSuperAdmin()
     @ApiOperation({
         summary: "清空单个合伙人数据（危险操作，仅超级管理员）",
         description:
@@ -252,6 +261,7 @@ export class PartnerAdminController {
      */
     @Delete("partners/clear-all-data")
     @UseGuards(SuperAdminGuard)
+    @RequireSuperAdmin()
     @ApiOperation({
         summary: "清空所有合伙人数据（极度危险操作，仅超级管理员）",
         description:

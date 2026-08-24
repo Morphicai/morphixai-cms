@@ -5,16 +5,20 @@ import { OperationLogEntity } from "../entities/operation-log.entity";
 import { ResultData } from "../utils/result";
 import { ApiResult } from "../decorators/api-result.decorator";
 import { JwtAuthGuard } from "../guards/auth.guard";
+import { Perm } from "../decorators/perm.decorator";
 
 /**
  * 操作日志控制器
  * 提供操作日志的查询接口
+ * 曾经无 @Perm,任何后台账号可读全量操作日志——等于把全部管理行为的
+ * 情报暴露给任意一个低权账号
  */
 @ApiTags("操作日志")
 @ApiBearerAuth()
 @ApiExtraModels(ResultData, OperationLogEntity)
 @Controller("operation-log")
 @UseGuards(JwtAuthGuard)
+@Perm("OperationLog")
 export class OperationLogController {
     constructor(private readonly operationLogService: OperationLogService) {}
 

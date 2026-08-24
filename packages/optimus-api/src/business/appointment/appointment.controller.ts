@@ -13,6 +13,7 @@ import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
 import { OperationLogInterceptor } from "../../shared/interceptors/operation-log.interceptor";
 import { ClientUserAuth } from "../../shared/decorators/auth-mode.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("预约记录相关")
 @ApiBearerAuth()
@@ -40,14 +41,16 @@ export class AppointmentController {
     }
 
     @Get("/list")
-    @ApiOperation({ summary: "查询预约记录列表" })
+    @Perm("Appointment") // 曾无任何权限标注,任何后台账号可读全量预约记录(含手机号)
+    @ApiOperation({ summary: "查询预约记录列表（管理后台）" })
     @ApiResult(AppointmentListResponseDto)
     async list(@Query() queryDto: QueryAppointmentDto): Promise<ResultData> {
         return await this.appointmentService.list(queryDto);
     }
 
     @Get("/export")
-    @ApiOperation({ summary: "导出预约记录为 Excel" })
+    @Perm("Appointment")
+    @ApiOperation({ summary: "导出预约记录为 Excel（管理后台）" })
     @OperationLog({
         module: "appointment",
         action: "export",

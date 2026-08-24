@@ -4,13 +4,17 @@ import { DictionaryService } from "./dictionary.service";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { DictionaryCollectionResponseDto } from "./dto/dictionary.dto";
+import { AllowNoPerm } from "../../shared/decorators/perm.decorator";
 
 /**
  * 用户私有数据控制器
  * 用于存储用户个人偏好、设置等数据
+ * @AllowNoPerm:全部方法按 req.user.id(调用者自己)读写,不存在越权到他人数据
+ * 的可能——性质等同"改自己密码",不是权限漏洞,不需要 RBAC 权限码
  */
 @ApiTags("用户私有数据")
 @Controller("/api/user-data")
+@AllowNoPerm()
 export class UserDictionaryController {
     constructor(private readonly dictionaryService: DictionaryService) {}
 
