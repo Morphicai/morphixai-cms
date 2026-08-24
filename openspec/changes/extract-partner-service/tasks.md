@@ -1,16 +1,16 @@
 ## 1. 落地前修复(在 optimus-api 里先做,验证后再随迁移带走)
 
-- [ ] 1.1 补 `op_biz_task_completion_log` 建表迁移脚本(不依赖 synchronize),在 optimus-api 里跑通,验证 dashboard 统计接口与外部任务审批接口不再 500
-- [ ] 1.2 删除 `partner.controller.ts` 里的 `update-mira`/`update-star`(已确认全局零调用方);删除前跑一次全量引用检查(`grep -rl "updateMira\|updateStar"`)兜底确认无遗漏调用方
-- [ ] 1.3 api 全量单测 + 手工验证两条曾 500 的路径,确认修复生效,提交这一小步(可独立于后续迁移先合 main)
+- [x] 1.1 补 `op_biz_task_completion_log` 建表迁移脚本(不依赖 synchronize),在 optimus-api 里跑通,验证 dashboard 统计接口与外部任务审批接口不再 500
+- [x] 1.2 删除 `partner.controller.ts` 里的 `update-mira`/`update-star`(已确认全局零调用方);删除前跑一次全量引用检查(`grep -rl "updateMira\|updateStar"`)兜底确认无遗漏调用方
+- [x] 1.3 api 全量单测 + 手工验证两条曾 500 的路径,确认修复生效,提交这一小步(可独立于后续迁移先合 main)
 
 ## 2. 服务目录扩展:API 路径路由(C 端代理分流的前提)
 
-- [ ] 2.1 `ServiceRegistryService`(`ServiceEntry` 接口)新增可选字段 `apiPathPrefixes: string[]`,与既有 `pathPrefix`(zone 页面路由)是两个独立概念——一个服务可以两者都有、都没有,或只有其中一个
-- [ ] 2.2 新增消费视图 `listApiRoutes()`(结构参照 `listZoneRoutes()`:`{key, prefix, baseUrl}[]`,按 `apiPathPrefixes` 展开)
-- [ ] 2.3 新增匿名只读接口 `GET /api/public/api-routes`(参照 `public-zone-routes.controller.ts` 的限频/匿名约定)
-- [ ] 2.4 `optimus-next/src/app/api/[...path]/route.ts` 改造:按 60s TTL 拉这份路由表(逻辑参照 `proxy.ts` 里的 `getZoneRoutes`/`matchZone`,可直接复制一份同构实现),命中前缀转发到对应服务 baseUrl,未命中维持转发到 `OPTIMUS_API_URL` 的原有行为
-- [ ] 2.5 单测覆盖:新前缀匹配逻辑、目录不可达时的降级行为(沿用旧表/维持原有转发,不阻断代理)
+- [x] 2.1 `ServiceRegistryService`(`ServiceEntry` 接口)新增可选字段 `apiPathPrefixes: string[]`,与既有 `pathPrefix`(zone 页面路由)是两个独立概念——一个服务可以两者都有、都没有,或只有其中一个。存储用 JSON 列(`op_sys_service_registry.api_path_prefixes`),唯一性(跨服务不重叠)下沉到应用层全表扫描校验,格式校验允许多段小写路径(如 `/biz/partner`),并挡掉 `/auth`、`/public`、`/login`、`/embed` 这几个 C 端代理自身占用的保留前缀
+- [x] 2.2 新增消费视图 `listApiRoutes()`(结构参照 `listZoneRoutes()`:`{key, prefix, baseUrl}[]`,按 `apiPathPrefixes` 展开)
+- [x] 2.3 新增匿名只读接口 `GET /api/public/api-routes`(独立控制器 `PublicApiRoutesController`,未复用 `PublicZoneRoutesController`——两张表语义不同,合并会让消费方搞不清该拉哪张;限频/匿名约定与 zone 路由那份一致)
+- [x] 2.4 `optimus-next/src/app/api/[...path]/route.ts` 改造:抽出 `src/lib/api-route-directory.ts`(TTL/stale-while-revalidate 逻辑与 `proxy.ts` 同构但状态独立,因为中间件跑 edge、路由处理器跑 node,两边缓存不共享),命中前缀转发到对应服务 baseUrl(最长前缀匹配),未命中维持转发到 `OPTIMUS_API_URL` 的原有行为
+- [x] 2.5 覆盖情况:optimus-api 侧 4 个新用例(格式校验/保留前缀/跨服务唯一性撞车/`listApiRoutes` 展平过滤)已并入 `service-registry.spec.ts`,21 个用例全绿。optimus-next 侧**未能补单测**——该包的 jest 完全没配 ts/next 转译,连仓库里唯一的既有测试文件(`oss.test.ts`)现在跑都跑不过(`Cannot use import statement outside a module`),是迁移前就存在、与本次改动无关的基建缺口,不在这次任务范围内顺手修。改用真实环境验证替代:起了个 dev server + 一次性回声后端,注册临时目录条目做端到端验证——命中前缀转发到测试后端(含验证 stale-while-revalidate 首次命中吃旧表、下一次请求才生效的真实行为)、未命中路径转发行为不受影响,验证后已删除测试目录条目和临时进程。**遗留待办:optimus-next 需要先有能跑的 jest 配置,才能真正把 2.5 的单测要求落地**,记入 8.10 一并回收
 
 ## 3. partner-service 骨架
 

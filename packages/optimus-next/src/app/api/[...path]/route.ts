@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getApiRoutes, matchApiRoute } from '@/lib/api-route-directory';
 
 /**
  * 通用 API 代理路由
@@ -10,6 +11,10 @@ import { cookies } from 'next/headers';
  * 代理只做两件事——透传请求 cookie、转发响应 Set-Cookie。
  * 早前版本在这里自己解析响应体再造 cookie，结果解析的字段层级和登录接口的
  * 实际返回对不上，cookie 从来没设上过；教训是代理别替后台实现认证语义。
+ *
+ * 多后端分流：服务目录里声明了 apiPathPrefixes 的子服务(拆出去的业务模块)按前缀
+ * 命中转发到自己的 baseUrl，其余请求维持原有行为转发到主服务——不然子服务一拆出去，
+ * C 端这层代理会继续把请求打给已经不再处理这些路由的主服务，业务直接断流
  */
 
 const OPTIMUS_API_URL = process.env.OPTIMUS_API_URL || 'http://localhost:8084/api';
@@ -20,7 +25,9 @@ async function handleRequest(request: NextRequest, method: string) {
     const apiPath = pathname.replace('/api', '');
     const cookieStore = await cookies();
 
-    const backendUrl = `${OPTIMUS_API_URL}${apiPath}${search}`;
+    const route = matchApiRoute(apiPath, await getApiRoutes());
+    const apiBase = (route ? route.baseUrl : OPTIMUS_API_URL).replace(/\/$/, '');
+    const backendUrl = `${apiBase}${apiPath}${search}`;
 
     // 透传 headers（排除逐跳头）
     const forwardHeaders: Record<string, string> = {};

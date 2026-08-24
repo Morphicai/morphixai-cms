@@ -22,6 +22,11 @@ export interface ServiceEntry {
     toolsPath?: string;
     /** zone 专用:该 zone 负责的 URL 前缀(全域唯一),主 zone 据此生成 rewrites */
     pathPrefix?: string;
+    /**
+     * API 请求路由前缀(可多个),C 端代理据此把 /api/xxx 转发到对应服务,
+     * 而不是清一色转给 optimus-api。与 pathPrefix 是独立概念,互不影响
+     */
+    apiPathPrefixes?: string[];
 }
 
 const KEY_RE = /^[a-z][a-z0-9-]{0,49}$/;
@@ -31,6 +36,10 @@ const PERM_RE = /^[A-Za-z][A-Za-z0-9]{0,49}$/;
 const PREFIX_RE = /^\/[a-z][a-z0-9-]{0,49}$/;
 // 主站自身占用的一级路径,zone 前缀撞上会把主站流量劫走(proxy 里 zone 匹配先于页面路由)
 const RESERVED_PREFIXES = ["/api", "/auth", "/embed"];
+// API 路径前缀允许多段(如 /biz/partner),但仍要求小写 slug 分段
+const API_PREFIX_RE = /^\/[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)*$/;
+// C 端代理自身逻辑占用的路径,登记成 apiPathPrefixes 会劫走鉴权/自省这些核心请求
+const API_RESERVED_PREFIXES = ["/auth", "/public", "/login", "/embed"];
 
 /** 实体 → 对外条目形状(null 列还原为 undefined,消费方判断逻辑不用感知 DB 表示) */
 function toEntry(row: ServiceRegistryEntity): { key: string; sortOrder: number } & ServiceEntry {
@@ -49,6 +58,7 @@ function toEntry(row: ServiceRegistryEntity): { key: string; sortOrder: number }
         menuIcon: row.menuIcon ?? undefined,
         permCode: row.permCode ?? undefined,
         pathPrefix: row.pathPrefix ?? undefined,
+        apiPathPrefixes: row.apiPathPrefixes ?? undefined,
     };
 }
 
@@ -101,6 +111,18 @@ export class ServiceRegistryService {
             .map(({ key, pathPrefix, baseUrl }) => ({ key, pathPrefix: pathPrefix!, baseUrl }));
     }
 
+    /**
+     * API 路由表(C 端 /api/[...path] 代理按 TTL 拉取)。一个服务可声明多个前缀,
+     * 按 entryType 无关——不要求走 embed/zone,纯粹是"这段 API 路径归谁处理"的声明,
+     * 展平成 {key, prefix, baseUrl}[],命中即转发,和 zone 页面路由完全独立判断
+     */
+    async listApiRoutes(): Promise<Array<{ key: string; prefix: string; baseUrl: string }>> {
+        return (await this.rows())
+            .map(toEntry)
+            .filter((e) => e.enabled !== false && e.apiPathPrefixes?.length)
+            .flatMap(({ key, apiPathPrefixes, baseUrl }) => apiPathPrefixes!.map((prefix) => ({ key, prefix, baseUrl })));
+    }
+
     async upsert(key: string, entry: ServiceEntry, by: string): Promise<void> {
         if (!KEY_RE.test(key)) throw new BadRequestException("key 需为小写 slug(≤50字)");
         this.validate(entry);
@@ -110,6 +132,15 @@ export class ServiceRegistryService {
             const clash = await this.repo.findOne({ where: { pathPrefix: entry.pathPrefix! } });
             if (clash && clash.key !== key) {
                 throw new BadRequestException(`pathPrefix ${entry.pathPrefix} 已被 ${clash.key} 占用`);
+            }
+        }
+        // apiPathPrefixes 是数组列,DB 唯一索引管不到元素级别,只能应用层全表扫描比对。
+        // 表本身就是治理级别的小表(几十行封顶),扫描成本可忽略
+        if (entry.apiPathPrefixes?.length) {
+            const others = (await this.rows()).filter((r) => r.key !== key);
+            for (const prefix of entry.apiPathPrefixes) {
+                const clash = others.find((r) => r.apiPathPrefixes?.includes(prefix));
+                if (clash) throw new BadRequestException(`apiPathPrefixes ${prefix} 已被 ${clash.key} 占用`);
             }
         }
         const existing = await this.repo.findOne({ where: { key } });
@@ -127,6 +158,7 @@ export class ServiceRegistryService {
             permCode: entry.permCode ?? null,
             // 非 zone 条目前缀强制置空,否则残留值会一直占着唯一索引
             pathPrefix: entry.entryType === "zone" ? entry.pathPrefix! : null,
+            apiPathPrefixes: entry.apiPathPrefixes?.length ? entry.apiPathPrefixes : null,
         };
         if (existing) {
             await this.repo.save(Object.assign(existing, fields));
@@ -166,6 +198,16 @@ export class ServiceRegistryService {
         for (const f of ["healthPath", "metricsPath", "toolsPath"] as const) {
             const v = entry[f];
             if (v && !v.startsWith("/")) throw new BadRequestException(`${f} 需为 / 开头的相对路径`);
+        }
+        if (entry.apiPathPrefixes) {
+            for (const prefix of entry.apiPathPrefixes) {
+                if (!API_PREFIX_RE.test(prefix)) {
+                    throw new BadRequestException(`apiPathPrefixes ${prefix} 需为小写分段路径,如 /biz/partner`);
+                }
+                if (API_RESERVED_PREFIXES.some((r) => prefix === r || prefix.startsWith(`${r}/`))) {
+                    throw new BadRequestException(`apiPathPrefixes ${prefix} 为主服务保留路径`);
+                }
+            }
         }
         if (entry.permCode && !PERM_RE.test(entry.permCode)) {
             throw new BadRequestException("permCode 需为字母开头的字母数字(≤50字)");
