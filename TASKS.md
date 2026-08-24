@@ -9,6 +9,43 @@
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
 下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
 
+## 上一迭代：权限模型收紧为 fail-closed（2026-08-24 完成，已合 main）
+
+数据表审计发现的权限缺口收权为一个独立迭代：全库精确扫描（正确识别
+@ClientUserAuth/@AllowAnonymous/@AnonymousAuth/@RequireSuperAdmin 等六种
+装饰器，排除误报）定位到 11 个 controller、53 个方法确实无权限声明，逐个
+判定后全部处理：
+
+- **最严重**：partner.controller.ts 的 update-mira/update-star——直接改
+  合伙人积分余额/星级，此前零权限校验且是唯一入口（非内部服务回调）。
+  收为 @RequireSuperAdmin（普通权限码可能被误发给运营角色，直接写积分/
+  权益的操作不该有这个空间）
+- **死代码陷阱**：partner.controller.ts 里 7 个 admin/* 路由与
+  partner-admin.controller.ts 完全同路径，因模块注册顺序当前不可达，
+  但只要注册顺序被无意调整就会复活成无保护路由——已删除
+- **写操作零校验**：partner-admin（16 方法，冻结/改上级关系/改备注等，
+  仅两个"清数据"方法有 SuperAdminGuard）、reward-claim-record 的
+  Get()/Delete()（swagger 标"管理员"却无 @Perm）
+- **读敏感数据零校验**：admin-order（全量订单）、appointment 的
+  list/export（全量预约+手机号）、operation-log（全部管理行为）、
+  external-task-admin（任务审核，关联积分发放）
+- **新增权限码**（对齐前端菜单 routes.js 同名项，授予角色 1/2）：
+  OrderManagement/Appointment/ConfigCenter/RewardClaimRecord/
+  ActivityCenter/PartnerManagement/PartnerDataManagement/
+  ExternalTaskReview/OperationLog
+- **自服务豁免**：user-dictionary.controller.ts 按 req.user.id 读写自己的
+  数据，标 @AllowNoPerm+注释（性质等同"改自己密码"，非漏洞）
+- **guard 翻转**：unified-auth.guard.ts 的"未挂 @Perm 即放行"改为
+  fail-closed（抛 403），新写的 ADMIN 模式接口必须显式声明
+  @Perm/@AllowNoPerm/@RequireSuperAdmin 三选一
+- **验证**：全库精确扫描确认零遗漏后才翻转；造角色3（零权限码）测试账号，
+  18 个历史高危接口全部 403；改绑角色1（新码已授权）后同一 token 全部 200；
+  @RequireSuperAdmin 接口对角色1（非超管 type）仍正确 403，证明两道门
+  独立生效；api 153 测全绿（含更新后的 perm-check.spec.ts fail-closed 断言）
+- 发现但不在本次范围：RolesGuard（旧守卫）的权限判断代码整段被注释掉，
+  等同永远放行——因 UnifiedAuthGuard 是全局守卫先执行且更严格，不影响
+  本次修复效果，但该文件本身是废弃代码，值得找机会清理
+
 ## 上一迭代：数据表规划审计（2026-08-24 完成，已合 main）
 
 按"基础设施与业务数据隔离"思路全库审计（36 表 + 6 字典集合），修掉三处：
@@ -162,15 +199,11 @@ examples/demo-activity 全流程验收过。
   屏蔽清单就是迁移范围的测试侧对账单
 - antd v4→v5 弃用 API 清理
 - dashboard 统计数据源
-- **无标注接口的"默认拒绝"收紧（2026-08-24 已全量摸底，升级为下一迭代首选）**：
-  25 个 controller 存在无权限标注方法。管理面高危：partner-admin（16 方法，仅
-  JwtAuthGuard，登录即用）、admin-order（3）、external-task-admin（5）、
-  operation-log（5，日志含敏感行为记录）。C 端/公开类（order/client-user/
-  appointment/contact/points/public-* 等）需要的是显式声明语义而非收权，
-  逐个判定不可一刀切；deploy-webhook 需确认签名校验。修法：guard 改
-  fail-closed + 每个 controller 显式声明（@Perm / @AnonymousAuth /
-  有意的 @AllowNoPerm+注释理由）+ 造无码账号做 403 负例。
-  样板：service-ops.controller（9/9 全标注）
+- ~~无标注接口的"默认拒绝"收紧~~ **已完成（见下方 Completed）**
+- RolesGuard（旧守卫）清理：权限判断逻辑整段被注释掉、等同永远放行，
+  UnifiedAuthGuard 全局先执行使其无害但属废弃代码，找机会删除
+- partner-admin.controller.ts 的 dashboard 接口 500（`op_biz_task_completion_log`
+  表不存在，权限收权时顺带发现，与本次改动无关，历史遗留）
 - i18n-platform 迁移为内部模块（现阶段 iframe 引用）
 - optimus-next 的 ComingSoon 文档页补全与文档搜索后端
 

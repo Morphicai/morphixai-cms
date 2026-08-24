@@ -10,6 +10,8 @@ import { AllowAnonymous } from "../../../shared/decorators/allow-anonymous.decor
 import { RequireClientUserAuth } from "../../../shared/decorators/require-client-user-auth.decorator";
 import { ResultData } from "../../../shared/utils/result";
 import { ApiResult } from "../../../shared/decorators/api-result.decorator";
+import { Perm } from "../../../shared/decorators/perm.decorator";
+import { RequireSuperAdmin } from "../../../shared/decorators/super-admin.decorator";
 import { PartnerService } from "../../partner/partner.service";
 
 /**
@@ -212,6 +214,7 @@ export class PointsController {
      */
     @Get("admin/:partnerId")
     @UseGuards(JwtAuthGuard)
+    @Perm("PartnerManagement") // 曾无 @Perm,任何后台账号可读任意合伙人积分明细
     @ApiOperation({
         summary: "查询指定用户积分（管理后台，需要JWT认证）",
         description: "管理员查询指定合伙人的积分和明细",
@@ -283,6 +286,7 @@ export class PointsController {
      */
     @Get("cache/stats")
     @UseGuards(JwtAuthGuard)
+    @RequireSuperAdmin() // 纯调试接口,无正当的普通管理员用例,直接锁超管
     @ApiOperation({
         summary: "获取缓存统计信息（调试用）",
         description: "查看积分缓存的命中率和大小",
@@ -319,6 +323,7 @@ export class PointsController {
      */
     @Post("cache/invalidate/:partnerId")
     @UseGuards(JwtAuthGuard)
+    @RequireSuperAdmin()
     @ApiOperation({
         summary: "清除指定用户的缓存（调试用）",
         description: "手动使指定用户的积分缓存失效",

@@ -16,10 +16,6 @@ import { HierarchyService } from "./hierarchy.service";
 import { JoinPartnerDto } from "./dto/join-partner.dto";
 import { CreateChannelDto } from "./dto/create-channel.dto";
 import { QueryTeamDto } from "./dto/query-team.dto";
-import { QueryPartnersDto } from "./dto/query-partners.dto";
-import { FreezePartnerDto } from "./dto/freeze-partner.dto";
-import { CorrectUplinkDto } from "./dto/correct-uplink.dto";
-import { UpdateRemarkDto } from "./dto/update-remark.dto";
 import { UpdateMiraDto } from "./dto/update-mira.dto";
 import { UpdateStarDto } from "./dto/update-star.dto";
 import { SetUplinkDto } from "./dto/set-uplink.dto";
@@ -28,6 +24,7 @@ import { ClientUserAuthGuard } from "../../shared/guards/client-user-auth.guard"
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { RequireClientUserAuth } from "../../shared/decorators/require-client-user-auth.decorator";
 import { AllowAnonymous } from "../../shared/decorators/allow-anonymous.decorator";
+import { RequireSuperAdmin } from "../../shared/decorators/super-admin.decorator";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
@@ -610,267 +607,23 @@ export class PartnerController {
         return ResultData.ok(null, "渠道已禁用");
     }
 
-    // ==================== 管理后台接口（JWT认证） ====================
-
-    /**
-     * 查询合伙人列表（管理后台）
-     * GET /api/biz/partner/admin/partners
-     */
-    @Get("admin/partners")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({
-        summary: "查询合伙人列表（管理后台，需要JWT认证）",
-        description: "管理员查询合伙人列表，支持按合伙人编号、状态过滤和分页",
-    })
-    @ApiQuery({ name: "partnerCode", required: false, description: "合伙人编号", example: "LP123456" })
-    @ApiQuery({ name: "status", required: false, description: "状态：active/frozen/deleted", example: "active" })
-    @ApiQuery({ name: "page", required: true, description: "页码，从1开始", example: 1 })
-    @ApiQuery({ name: "pageSize", required: true, description: "每页数量", example: 10 })
-    @ApiResponse({
-        status: 200,
-        description: "成功获取合伙人列表",
-        schema: {
-            example: {
-                code: 200,
-                message: "success",
-                data: {
-                    list: [
-                        {
-                            partnerId: 1,
-                            uid: "wemade_user_123",
-                            username: "张三",
-                            partnerCode: "LP123456",
-                            status: "active",
-                            currentStar: "S1",
-                            totalMira: 1000,
-                            joinTime: "2025-12-01T10:00:00.000Z",
-                            remark: "优质合伙人",
-                            teamName: "精英战队",
-                        },
-                    ],
-                    total: 1,
-                    page: 1,
-                    pageSize: 10,
-                },
-            },
-        },
-    })
-    @ApiResult()
-    async queryPartners(@Query() queryDto: QueryPartnersDto): Promise<ResultData> {
-        const result = await this.partnerService.queryPartners(queryDto);
-        return ResultData.ok(result);
-    }
-
-    /**
-     * 获取合伙人详情（管理后台）
-     * GET /api/biz/partner/admin/partners/:partnerId
-     */
-    @Get("admin/partners/:partnerId")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({
-        summary: "获取合伙人详情（管理后台，需要JWT认证）",
-        description: "管理员获取指定合伙人的详细信息，包括上级信息",
-    })
-    @ApiParam({ name: "partnerId", description: "合伙人ID", example: "1" })
-    @ApiResponse({
-        status: 200,
-        description: "成功获取合伙人详情",
-        schema: {
-            example: {
-                code: 200,
-                message: "success",
-                data: {
-                    partnerId: 1,
-                    uid: "wemade_user_123",
-                    username: "张三",
-                    partnerCode: "LP123456",
-                    status: "active",
-                    currentStar: "S1",
-                    totalMira: 1000,
-                    joinTime: "2025-12-01T10:00:00.000Z",
-                    lastUpdateTime: "2025-12-05T10:00:00.000Z",
-                    remark: "优质合伙人",
-                    extraData: null,
-                    teamName: "精英战队",
-                    uplink: {
-                        partnerId: "10",
-                        partnerCode: "LP999999",
-                        uid: "wemade_user_999",
-                    },
-                },
-            },
-        },
-    })
-    @ApiResponse({ status: 404, description: "合伙人不存在" })
-    @ApiResult()
-    async getPartnerDetail(@Param("partnerId") partnerId: string): Promise<ResultData> {
-        const profile = await this.partnerService.getProfileByIdWithUplink(partnerId);
-        return ResultData.ok(profile);
-    }
-
-    /**
-     * 获取合伙人团队（管理后台）
-     * GET /api/biz/partner/admin/partners/:partnerId/team
-     */
-    @Get("admin/partners/:partnerId/team")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({
-        summary: "获取合伙人团队（管理后台，需要JWT认证）",
-        description: "管理员查看指定合伙人的团队成员列表，支持按深度过滤和分页。depth=2时返回树状结构（包含children）",
-    })
-    @ApiParam({ name: "partnerId", description: "合伙人ID", example: "1" })
-    @ApiQuery({
-        name: "depth",
-        required: false,
-        description: "深度：1=一级下线，2=包含二级下线的树状结构，默认为1",
-        example: 1,
-    })
-    @ApiQuery({ name: "page", required: true, description: "页码，从1开始", example: 1 })
-    @ApiQuery({ name: "pageSize", required: true, description: "每页数量", example: 10 })
-    @ApiResponse({
-        status: 200,
-        description: "成功获取团队列表",
-        schema: {
-            example: {
-                code: 200,
-                message: "success",
-                data: {
-                    items: [
-                        {
-                            partnerId: "2",
-                            uid: "wemade_user_456",
-                            partnerCode: "LP234567",
-                            currentStar: "NEW",
-                            joinTime: "2025-12-02T10:00:00.000Z",
-                            sourceChannelId: "1",
-                            children: [
-                                {
-                                    partnerId: "3",
-                                    uid: "wemade_user_789",
-                                    partnerCode: "LP345678",
-                                    currentStar: "NEW",
-                                    joinTime: "2025-12-03T10:00:00.000Z",
-                                    sourceChannelId: "1",
-                                },
-                            ],
-                        },
-                    ],
-                    total: 1,
-                    page: 1,
-                    pageSize: 10,
-                },
-            },
-        },
-    })
-    @ApiResult()
-    async getPartnerTeam(@Param("partnerId") partnerId: string, @Query() queryDto: QueryTeamDto): Promise<ResultData> {
-        const depth = queryDto.depth || 1;
-        const result = await this.statisticsService.getTeamMembers(partnerId, depth, {
-            page: queryDto.page,
-            pageSize: queryDto.pageSize,
-        });
-        return ResultData.ok(result);
-    }
-
-    /**
-     * 冻结合伙人（管理后台）
-     * PUT /api/biz/partner/admin/partners/:partnerId/freeze
-     */
-    @Put("admin/partners/:partnerId/freeze")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "冻结合伙人（管理后台，需要JWT认证）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "freeze",
-        description: "冻结合伙人",
-        recordResponse: false,
-    })
-    async freezePartner(
-        @Param("partnerId") partnerId: string,
-        @Body() dto: FreezePartnerDto,
-        @Req() req: any,
-    ): Promise<ResultData> {
-        const adminId = req.user?.userId || "unknown";
-        await this.partnerService.freezePartner(partnerId, adminId, dto.reason);
-        return ResultData.ok(null, "合伙人已冻结");
-    }
-
-    /**
-     * 解冻合伙人（管理后台）
-     * PUT /api/biz/partner/admin/partners/:partnerId/unfreeze
-     */
-    @Put("admin/partners/:partnerId/unfreeze")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "解冻合伙人（管理后台，需要JWT认证）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "unfreeze",
-        description: "解冻合伙人",
-        recordResponse: false,
-    })
-    async unfreezePartner(@Param("partnerId") partnerId: string, @Req() req: any): Promise<ResultData> {
-        const adminId = req.user?.userId || "unknown";
-        await this.partnerService.unfreezePartner(partnerId, adminId);
-        return ResultData.ok(null, "合伙人已解冻");
-    }
-
-    /**
-     * 纠正上级关系（管理后台）
-     * POST /api/biz/partner/admin/partners/:partnerId/correct-uplink
-     */
-    @Post("admin/partners/:partnerId/correct-uplink")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "纠正上级关系（管理后台，需要JWT认证）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "correct_uplink",
-        description: "纠正上级关系",
-        recordResponse: false,
-    })
-    async correctUplink(
-        @Param("partnerId") partnerId: string,
-        @Body() dto: CorrectUplinkDto,
-        @Req() req: any,
-    ): Promise<ResultData> {
-        const adminId = req.user?.userId || "unknown";
-        await this.hierarchyService.correctUplink(partnerId, dto.newParentId, adminId, dto.reason);
-        return ResultData.ok(null, "上级关系已纠正");
-    }
-
-    /**
-     * 更新备注（管理后台）
-     * PUT /api/biz/partner/admin/partners/:partnerId/remark
-     */
-    @Put("admin/partners/:partnerId/remark")
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "更新备注（管理后台，需要JWT认证）" })
-    @ApiResult()
-    @OperationLog({
-        module: "partner",
-        action: "update_remark",
-        description: "更新合伙人备注",
-        recordResponse: false,
-    })
-    async updateRemark(
-        @Param("partnerId") partnerId: string,
-        @Body() dto: UpdateRemarkDto,
-        @Req() req: any,
-    ): Promise<ResultData> {
-        const adminId = req.user?.userId || "unknown";
-        await this.partnerService.updateRemark(partnerId, dto.remark, adminId);
-        return ResultData.ok(null, "备注已更新");
-    }
+    // 7 个重复的 admin/* 路由(查询/冻结/纠正上级/改备注)已删——与
+    // PartnerAdminController(biz/partner/admin/*)完全同路径,因模块注册顺序
+    // (见 partner.module.ts)后者优先命中,这里的版本从未被真正调用过,
+    // 只是一份无人保护的死代码,留着是隐患:谁调整一下注册顺序它就会复活。
 
     /**
      * 更新MIRA积分（积分引擎回调）
      * POST /api/biz/partner/admin/partners/:partnerId/update-mira
+     * 直接改积分余额,曾经无 @Perm 裸奔——任何后台账号都能任意改任意合伙人的
+     * 积分。这个方法目前没有任何调用方(不是内部服务间调用,是唯一入口),
+     * 收到 @RequireSuperAdmin 而不是普通 @Perm:普通权限码可能被误发给
+     * 运营角色,直接写积分/权益的操作不该有这种误发空间
      */
     @Post("admin/partners/:partnerId/update-mira")
     @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "更新MIRA积分（积分引擎回调，需要JWT认证）" })
+    @RequireSuperAdmin()
+    @ApiOperation({ summary: "更新MIRA积分（积分引擎回调，需要JWT认证+超管）" })
     @ApiResult()
     @OperationLog({
         module: "partner",
@@ -886,10 +639,12 @@ export class PartnerController {
     /**
      * 更新星级（积分引擎回调）
      * POST /api/biz/partner/admin/partners/:partnerId/update-star
+     * 同 update-mira,直接改奖励星级,收到 @RequireSuperAdmin
      */
     @Post("admin/partners/:partnerId/update-star")
     @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: "更新星级（积分引擎回调，需要JWT认证）" })
+    @RequireSuperAdmin()
+    @ApiOperation({ summary: "更新星级（积分引擎回调，需要JWT认证+超管）" })
     @ApiResult()
     @OperationLog({
         module: "partner",

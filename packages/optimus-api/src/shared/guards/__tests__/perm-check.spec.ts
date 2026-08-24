@@ -1,7 +1,7 @@
 /**
- * 路由级权限码校验的四个核心情形。
+ * 路由级权限码校验的核心情形，含 fail-closed 默认拒绝。
  * 只测 validateRolePermissions 这一段逻辑，guard 的其余依赖全部打桩——
- * 这里守的是"打了标的接口真的会拒人"，不是整条认证链。
+ * 这里守的是"打了标的接口真的会拒人，没打标的接口默认也拒人"，不是整条认证链。
  */
 import { ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -56,8 +56,13 @@ describe("UnifiedAuthGuard 路由级权限码校验", () => {
         await expect(run(user, "ContentManagement")).resolves.toBeUndefined();
     });
 
-    it("未标注 @Perm 的接口维持原行为(放行)", async () => {
+    it("未标注 @Perm 的接口默认拒绝(fail-closed,2026-08-24 起)", async () => {
         const user = { id: "2", account: "t", type: UserType.ORDINARY_USER, perms: [] };
+        await expect(run(user, undefined)).rejects.toThrow(ForbiddenException);
+    });
+
+    it("超级管理员即便未标注 @Perm 也放行(super admin 分支在 fail-closed 检查之前)", async () => {
+        const user = { id: "1", account: "a", type: UserType.SUPER_ADMIN, perms: ["*"] };
         await expect(run(user, undefined)).resolves.toBeUndefined();
     });
 });

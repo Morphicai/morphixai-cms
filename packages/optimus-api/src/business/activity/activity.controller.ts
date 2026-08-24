@@ -3,9 +3,12 @@ import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from "@nestjs/swagger";
 import { ActivityService } from "./activity.service";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
+// 前端调用方是管理端 activity-center 页(权限码 ActivityCenter),曾无任何标注
 @ApiTags("活动管理")
 @Controller("biz/activity")
+@Perm("ActivityCenter")
 export class ActivityController {
     constructor(private readonly activityService: ActivityService) {}
 

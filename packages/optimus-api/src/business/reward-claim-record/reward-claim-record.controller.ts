@@ -19,6 +19,7 @@ import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
 import { OperationLogInterceptor } from "../../shared/interceptors/operation-log.interceptor";
 import { ClientUserAuth } from "../../shared/decorators/auth-mode.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 
 @ApiTags("奖励发放记录")
 @ApiExtraModels(ResultData, RewardClaimRecordEntity, RewardClaimRecordListResponseDto, RewardClaimRecordInfoDto)
@@ -85,6 +86,7 @@ export class RewardClaimRecordController {
     }
 
     @Get()
+    @Perm("RewardClaimRecord") // swagger 标了"管理员"却曾经无 @Perm,任何后台账号可读全量记录
     @ApiOperation({ summary: "查询奖励发放记录列表（管理员）" })
     @ApiResult(RewardClaimRecordListResponseDto)
     async list(@Query() queryDto: QueryRewardClaimRecordDto): Promise<ResultData> {
@@ -92,6 +94,7 @@ export class RewardClaimRecordController {
     }
 
     @Delete()
+    @Perm("RewardClaimRecord") // 同上,且是删除——任何后台账号曾可直接删奖励发放记录
     @ApiOperation({ summary: "删除奖励发放记录（管理员）" })
     @ApiResult()
     @OperationLog({

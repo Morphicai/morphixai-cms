@@ -242,16 +242,26 @@ export class UnifiedAuthGuard implements CanActivate {
       return;
     }
 
-    // 路由级权限码校验：只对挂了 @Perm 的接口生效，方法级声明优先于类级。
-    // 权限码与前端菜单显隐同源（op_sys_role_menu.permission_code），user.perms
-    // 在 validateUser 时已查好，这里不再查库。没挂 @Perm 的接口维持原行为——
-    // 全面"默认拒绝"要等长尾接口梳理完，现在一刀切只会误伤没排查过的接口。
+    // 路由级权限码校验：方法级声明优先于类级。权限码与前端菜单显隐同源
+    // （op_sys_role_menu.permission_code），user.perms 在 validateUser 时已查好，
+    // 这里不再查库。
+    //
+    // 2026-08-24 起默认拒绝（fail-closed）：长尾接口已梳理完并逐个补上
+    // @Perm/@AllowNoPerm/@RequireSuperAdmin（见当次审计的 commit）。此前是
+    // "没挂 @Perm 就放行"——那次审计里，好几个 ADMIN 模式接口就是靠这条
+    // 默认放行裸奔的（直接改积分余额、清空数据、读全量订单等，均无权限码）。
+    // 新增 ADMIN 模式接口必须显式声明权限语义，否则一律 403，这是有意的：
+    // 忘记声明的后果应该是报错，不应该是放行。
     const requiredPerm = this.reflector.getAllAndOverride<string>(PERM_CODE_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (!requiredPerm) {
-      return;
+      this.logger.warn(
+        `接口未声明权限语义(缺 @Perm/@AllowNoPerm/@RequireSuperAdmin): ` +
+        `user=${user.id}(${user.account}) route=${request.method} ${request.url}`,
+      );
+      throw new ForbiddenException('接口未声明权限语义，拒绝访问');
     }
     const perms: string[] = Array.isArray(user.perms) ? user.perms : [];
     if (!perms.includes(requiredPerm)) {

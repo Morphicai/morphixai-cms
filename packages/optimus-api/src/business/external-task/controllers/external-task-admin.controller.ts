@@ -7,11 +7,15 @@ import { RejectSubmissionDto } from "../dto/reject-submission.dto";
 import { JwtAuthGuard } from "../../../shared/guards/auth.guard";
 import { RolesGuard } from "../../../shared/guards/roles.guard";
 import { PartnerService } from "../../partner/partner.service";
+import { Perm } from "../../../shared/decorators/perm.decorator";
 
+// 曾经全员无 @Perm,任何后台账号可审批/驳回外部任务——审批会触发积分发放,
+// 等于绕过指定审核人即可发钱
 @ApiTags("外部任务（管理后台）")
 @ApiBearerAuth()
 @Controller("admin/external-task")
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Perm("ExternalTaskReview")
 export class ExternalTaskAdminController {
     constructor(
         private readonly externalTaskService: ExternalTaskService,
