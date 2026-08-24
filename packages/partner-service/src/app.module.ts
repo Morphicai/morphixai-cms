@@ -4,6 +4,9 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { HealthController } from "./health.controller";
 import { IntrospectAuthGuard } from "./shared/guards/introspect-auth.guard";
+import { PartnerModule } from "./business/partner/partner.module";
+import { PointsEngineModule } from "./business/points-engine/points-engine.module";
+import { ExternalTaskModule } from "./business/external-task/external-task.module";
 
 @Module({
     imports: [
@@ -35,6 +38,9 @@ import { IntrospectAuthGuard } from "./shared/guards/introspect-auth.guard";
                 },
             }),
         }),
+        PartnerModule,
+        PointsEngineModule,
+        ExternalTaskModule,
     ],
     controllers: [HealthController],
     providers: [{ provide: APP_GUARD, useClass: IntrospectAuthGuard }],

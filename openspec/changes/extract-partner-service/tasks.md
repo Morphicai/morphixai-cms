@@ -54,11 +54,17 @@
 
 ## 4. 业务模块搬迁(双跑阶段,optimus-api 侧先不删)
 
-- [ ] 4.1 搬迁 partner 模块(controller/service/entity/DTO)到 partner-service,替换掉原来的 `UnifiedAuthGuard` 相关装饰器为新的本地装饰器,保持业务逻辑不变
-- [ ] 4.2 搬迁 points-engine 模块,points→partner 的 4 处只读调用保持进程内直接调用(不引入网络调用)
-- [ ] 4.3 搬迁 external-task 模块,`approveSubmission`→`processExternalTaskEvent` 的调用链保持进程内直接调用
-- [ ] 4.4 `op_biz_task_completion_log` 的建表迁移脚本原样带到 partner-service(与 1.1 的脚本保持一致或复用同一份)
-- [ ] 4.5 partner-service 自己实现管理页(合伙人列表/团队/冻结解冻/渠道、积分调试页、外部任务审核列表),复用既有 `EmbedFrame`/`@optimus/admin-embed` 握手协议,不改协议本身
+- [x] 4.1 搬迁 partner 模块(controller/service/entity/DTO)到 partner-service,替换掉原来的 `UnifiedAuthGuard` 相关装饰器为新的本地装饰器,保持业务逻辑不变。实施中发现两处设计阶段没预料到的跨模块依赖(OSS 存储、短链服务),决策见 design.md 3.5 节:不整体复制,partner-service 走 HTTP 调 optimus-api 新增的 `client-upload`/`client-shorten` 两个口子(`shared/utils/optimus-api-client.ts`);顺带去掉了从未被实际调用过的 `UserModule` 依赖;系统级 `@OperationLog` 审计装饰器同样不随迁移复制(见 partner.controller.ts 头注释),`AdminOperationLogEntity`(partner 专属审计表)不受影响照常搬
+- [x] 4.2 搬迁 points-engine 模块,points→partner 的 4 处只读调用保持进程内直接调用(不引入网络调用)
+- [x] 4.3 搬迁 external-task 模块,`approveSubmission`→`processExternalTaskEvent` 的调用链保持进程内直接调用;`upload-proof` 改成 HTTP 调 optimus-api 的 `client-upload`(转发的是发起者自己的 clientAccessToken)
+- [x] 4.4 `op_biz_task_completion_log` 的建表迁移脚本原样带到 `packages/partner-service/db/`,加了说明注释:dev 阶段两边共用一个库,这张表的迁移只需要执行一次,放一份在这里是为了 schema 归属跟着实体定义走
+- [ ] 4.5 partner-service 自己实现管理页(合伙人列表/团队/冻结解冻/渠道、积分调试页、外部任务审核列表),复用既有 `EmbedFrame`/`@optimus/admin-embed` 握手协议,不改协议本身——留到第 5 组服务目录接入时一起做,管理页需要先有 embed 入口才有意义单独验证
+
+**4.1-4.4 完成后的真实端到端验证**(全部通过独立的 partner-service 进程,port 8089,optimus-api 侧代码原样未动):
+- 全量单测:9 个存量已知失败测试(和 optimus-api 里屏蔽的是同一批,不是本次新增)用同样的 `testPathIgnorePatterns` 处理,其余 4 个套件(points-cache/points.service/hierarchy.service.circular/新增的 introspect-auth.guard)37 个用例全绿;`nest build` 产物验证通过
+- 真实业务闭环(client-user 注册登录→拿 optimus-api 签发的 cookie→直接打 partner-service 的 8089 端口):join(触发注册积分事件)→profile(totalMira 正确)→points/me(totalPoints 正确)→submit 外部任务→admin 审核通过(触发 processExternalTaskEvent 写积分事件)→points/me 再次查询确认积分正确累加(300+2000=2300)
+- 曾经 500 的 `GET /biz/partner/admin/dashboard` 在 partner-service 里返回正确的聚合统计(总合伙人数/活跃数/积分发放总额等)
+- 验证后清理了全部测试数据(client_user/partner_profile/task_completion_log/external_task_submission 四张表)
 
 ## 5. 服务目录接入与验证分流(必须在这一步验证通过后才能进入第 6 步删除)
 
