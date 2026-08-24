@@ -46,11 +46,11 @@
 
 ## 3. partner-service 骨架
 
-- [ ] 3.1 建 `packages/partner-service`(Nest 应用,参照 optimus-api 的 main.ts/app.module.ts 启动方式),端口 8089
-- [ ] 3.2 数据库连接配置(TypeORM,指向与 optimus-api 相同的 MySQL 实例,`synchronize:false`)
-- [ ] 3.3 实现 `IntrospectAuthGuard`:调 `POST {OPTIMUS_API_URL}/auth/introspect`,支持 admin/client 两种 type;本地实现 `@Perm`/`@AllowNoPerm`/`@RequireSuperAdmin` 三个装饰器(照抄 optimus-api 对应装饰器的最小实现,不引入包依赖)与 fail-closed 判定逻辑
-- [ ] 3.4 暴露 `healthPath`/`metricsPath`(参照 agent-service 的 `/metrics-lite` 与 optimus-api 的 request-stats 同形实现)
-- [ ] 3.5 guard 单测:覆盖 spec 里列出的四个鉴权场景(超管放行/无权限码拒绝/未声明默认拒绝/token 失效 401)
+- [x] 3.1 建 `packages/partner-service`(Nest 应用,参照 optimus-api 的 main.ts/app.module.ts 启动方式),端口 8089
+- [x] 3.2 数据库连接配置(TypeORM,指向与 optimus-api 相同的 MySQL 实例,`synchronize:false`)——直接读 `DATABASE_*` 环境变量,没有引入 optimus-api 那套 yml+DB_* 映射层(新服务不需要那层历史包袱)
+- [x] 3.3 实现 `IntrospectAuthGuard`:调 `POST {OPTIMUS_API_URL}/auth/introspect`,支持 admin/client 两种 type;本地实现 `@Perm`/`@AllowNoPerm`/`@RequireSuperAdmin`/`@ClientUserAuth`/`@AllowAnonymous` 五个装饰器(`src/shared/decorators/auth.decorators.ts`,照抄 optimus-api 对应装饰器的最小语义,不引入包依赖)与 fail-closed 判定逻辑;网络调用失败按未认证处理(不悄悄放行)
+- [x] 3.4 暴露 `/health`/`/metrics-lite`(`health.controller.ts`,直接搬 optimus-api 的 `request-stats.ts`,同形实现)
+- [x] 3.5 guard 单测:覆盖 spec 里列出的四个鉴权场景(超管放行/无权限码拒绝/未声明默认拒绝/token 失效 401)+ AllowNoPerm/RequireSuperAdmin/AllowAnonymous/网络失败降级等 8 个补充场景,共 12 个用例全绿。真实起服务验证过 `/health`、`/metrics-lite`、`/docs`(Swagger)均正常响应
 
 ## 4. 业务模块搬迁(双跑阶段,optimus-api 侧先不删)
 
