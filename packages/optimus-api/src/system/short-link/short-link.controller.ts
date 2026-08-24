@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Query, Param, HttpCode, Req, UseInterceptors } from "@nestjs/common";
+import { Perm } from "../../shared/decorators/perm.decorator";
 import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiParam } from "@nestjs/swagger";
 import { ShortLinkService } from "./short-link.service";
 import {
@@ -14,6 +15,8 @@ import { OperationLog } from "../../shared/decorators/operation-log.decorator";
 import { OperationLogInterceptor } from "../../shared/interceptors/operation-log.interceptor";
 
 @ApiTags("短链管理")
+// 短链管理曾无任何权限标注(guard 对无标注接口默认放行=登录即用),对齐前端菜单码收权
+@Perm("ContentShortLink")
 @Controller("/system/short-link")
 @UseInterceptors(OperationLogInterceptor)
 export class ShortLinkController {
