@@ -31,7 +31,18 @@
   均已实现并浏览器验证,保留为资产,业务复杂到值得时再切共享包
 - [x] 2.8 验收:登出→活动页跳转链接→登录页带 redirect→登录后回跳 /activity→SSR 识别已报名,全链路浏览器实测
 
-## 后续迭代三:模块标准实现(触发:第一个真实深度集成模块出现)
+## 迭代三:zone 路由动态化(2026-08-24 完成)
+
+- [x] 2.9 zone 路由从 next.config 启动时 rewrites 迁到 src/proxy.ts(Next 16 的 middleware):
+  按 60s TTL 拉服务目录,stale-while-revalidate(有旧表直接用后台刷,目录不可达沿用旧表),
+  面板登记/启停 zone 约 1 分钟生效、主站零重启——"管理后台管控"在 C 端补成全动态闭环;
+  matcher 从 debug 窄列表放宽为排除式(排除 /_next、/api、favicon)
+- [x] 2.10 registry 加保留前缀校验(/api /auth /embed 不可登记为 zone 前缀,防劫主站流量)+ 1 单测
+- [x] 2.11 验收:停用 zone→404、启用→恢复(全程零重启);页面/静态资产/cookie 登录态 SSR/
+  报名 POST 经 proxy 全通;主站页面不回归;保留前缀负例 400;api 152 测全绿。
+  观察记录:zone SSR introspect 偶发失败时静默降级为未登录(既有容错,刷新即恢复)
+
+## 后续迭代四:模块标准实现(触发:第一个真实深度集成模块出现)
 
 - [ ] 3.1 以真实用例校准标准 v0 → v1
 - [ ] 3.2 基座 loader(import + sharedPeers 校验 + mount/unmount 生命周期)

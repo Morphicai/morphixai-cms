@@ -31,6 +31,8 @@ const PERM_RE = /^[A-Za-z][A-Za-z0-9]{0,49}$/;
 // 单段小写前缀:/activity 合法,/a/b 不合法——zone 边界是业务域,一段足矣,
 // 多段前缀会让 assetPrefix 约定(prefix + "-static")和唯一性判断复杂化
 const PREFIX_RE = /^\/[a-z][a-z0-9-]{0,49}$/;
+// 主站自身占用的一级路径,zone 前缀撞上会把主站流量劫走(proxy 里 zone 匹配先于页面路由)
+const RESERVED_PREFIXES = ["/api", "/auth", "/embed"];
 
 /**
  * 服务目录:唯一事实源,探测/菜单/Agent 工具三个消费者读同一份数据。
@@ -130,6 +132,9 @@ export class ServiceRegistryService {
             if (!entry.pathPrefix) throw new BadRequestException("entryType=zone 时 pathPrefix 必填");
             if (!PREFIX_RE.test(entry.pathPrefix)) {
                 throw new BadRequestException("pathPrefix 需为单段小写路径,如 /activity");
+            }
+            if (RESERVED_PREFIXES.includes(entry.pathPrefix)) {
+                throw new BadRequestException(`pathPrefix ${entry.pathPrefix} 为主站保留路径`);
             }
         }
         for (const f of ["healthPath", "metricsPath", "toolsPath"] as const) {

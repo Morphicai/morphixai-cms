@@ -75,6 +75,13 @@ describe("ServiceRegistryService zone 校验", () => {
         await expect(s.upsert("z", { ...ok, entryType: "zone", pathPrefix: "activity" } as any, "u")).rejects.toThrow(BadRequestException);
     });
 
+    it("主站保留路径不可登记为 zone 前缀", async () => {
+        const s = svc();
+        for (const p of ["/api", "/auth", "/embed"]) {
+            await expect(s.upsert("z", { ...ok, entryType: "zone", pathPrefix: p } as any, "u")).rejects.toThrow(/保留/);
+        }
+    });
+
     it("pathPrefix 全域唯一,撞车报被谁占用", async () => {
         const taken = [{ key: "other", sortOrder: 0, value: { name: "O", baseUrl: "http://o", entryType: "zone", pathPrefix: "/activity" } }];
         const s = svc(mkRepo(taken));
