@@ -162,7 +162,15 @@ examples/demo-activity 全流程验收过。
   屏蔽清单就是迁移范围的测试侧对账单
 - antd v4→v5 弃用 API 清理
 - dashboard 统计数据源
-- 无标注接口的"默认拒绝"收紧（platform-closed-loop 产出清单，下一轮做）
+- **无标注接口的"默认拒绝"收紧（2026-08-24 已全量摸底，升级为下一迭代首选）**：
+  25 个 controller 存在无权限标注方法。管理面高危：partner-admin（16 方法，仅
+  JwtAuthGuard，登录即用）、admin-order（3）、external-task-admin（5）、
+  operation-log（5，日志含敏感行为记录）。C 端/公开类（order/client-user/
+  appointment/contact/points/public-* 等）需要的是显式声明语义而非收权，
+  逐个判定不可一刀切；deploy-webhook 需确认签名校验。修法：guard 改
+  fail-closed + 每个 controller 显式声明（@Perm / @AnonymousAuth /
+  有意的 @AllowNoPerm+注释理由）+ 造无码账号做 403 负例。
+  样板：service-ops.controller（9/9 全标注）
 - i18n-platform 迁移为内部模块（现阶段 iframe 引用）
 - optimus-next 的 ComingSoon 文档页补全与文档搜索后端
 
