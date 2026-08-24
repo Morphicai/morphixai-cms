@@ -9,7 +9,16 @@
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
 下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
 
-## 上一迭代：zone 共享登录收口（2026-08-24 完成，已合 main）
+## 上一迭代：zone 路由动态化（2026-08-24 完成，已合 main）
+
+zone 路由从 next.config 启动时 rewrites 迁到 src/proxy.ts：60s TTL 拉服务目录 +
+stale-while-revalidate（目录不可达沿用旧表），**登记/启停 zone 约 1 分钟生效、
+主站零重启**——之前评估里"变更需重启"的最大缺口已消。registry 同时加保留前缀
+校验（/api /auth /embed 不可登记为 zone 前缀）。
+遗留观察：zone SSR introspect 偶发失败静默降级为未登录（既有容错，刷新即恢复），
+zone 变多后若成为可感知问题，考虑 introspect 加一次重试。
+
+## 前一迭代：zone 共享登录收口（2026-08-24 完成，已合 main）
 
 zone 未登录引导定为**跳转**：`/auth?redirect=` 回跳（同源校验：只收 `/` 开头且非 `//`，
 防 open redirect；跨 zone 硬导航 window.location）。另两条通道已实现、浏览器验证过，
