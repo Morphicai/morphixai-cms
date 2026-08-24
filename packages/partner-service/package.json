@@ -1,0 +1,56 @@
+{
+  "name": "@optimus/partner-service",
+  "version": "0.0.1",
+  "private": true,
+  "description": "合伙人/积分/外部任务子服务——第一个从 optimus-api 拆出的真实业务微服务",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "nest build && npm run build:admin-app",
+    "build:admin-app": "npm --prefix admin-app install --no-audit --no-fund && npm --prefix admin-app run build",
+    "start": "nest start",
+    "dev": "cross-env NODE_ENV=development nest start --watch",
+    "test": "jest --passWithNoTests --runInBand --forceExit",
+    "verify:closed-loop": "node scripts/verify-closed-loop.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^8.4.7",
+    "@nestjs/config": "^1.1.5",
+    "@nestjs/core": "^8.4.7",
+    "@nestjs/event-emitter": "^3.0.1",
+    "@nestjs/platform-express": "^8.4.7",
+    "@nestjs/swagger": "^5.1.5",
+    "@nestjs/typeorm": "^7.1.5",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.19.0",
+    "mysql2": "3.23.4",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.2.41"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^8.2.8",
+    "@nestjs/schematics": "^8.0.5",
+    "@nestjs/testing": "^8.4.7",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^4.17.13",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.11.13",
+    "cross-env": "^7.0.3",
+    "jest": "^27.4.5",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.1.5",
+    "typescript": "^4.5.4"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": ["/node_modules/"]
+  }
+}

@@ -50,10 +50,18 @@ export class ServiceRegistryEntity {
     @Column({ name: "perm_code", length: 50, nullable: true })
     permCode: string | null;
 
-    /** zone 专用 URL 前缀。DB 唯一索引兜底(MySQL 下多个 NULL 不冲突,非 zone 条目留空) */
+    /** zone 专用 URL 前缀(页面路由)。DB 唯一索引兜底(MySQL 下多个 NULL 不冲突,非 zone 条目留空) */
     @Index({ unique: true })
     @Column({ name: "path_prefix", length: 50, nullable: true })
     pathPrefix: string | null;
+
+    /**
+     * API 请求路由前缀(与 pathPrefix 是两个独立概念:pathPrefix 管页面级 zone 路由,
+     * 这个管 API 级请求路由——一个服务可以两者都有、都没有,或只有其中一个)。
+     * 数组存 JSON 列,唯一性(跨服务不重叠)在应用层校验,DB 不便对数组元素做唯一约束
+     */
+    @Column({ name: "api_path_prefixes", type: "json", nullable: true })
+    apiPathPrefixes: string[] | null;
 
     @Column({ name: "sort_order", default: 0 })
     sortOrder: number;

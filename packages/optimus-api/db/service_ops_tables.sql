@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS `op_sys_service_registry` (
   `menu_icon` varchar(50) DEFAULT NULL,
   `perm_code` varchar(50) DEFAULT NULL,
   `path_prefix` varchar(50) DEFAULT NULL COMMENT 'zone 专用 URL 前缀,全域唯一',
+  `api_path_prefixes` json DEFAULT NULL COMMENT 'C 端 API 代理路由前缀(可多个),唯一性应用层校验',
   `sort_order` int NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

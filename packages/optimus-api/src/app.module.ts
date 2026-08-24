@@ -46,9 +46,6 @@ import { DatabaseBackupModule } from "./system/database-backup/database-backup.m
 import { DeployWebhookModule } from "./system/deploy-webhook/deploy-webhook.module";
 import { DictionaryModule } from "./system/dictionary/dictionary.module";
 import { ShortLinkModule } from "./system/short-link/short-link.module";
-import { PartnerModule } from "./business/partner/partner.module";
-import { PointsEngineModule } from "./business/points-engine/points-engine.module";
-import { ExternalTaskModule } from "./business/external-task/external-task.module";
 import { ClientUserModule } from "./business/client-user/client-user.module";
 import { SetupModule } from "./system/setup/setup.module";
 import { join } from "path";
@@ -232,12 +229,8 @@ import { join } from "path";
         DictionaryModule,
         // 短链管理模块
         ShortLinkModule,
-        // 合伙人计划模块
-        PartnerModule,
-        // 积分引擎模块
-        PointsEngineModule,
-        // 外部任务模块
-        ExternalTaskModule,
+        // 合伙人计划/积分引擎/外部任务 三个模块已整体迁到独立的 partner-service
+        // (openspec/changes/extract-partner-service),这里不再注册
         // C端用户模块
         ClientUserModule,
         // 系统安装模块

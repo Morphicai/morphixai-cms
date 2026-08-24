@@ -36,12 +36,25 @@
   1. 从请求头/cookie 取 token
   2. 调 `POST {OPTIMUS_API_URL}/auth/introspect`(`type` 按接口类别传 `admin` 或 `client`,已验证两种类型都有现成实现)
   3. `active:false` 直接 401;`active:true` 时,ADMIN 类接口沿用主服务这次收紧确立的 fail-closed 语义——没挂 `@Perm`/`@AllowNoPerm`/`@RequireSuperAdmin` 一律拒绝,挂了 `@Perm` 就比对 introspect 回来的 `perms` 数组,`user.type===SUPER_ADMIN` 直接放行
-  4. CLIENT 类接口(合伙人查自己积分等)只需要 `active:true`,不做权限码比对(和主服务现有的 `@ClientUserAuth()` 语义一致)
+  4. CLIENT 类接口(合伙人查自己积分等)只需要 `active:true`,不做权限码比对(和主服务现有的 `@ClientUserAuth()` 语义一致——**这条此前是假设,实测发现 partner/points-engine/external-task 三个模块从头到尾就没真的接 `@ClientUserAuth()`,接的是给外部服务端调用方准备的 HMAC 签名鉴权,浏览器根本调不通;已在 1.5 节修复为真正的 `@ClientUserAuth()`,现在这条假设才成立**)
 - 权限码(`PartnerManagement`/`PartnerDataManagement`/`ExternalTaskReview`)由主服务的 `op_sys_role_menu` 继续做唯一事实源,partner-service 不维护自己的权限表——查权限这件事没有下放,只有"查完权限之后怎么校验"下放了
 - 代价:每个请求多一次到主服务的网络往返(~几毫秒,dev 环境同机可忽略);`/auth/introspect` 本身有 60 次/分钟的 IP 限频,partner-service 作为管理后台的调用方(人操作,不是高频轮询)不会撞到这个限制,但如果以后 embed 页面出现高频轮询式调用,需要重新评估——先记录，不在本次处理
 
 ### 3. 三模块整体迁移,不拆成三个服务
 已验证的依赖图:points-engine→partner(4处只读)、external-task→partner+points-engine(1处写)。三者耦合度不算低,拆成三个独立服务只是把进程内函数调用换成三次网络调用外加三套鉴权配置,除了增加运维复杂度和引入需要 service token 的场景外没有实质收益。**决策:一个新进程装三个业务域**,内部仍是普通的 Nest module 依赖注入调用。
+
+### 3.5 OSS 存储、短链服务不随迁移复制,partner-service 走 HTTP 调 optimus-api
+
+实施 4.1/4.3 时发现设计阶段漏看的两处跨模块依赖(都不在 partner/points-engine/external-task 目录内,是它们引用的"外面的"能力):
+
+- `external-task` 的"上传任务凭证图片"依赖 `system/oss/`(45 个文件:多存储后端、签名 URL、文件代理、缓存、专属异常处理),是平台级能力
+- `partner` 的"创建推广渠道"依赖 `system/short-link/`,写入 `op_sys_short_link`——`op_sys_` 前缀本身就说明这是全局共享表,不是 partner 专属数据
+
+**决策:这两个不算业务域范畴,留在 optimus-api,partner-service 通过 HTTP 调用 optimus-api 现有接口,不复制实现。** 和"鉴权用 introspect 不搬 UnifiedAuthGuard"是同一个架构判断——身份验证、文件存储、短链都是平台级横切能力,新服务应该做的是"调用平台",不是"把整个平台系统再复制一份"。复制 OSS 45 个文件的维护成本和这次迁移里三个业务模块本身的体量完全不成比例,且会产生两份互不可见的存储/短链数据。
+
+（顺带确认:`system/user/` 虽被三个 `.module.ts` import,但 `UserService` 从未被实际调用,迁移时直接去掉这个 import,不需要处理）
+
+代价:`upload-proof`、`create-channel` 两个端点各多一次到 optimus-api 的网络往返;网络往返期间如果 optimus-api 不可达,这两个功能会跟着降级,这是把它们定义为"平台能力"而非"业务域自身能力"的自然结果,可接受。
 
 ### 4. 落地前修复两处断裂,不带着坏设计走
 - `update-mira`/`update-star`:全局零调用方,是被事件溯源方案取代后的遗留写口。**删除**,不带进新服务。如果将来真的需要"运营手动修正积分"这类操作,应该基于事件溯源模型设计一条新的修正记录写入路径(补一条负向/修正 `TaskCompletionLogEntity` 记录），而不是恢复一个绕过账本直接改字段的口子

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Query, Param, HttpCode, Req, UseInterceptors } from "@nestjs/common";
 import { Perm } from "../../shared/decorators/perm.decorator";
+import { ClientUserAuth } from "../../shared/decorators/auth-mode.decorator";
 import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiParam } from "@nestjs/swagger";
 import { ShortLinkService } from "./short-link.service";
 import {
@@ -8,6 +9,7 @@ import {
     QueryShortLinkDto,
     ShortLinkInfoDto,
     ShortLinkListResponseDto,
+    ClientShortenDto,
 } from "./dto/short-link.dto";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
@@ -36,6 +38,19 @@ export class ShortLinkController {
     async create(@Body() dto: CreateShortLinkDto, @Req() req: any): Promise<ResultData> {
         const userId = req.user?.id;
         const result = await this.shortLinkService.create(dto, userId);
+        return ResultData.ok(result);
+    }
+
+    // 类级 @Perm("ContentShortLink") 只认管理员——拆出去的业务子服务(如 partner-service
+    // 的推广渠道生成)代 client 用户生成短链时没有管理员身份,单独开一个走 client 会话的口子。
+    // 方法级 @ClientUserAuth() 覆盖类级权限模式
+    @Post("client-shorten")
+    @HttpCode(200)
+    @ClientUserAuth()
+    @ApiOperation({ summary: "C 端/业务子服务生成短链" })
+    @ApiBody({ type: ClientShortenDto })
+    async clientShorten(@Body() dto: ClientShortenDto): Promise<ResultData> {
+        const result = await this.shortLinkService.shorten(dto.target, dto.remark);
         return ResultData.ok(result);
     }
 

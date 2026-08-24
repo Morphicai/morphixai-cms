@@ -39,6 +39,7 @@ import { TemporaryUrlService } from "./services/temporary-url.service";
 import { StoragePathUtils } from "./utils/storage-path.utils";
 import { OssProxyUrlUtils } from "./utils/oss-proxy-url.utils";
 import { Perm } from "../../shared/decorators/perm.decorator";
+import { ClientUserAuth } from "../../shared/decorators/auth-mode.decorator";
 
 @ApiTags("文件存储相关")
 @ApiBearerAuth()
@@ -165,6 +166,36 @@ export class OssController {
         @Body() params: UploadExtraParamsDto,
         @Req() req,
     ): Promise<ResultData> {
+        return this.performUpload(file, params, { id: req.user?.id || "", account: req.user?.account || "" });
+    }
+
+    // 类级 @Perm("Files") 只认管理员——C 端(合伙人提交任务凭证等)没有管理员身份,
+    // 需要单独一个走 client 会话的口子。方法级 @ClientUserAuth() 覆盖类级权限模式,
+    // 上传逻辑本身复用同一份 performUpload,只是署名从 req.user 换成 req.clientUser
+    @Post("client-upload")
+    @ClientUserAuth()
+    @ApiOperation({ summary: "C 端文件上传(合伙人/外部任务凭证等场景),返回 url 地址" })
+    @ApiConsumes("multipart/form-data")
+    @HttpCode(200)
+    @UseInterceptors(FileInterceptor("file"))
+    @ApiResult(OssEntity)
+    async clientUploadFile(
+        @UploadedFile() file: Express.Multer.File,
+        @Body() params: UploadExtraParamsDto,
+        @Req() req,
+    ): Promise<ResultData> {
+        const clientUser = req.clientUser;
+        return this.performUpload(file, params, {
+            id: clientUser?.userId || "",
+            account: clientUser?.username || `client:${clientUser?.userId || "unknown"}`,
+        });
+    }
+
+    private async performUpload(
+        file: Express.Multer.File,
+        params: UploadExtraParamsDto,
+        creator: { id: string; account: string },
+    ): Promise<ResultData> {
         try {
             this.logger.log(`Uploading file: ${file.originalname}, size: ${file.size}`);
 
@@ -204,10 +235,7 @@ export class OssController {
                     mimeType: fileResult.mimeType,
                     fileKey: fileKey,
                 },
-                {
-                    id: req.user?.id || "",
-                    account: req.user?.account || "",
-                },
+                creator,
                 this.storageFactory.getStorageProvider() as any,
                 params.business,
             );

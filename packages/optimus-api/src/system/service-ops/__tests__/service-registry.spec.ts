@@ -109,6 +109,48 @@ describe("ServiceRegistryService zone 校验", () => {
     });
 });
 
+describe("ServiceRegistryService apiPathPrefixes 校验", () => {
+    const ok = { name: "P", baseUrl: "http://p:1" };
+
+    it("需为 / 开头的小写分段路径,可多段", async () => {
+        const s = svc();
+        await expect(s.upsert("p", { ...ok, apiPathPrefixes: ["biz/partner"] } as any, "u")).rejects.toThrow(BadRequestException);
+        await expect(s.upsert("p", { ...ok, apiPathPrefixes: ["/Biz/Partner"] } as any, "u")).rejects.toThrow(BadRequestException);
+        await expect(s.upsert("p", { ...ok, apiPathPrefixes: ["/biz/partner", "/external-task"] } as any, "u")).resolves.toBeUndefined();
+    });
+
+    it("主服务保留路径(及其子路径)不可登记", async () => {
+        const s = svc();
+        for (const p of ["/auth", "/auth/refresh", "/public", "/login", "/embed"]) {
+            await expect(s.upsert("p", { ...ok, apiPathPrefixes: [p] } as any, "u")).rejects.toThrow(/保留/);
+        }
+    });
+
+    it("跨服务不重叠,撞车报被谁占用;同 key 更新自己不算撞车", async () => {
+        const taken = [{ key: "other", sortOrder: 0, name: "O", baseUrl: "http://o", apiPathPrefixes: ["/biz/partner"] }];
+        const s = svc(mkRepo(taken));
+        await expect(
+            s.upsert("p", { ...ok, apiPathPrefixes: ["/biz/partner"] } as any, "u"),
+        ).rejects.toThrow(/other/);
+        await expect(
+            s.upsert("other", { ...ok, apiPathPrefixes: ["/biz/partner"] } as any, "u"),
+        ).resolves.toBeUndefined();
+    });
+
+    it("listApiRoutes 只出 enabled 条目,一个服务多前缀展平成多行", async () => {
+        const mixed = [
+            { key: "s1", sortOrder: 0, name: "S1", baseUrl: "http://s1", apiPathPrefixes: ["/biz/partner", "/biz/points"] },
+            { key: "s2", sortOrder: 1, name: "S2", baseUrl: "http://s2", apiPathPrefixes: ["/blog"], enabled: false },
+            { key: "s3", sortOrder: 2, name: "S3", baseUrl: "http://s3" },
+        ];
+        const out = await svc(mkRepo(mixed)).listApiRoutes();
+        expect(out).toEqual([
+            { key: "s1", prefix: "/biz/partner", baseUrl: "http://s1" },
+            { key: "s1", prefix: "/biz/points", baseUrl: "http://s1" },
+        ]);
+    });
+});
+
 describe("ServiceRegistryService 消费视图", () => {
     it("listToolProviders 只出 enabled 且有 toolsPath 的,最小披露三字段", async () => {
         const out = await svc().listToolProviders();

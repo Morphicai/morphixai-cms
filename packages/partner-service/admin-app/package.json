@@ -1,0 +1,22 @@
+{
+  "name": "@optimus/partner-service-admin-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "partner-service 的 embed 管理页(合伙人管理 + 外部任务审核),构建产物落到 ../public/admin",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.0",
+    "antd": "^5.12.0",
+    "axios": "^1.6.0",
+    "dayjs": "^1.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
+  }
+}

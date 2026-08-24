@@ -2,12 +2,19 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前状态（2026-08-23）：服务端微服务模式闭环
+## 当前状态（2026-08-24）：第一个真实业务子服务迁移完成
 
-单机规模的微服务模式已成型：multi-service（api/agent/ui/next/demo）+
-服务目录（注册即接入）+ 探测观测 + 事务性事件 outbox。升级路径已存档
-（事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
-下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
+partner/points-engine/external-task 从 optimus-api 整体迁出为独立的
+partner-service（openspec: extract-partner-service，分支
+feature-extract-partner-service-20260824），验证了"服务目录 + embed 动态菜单
++ introspect 鉴权 + C 端 API 代理多后端路由"这套单机微服务基建接一个真实业务
+模块（不是 demo）是否顺畅。结论：核心链路（服务目录扩展、API 代理分流、
+introspect 鉴权）直接复用打通，没有额外踩坑；embed 端 React 集成的胶水代码
+(`useEmbedAuth` hook、请求归一化)值得抽进 `@optimus/admin-embed` 包本身，
+留作下一个业务模块迁移前的优化项。api+partner-service 全量单测
+132+110 全绿，自动化闭环脚本 `verify-closed-loop.mjs` 33 项断言覆盖
+C 端全流程+管理端全流程+跨端账本一致性，可作为常规回归脚本长期复用。
+详见 `openspec/changes/extract-partner-service/tasks.md` 第 8 组。
 
 ## 上一迭代：权限模型收紧为 fail-closed（2026-08-24 完成，已合 main）
 
@@ -191,19 +198,11 @@ examples/demo-activity 全流程验收过。
 
 ## 已明确推迟（闭环前不碰）
 
-- **partner/points-engine 迁出为子服务**：init project 拷入的存量业务线
-  （游戏合伙人/积分引擎），代码挂载但三张 partner 表 0 行、无活跃使用。
-  已决策走服务目录接入（entryType=embed + 自己的权限码 + toolsPath）。
-  其 9 个单测自 init 起就与实现不同步（引用从未存在的 JoinMode/旧签名），
-  已在 jest.unit.config.js testPathIgnorePatterns 屏蔽——**迁移时随行修复**，
-  屏蔽清单就是迁移范围的测试侧对账单
 - antd v4→v5 弃用 API 清理
 - dashboard 统计数据源
 - ~~无标注接口的"默认拒绝"收紧~~ **已完成（见下方 Completed）**
 - RolesGuard（旧守卫）清理：权限判断逻辑整段被注释掉、等同永远放行，
   UnifiedAuthGuard 全局先执行使其无害但属废弃代码，找机会删除
-- partner-admin.controller.ts 的 dashboard 接口 500（`op_biz_task_completion_log`
-  表不存在，权限收权时顺带发现，与本次改动无关，历史遗留）
 - i18n-platform 迁移为内部模块（现阶段 iframe 引用）
 - optimus-next 的 ComingSoon 文档页补全与文档搜索后端
 
@@ -221,6 +220,10 @@ examples/demo-activity 全流程验收过。
 - [x] harness-fe 运行时观测集成（optimus-ui，projectId=optimus-admin）
 - [x] 数据库连接稳定性（容器域名直连，见 CLAUDE.md 启动要点 3）
 - [x] 数据库失联不再误跳安装页（App.js）
+- [x] extract-partner-service（第一个真实业务子服务迁移：partner/points-engine/
+      external-task 拆出为独立 partner-service，验证服务目录+embed+introspect+
+      API 代理这套基建；`verify-closed-loop.mjs` 33 项断言 + 全量单测 132+110 全绿）
+  - 遗留小项：embed 端 React 集成胶水代码待抽进 `@optimus/admin-embed` 包
 
 ## harness-fe 上游待修（本项目已用显式配置绕过）
 
