@@ -9,7 +9,15 @@
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
 下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
 
-## 上一迭代：zone-foundation（2026-08-24 完成，已合 main）
+## 上一迭代：zone 共享登录收口（2026-08-24 完成，已合 main）
+
+zone 未登录引导定为**跳转**：`/auth?redirect=` 回跳（同源校验：只收 `/` 开头且非 `//`，
+防 open redirect；跨 zone 硬导航 window.location）。另两条通道已实现、浏览器验证过，
+保留为资产不删：@optimus/auth-ui 共享包（同栈构建时，只发 dist，主站不暴露源码）、
+/auth/login-embed iframe 通道（postMessage，异构/外部子应用）。
+业务复杂到弹层体验值得时，再切共享包——届时 zone 只改 SignupPanel 一处。
+
+## 前一迭代：zone-foundation（2026-08-24 完成，已合 main）
 
 C 端 Multi-Zones 落地（微前端三模式的模式二）：
 

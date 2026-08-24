@@ -22,7 +22,16 @@
   即天然一人一报(重复报名幂等返回"已报过名");未登录报名 401;
   报名行在管理端数据集合页直接可见;浏览器截图验收(hero/徽章/规则/名单胶囊)
 
-## 后续迭代二:模块标准实现(触发:第一个真实深度集成模块出现)
+## 迭代二:zone 间共享登录(2026-08-24 完成)
+
+- [x] 2.7 三通道全部打样后定当前形态:**跳转**(/auth?redirect= 回跳,同源校验防 open redirect,
+  跨 zone 硬导航 window.location)——zone 未登录态就一个 `<a>`,零依赖;
+  SDK @optimus/auth-ui(构建时共享包,只发 dist,主站不暴露源码)与
+  iframe /auth/login-embed(postMessage optimus:login-success,异构/外部子应用)
+  均已实现并浏览器验证,保留为资产,业务复杂到值得时再切共享包
+- [x] 2.8 验收:登出→活动页跳转链接→登录页带 redirect→登录后回跳 /activity→SSR 识别已报名,全链路浏览器实测
+
+## 后续迭代三:模块标准实现(触发:第一个真实深度集成模块出现)
 
 - [ ] 3.1 以真实用例校准标准 v0 → v1
 - [ ] 3.2 基座 loader(import + sharedPeers 校验 + mount/unmount 生命周期)
