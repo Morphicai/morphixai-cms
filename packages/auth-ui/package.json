@@ -1,0 +1,25 @@
+{
+  "name": "@optimus/auth-ui",
+  "version": "1.0.0",
+  "description": "Optimus 登录弹窗 SDK:同栈(React)子应用页内共享主站登录能力,只分发编译产物",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "test": "echo \"No tests in auth-ui package\" && exit 0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0"
+  }
+}

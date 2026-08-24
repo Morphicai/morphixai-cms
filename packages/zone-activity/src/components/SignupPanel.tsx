@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import LoginModal from "./LoginModal";
+import { LoginModal } from "@optimus/auth-ui";
 
 /**
  * 报名交互区(客户端组件)。三态:未登录引导 / 可报名 / 已报名。
- * 未登录时弹主站共享登录窗(iframe,见 LoginModal),登录完留在本页。
+ * 未登录时弹共享登录窗——@optimus/auth-ui SDK(同栈子应用的正解,构建时集成,
+ * 只含编译产物);异构/外部子应用则用主站 /auth/login-embed 的 iframe 通道。
  * 报名请求走同域相对路径,cookie 自动携带,身份校验在 zone 服务端。
  */
 export default function SignupPanel({
@@ -61,7 +62,11 @@ export default function SignupPanel({
                 >
                     登录后报名
                 </button>
-                {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+                <LoginModal
+                    open={loginOpen}
+                    onClose={() => setLoginOpen(false)}
+                    onSuccess={() => window.location.reload()}
+                />
             </>
         );
     }
