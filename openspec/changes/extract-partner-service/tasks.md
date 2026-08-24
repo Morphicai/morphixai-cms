@@ -68,9 +68,9 @@
 
 ## 5. 服务目录接入与验证分流(必须在这一步验证通过后才能进入第 6 步删除)
 
-- [ ] 5.1 服务目录新增 partner-service 条目:`entryType=embed` + `apiPathPrefixes: ["/biz/partner", "/biz/points", "/external-task"]`,`healthPath`/`metricsPath` 按 3.4 的实现填,`toolsPath` 留空(已确认当前无 agent 工具声明)
+- [x] 5.1 服务目录新增 partner-service 条目:`entryType=embed` + `apiPathPrefixes: ["/biz/partner", "/biz/points", "/external-task"]`,`healthPath`/`metricsPath` 按 3.4 的实现填,`toolsPath` 留空(已确认当前无 agent 工具声明)。登记后经真实 `optimus-next` C 端代理(不是直连 8089)验证过:`GET /api/public/api-routes` 确认三个前缀都指向 partner-service,未登录请求返回 partner-service 自身的 `IntrospectAuthGuard` 错误文案(证明是真路由生效,不是巧合落到 optimus-api),登录后 join/profile/points 全链路经代理走通
 - [ ] 5.2 `optimus-ui` 里原 partner-admin/points/external-task-admin 相关的静态路由节点下线,菜单改走动态 embed 入口(参照 demo-activity 迁移时 routes.js 的改法)
-- [ ] 5.3 浏览器验证:登录一个真实合伙人账号打开 `/profile` 页,确认"合伙人状态"与"积分概览"两张卡片正常显示(证明 C 端代理分流生效、经 introspect 鉴权的调用链路走通)
+- [x] 5.3 浏览器验证:登录一个真实合伙人账号打开 `/profile` 页,确认"合伙人状态"与"积分概览"两张卡片正常显示(证明 C 端代理分流生效、经 introspect 鉴权的调用链路走通)。**验证中发现并修复了一个独立的前端字段映射 bug**(与迁移本身无关,是这两个接口第一次被浏览器真正调通才暴露出来的存量缺陷):`page.tsx` 的 `Partner`/`Points`/`User` 三个 TS 接口是按一套从未存在过的假想响应形状写的——`partner.partnerNo` 应为 `partner.partnerCode`,`partner.starLevel`(假想的数字星数)应为 `partner.currentStar`(真实是字符串枚举 NEW/S1.../LEGEND),`points.currentPoints` 应为 `points.totalPoints`,`points.totalEarned`/`totalSpent`/`frozenPoints` 三个字段在后端从未实现过(`points-engine/README.md` 明确把积分消耗/冻结列为未完成项,这套账本目前只有"发放"没有"消耗"),`user.id` 应为 `user.userId`。修复后用一个全新注册的测试账号(profilecheck2)端到端验证:join→profile→points/me 全部通过真实代理走通,浏览器截图确认合伙人编号"LP957050"、星级"新人"、团队名称"渲染验证队"、当前积分"300"、用户ID"#12"均正确渲染,测试数据已清理
 - [ ] 5.4 浏览器验证管理端:embed 页能操作合伙人列表/冻结解冻/外部任务审核
 
 ## 6. 收尾:确认分流生效后删除 optimus-api 侧代码

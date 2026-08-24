@@ -1,6 +1,8 @@
 import "reflect-metadata";
+import { join } from "path";
 import cookieParser from "cookie-parser";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { ValidationPipe, Logger } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
@@ -8,7 +10,12 @@ import { AppModule } from "./app.module";
 import { requestStatsMiddleware } from "./shared/utils/request-stats";
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, { cors: true });
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });
+
+    // 管理页(合伙人列表/冻结解冻/外部任务审核)是纯静态 HTML+admin-embed UMD 脚本,
+    // 零构建,直接托管在这个进程里,不单开一个前端服务——这是服务目录 embed 入口
+    // (entryType=embed)实际要加载的地址
+    app.useStaticAssets(join(__dirname, "..", "public"));
 
     const swaggerOptions = new DocumentBuilder()
         .setTitle("Partner Service")

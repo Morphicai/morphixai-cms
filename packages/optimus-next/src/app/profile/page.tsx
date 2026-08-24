@@ -6,25 +6,35 @@ import { useMount } from '../../hooks/useMount';
 import { clientUserService, partnerService, pointsService } from '../../services/ApiService';
 
 interface User {
-  id: number;
+  userId: string;
   username: string;
   email: string;
   createdAt: string;
 }
 
+// 字段名对齐 partner-service 的 PartnerProfileEntity 真实返回(GET /biz/partner/profile),
+// 不是历史上假设的形状——currentStar 是字符串枚举(NEW/S1.../LEGEND),不是数字星数
 interface Partner {
-  id: number;
-  partnerNo: string;
-  starLevel: number;
-  totalPoints: number;
+  partnerCode: string;
+  currentStar: string;
   teamName?: string;
 }
 
+const STAR_LEVEL_LABELS: Record<string, string> = {
+  NEW: '新人',
+  S1: '一星',
+  S2: '二星',
+  S3: '三星',
+  S4: '四星',
+  S5: '五星',
+  LEGEND: '传奇',
+};
+
+// 字段名对齐 points-engine 真实返回(GET /biz/points/me):只有 totalPoints 一个汇总值,
+// 没有 totalEarned/totalSpent/frozenPoints——积分消耗/冻结这套概念在后端从未实现过
+// (points-engine/README.md 明确把 "Points consumption / deduction" 列为未实现项)
 interface Points {
-  currentPoints: number;
-  totalEarned: number;
-  totalSpent: number;
-  frozenPoints: number;
+  totalPoints: number;
 }
 
 export default function ProfilePage() {
@@ -212,7 +222,7 @@ export default function ProfilePage() {
                       用户ID
                     </label>
                     <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-                      #{user.id}
+                      #{user.userId}
                     </div>
                   </div>
                 </div>
@@ -245,20 +255,13 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">合伙人编号</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{partner.partnerNo}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{partner.partnerCode}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">星级</span>
-                      <div className="flex items-center">
-                        {Array.from({ length: partner.starLevel }, (_, i) => (
-                          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                        <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
-                          {partner.starLevel} 星
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {STAR_LEVEL_LABELS[partner.currentStar] || partner.currentStar}
+                      </span>
                     </div>
                     {partner.teamName && (
                       <div className="flex items-center justify-between">
@@ -306,29 +309,9 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">当前积分</span>
                       <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                        {points.currentPoints}
+                        {points.totalPoints}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">累计获得</span>
-                      <span className="font-medium text-green-600 dark:text-green-400">
-                        +{points.totalEarned}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">已使用</span>
-                      <span className="font-medium text-red-600 dark:text-red-400">
-                        -{points.totalSpent}
-                      </span>
-                    </div>
-                    {points.frozenPoints > 0 && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">冻结积分</span>
-                        <span className="font-medium text-yellow-600 dark:text-yellow-400">
-                          {points.frozenPoints}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

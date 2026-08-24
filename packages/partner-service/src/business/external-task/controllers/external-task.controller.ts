@@ -26,7 +26,14 @@ import { uploadFileViaOptimusApi, extractClientToken } from "../../../shared/uti
 
 @ApiTags("外部任务（C端）")
 @ApiBearerAuth()
-@Controller("api/external-task")
+// 原路径带了多余的 "api/" 前缀,和 partner/points-engine 的 C 端控制器
+// (@Controller("biz/partner")、@Controller("biz/points"),都不带 api/)不一致——
+// optimus-api 那边全局再叠一层 "/api" 前缀,会变成实际要 /api/api/external-task
+// 才能命中(live 验证过,单前缀 404、双前缀 401),前端 ApiService.ts 一直按
+// 单前缀写(baseURL '/api' + '/external-task/...'),说明这是从没被真正用过的
+// 潜伏 bug(唯一调用方是调试页 api-examples,不是生产页面)。搬迁时顺手改正,
+// 不带着这个坑走
+@Controller("external-task")
 export class ExternalTaskController {
     private readonly logger = new Logger(ExternalTaskController.name);
 
