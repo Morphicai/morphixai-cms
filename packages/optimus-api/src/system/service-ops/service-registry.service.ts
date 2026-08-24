@@ -1,12 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { DictionaryEntity, DictionaryStatus } from "../dictionary/entities/dictionary.entity";
+import { ServiceRegistryEntity } from "./service-registry.entity";
 import { ServiceEventService } from "./service-event.service";
 
-export const REGISTRY_COLLECTION = "services-registry";
-
-/** 目录条目——服务的自我声明。存储即 services-registry 集合行的 value */
+/** 目录条目——服务的自我声明。存储为 op_sys_service_registry 专表一行 */
 export interface ServiceEntry {
     name: string;
     baseUrl: string;
@@ -34,31 +32,49 @@ const PREFIX_RE = /^\/[a-z][a-z0-9-]{0,49}$/;
 // 主站自身占用的一级路径,zone 前缀撞上会把主站流量劫走(proxy 里 zone 匹配先于页面路由)
 const RESERVED_PREFIXES = ["/api", "/auth", "/embed"];
 
+/** 实体 → 对外条目形状(null 列还原为 undefined,消费方判断逻辑不用感知 DB 表示) */
+function toEntry(row: ServiceRegistryEntity): { key: string; sortOrder: number } & ServiceEntry {
+    return {
+        key: row.key,
+        sortOrder: row.sortOrder,
+        name: row.name,
+        baseUrl: row.baseUrl,
+        healthPath: row.healthPath ?? undefined,
+        metricsPath: row.metricsPath ?? undefined,
+        toolsPath: row.toolsPath ?? undefined,
+        enabled: row.enabled,
+        entryType: row.entryType,
+        embedUrl: row.embedUrl ?? undefined,
+        menuTitle: row.menuTitle ?? undefined,
+        menuIcon: row.menuIcon ?? undefined,
+        permCode: row.permCode ?? undefined,
+        pathPrefix: row.pathPrefix ?? undefined,
+    };
+}
+
 /**
- * 服务目录:唯一事实源,探测/菜单/Agent 工具三个消费者读同一份数据。
- * 存储复用 services-registry 集合行(不建新表);校验在这里而不靠 form schema——
- * URL 协议、字段联动这类规则 form 协议表达不了,而且这个接入面必须自己站得住,
- * 不能依赖"数据恰好是从受校验的入口进来的"。
+ * 服务目录:唯一事实源,探测/菜单/Agent 工具/zone 路由四个消费者读同一份数据。
+ * 存储在专表 op_sys_service_registry(见 entity 注释:与通用字典物理隔离,防误删)。
+ * 校验在这里而不靠 form schema——URL 协议、字段联动这类规则 form 协议表达不了,
+ * 而且这个接入面必须自己站得住,不能依赖"数据恰好是从受校验的入口进来的"。
  */
 @Injectable()
 export class ServiceRegistryService {
     constructor(
-        @InjectRepository(DictionaryEntity)
-        private readonly dictRepo: Repository<DictionaryEntity>,
+        @InjectRepository(ServiceRegistryEntity)
+        private readonly repo: Repository<ServiceRegistryEntity>,
         private readonly events: ServiceEventService,
     ) {}
 
     /** 完整目录(治理视角,ServiceOps 门后使用) */
     async list(): Promise<Array<{ key: string; sortOrder: number } & ServiceEntry>> {
-        const rows = await this.rows();
-        return rows.map((r) => ({ key: r.key, sortOrder: r.sortOrder, ...(r.value as ServiceEntry) }));
+        return (await this.rows()).map(toEntry);
     }
 
     /** embed 入口条目(登录即可读,前端据 permCode 过滤菜单;真正的门在子应用后端) */
     async listEmbedEntries(): Promise<Array<{ key: string } & Pick<ServiceEntry, "menuTitle" | "menuIcon" | "permCode" | "embedUrl">>> {
-        const rows = await this.rows();
-        return rows
-            .map((r) => ({ key: r.key, ...(r.value as ServiceEntry) }))
+        return (await this.rows())
+            .map(toEntry)
             .filter((e) => e.enabled !== false && e.entryType === "embed" && e.embedUrl)
             .map(({ key, menuTitle, menuIcon, permCode, embedUrl, name }) => ({
                 key,
@@ -71,18 +87,16 @@ export class ServiceRegistryService {
 
     /** 工具提供方(AgentConsole 门,最小披露:只给工具发现需要的三个字段) */
     async listToolProviders(): Promise<Array<{ key: string; baseUrl: string; toolsPath: string }>> {
-        const rows = await this.rows();
-        return rows
-            .map((r) => ({ key: r.key, ...(r.value as ServiceEntry) }))
+        return (await this.rows())
+            .map(toEntry)
             .filter((e) => e.enabled !== false && e.toolsPath)
             .map(({ key, baseUrl, toolsPath }) => ({ key, baseUrl, toolsPath: toolsPath! }));
     }
 
-    /** zone 路由表(主 zone 启动时拉取生成 rewrites;匿名接口消费,只出这三个字段) */
+    /** zone 路由表(主 zone 的 proxy 按 TTL 拉取;匿名接口消费,只出这三个字段) */
     async listZoneRoutes(): Promise<Array<{ key: string; pathPrefix: string; baseUrl: string }>> {
-        const rows = await this.rows();
-        return rows
-            .map((r) => ({ key: r.key, ...(r.value as ServiceEntry) }))
+        return (await this.rows())
+            .map(toEntry)
             .filter((e) => e.enabled !== false && e.entryType === "zone" && e.pathPrefix)
             .map(({ key, pathPrefix, baseUrl }) => ({ key, pathPrefix: pathPrefix!, baseUrl }));
     }
@@ -90,32 +104,44 @@ export class ServiceRegistryService {
     async upsert(key: string, entry: ServiceEntry, by: string): Promise<void> {
         if (!KEY_RE.test(key)) throw new BadRequestException("key 需为小写 slug(≤50字)");
         this.validate(entry);
-        // zone 前缀全域唯一:两个 zone 抢同一段路径,rewrites 只会命中一个,另一个静默失效
+        // zone 前缀全域唯一:两个 zone 抢同一段路径,路由只会命中一个,另一个静默失效。
+        // 应用层先查是为了报出占用者;DB 唯一索引兜底并发窗口
         if (entry.entryType === "zone") {
-            const rows = await this.rows();
-            const clash = rows.find(
-                (r) => r.key !== key && (r.value as ServiceEntry)?.pathPrefix === entry.pathPrefix,
-            );
-            if (clash) throw new BadRequestException(`pathPrefix ${entry.pathPrefix} 已被 ${clash.key} 占用`);
+            const clash = await this.repo.findOne({ where: { pathPrefix: entry.pathPrefix! } });
+            if (clash && clash.key !== key) {
+                throw new BadRequestException(`pathPrefix ${entry.pathPrefix} 已被 ${clash.key} 占用`);
+            }
         }
-        const existing = await this.dictRepo.findOne({ where: { collection: REGISTRY_COLLECTION, key } });
+        const existing = await this.repo.findOne({ where: { key } });
+        const fields = {
+            name: entry.name,
+            baseUrl: entry.baseUrl,
+            healthPath: entry.healthPath ?? null,
+            metricsPath: entry.metricsPath ?? null,
+            toolsPath: entry.toolsPath ?? null,
+            enabled: entry.enabled !== false,
+            entryType: entry.entryType ?? "none",
+            embedUrl: entry.embedUrl ?? null,
+            menuTitle: entry.menuTitle ?? null,
+            menuIcon: entry.menuIcon ?? null,
+            permCode: entry.permCode ?? null,
+            // 非 zone 条目前缀强制置空,否则残留值会一直占着唯一索引
+            pathPrefix: entry.entryType === "zone" ? entry.pathPrefix! : null,
+        };
         if (existing) {
-            existing.value = entry;
-            await this.dictRepo.save(existing);
+            await this.repo.save(Object.assign(existing, fields));
         } else {
-            await this.dictRepo.save(
-                this.dictRepo.create({ collection: REGISTRY_COLLECTION, key, value: entry }),
-            );
+            await this.repo.save(this.repo.create({ key, ...fields }));
         }
         // 审计走事件 outbox,发失败不影响登记本身
         await this.emitSafe(existing ? "service.updated" : "service.registered", key, entry, by);
     }
 
     async remove(key: string, by: string): Promise<void> {
-        const existing = await this.dictRepo.findOne({ where: { collection: REGISTRY_COLLECTION, key } });
+        const existing = await this.repo.findOne({ where: { key } });
         if (!existing) throw new NotFoundException(`服务不存在: ${key}`);
-        await this.dictRepo.remove(existing);
-        await this.emitSafe("service.removed", key, existing.value as ServiceEntry, by);
+        await this.repo.remove(existing);
+        await this.emitSafe("service.removed", key, toEntry(existing), by);
     }
 
     private validate(entry: ServiceEntry): void {
@@ -164,11 +190,8 @@ export class ServiceRegistryService {
         }
     }
 
-    private async rows(): Promise<DictionaryEntity[]> {
-        return this.dictRepo.find({
-            where: { collection: REGISTRY_COLLECTION, status: DictionaryStatus.ACTIVE },
-            order: { sortOrder: "ASC", id: "ASC" },
-        });
+    private async rows(): Promise<ServiceRegistryEntity[]> {
+        return this.repo.find({ order: { sortOrder: "ASC", id: "ASC" } });
     }
 
     private async emitSafe(type: string, key: string, entry: ServiceEntry, by: string): Promise<void> {

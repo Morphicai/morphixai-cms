@@ -26,3 +26,13 @@
 - [x] 4.4 service.registered 事件入流,含操作人 admin 与 payload
 - [x] 4.5 无 token 调目录接口 401;负例(file://、embed 缺 embedUrl)400;菜单按 permCode 过滤走 getMenuTree 既有机制(动态文档菜单同款)+ 单测覆盖(未造"无码普通账号"实测,dev 库只有超管)
 - [x] 4.6 单测:本迭代相关套件全过(service-ops 13/auth/i18n/form/guards);全量中 19 个失败全在 partner/points-engine/public-article 存量套件(其类型错误在本迭代前的全量 tsc 已存在,未触碰);UI 构建过
+
+## 5. 追加:目录迁专表(2026-08-24)
+
+- [x] 5.1 存储从字典集合行迁到专表 op_sys_service_registry(字段列化,key/path_prefix DB 唯一索引兜底)。
+  动机:字典是通用业务数据的地盘,持 DataCollections 权限者在数据集合页一个删除就能端掉整个目录——
+  基础设施数据必须物理隔离,专表只有 ServiceOps 门后的接口能写
+- [x] 5.2 probe 改经 ServiceRegistryService 读目录(不再直连存储);消费视图/controller/前端/agent/proxy 零改动
+- [x] 5.3 迁移脚本 db/migrate_registry_to_table.sql(存量搬迁+清理字典侧);seed 文件改为专表版本
+- [x] 5.4 验收:6 服务迁移无损;探测全绿;zone-routes/embed entries/agent 工具发现(4 工具)/zone 经 proxy 全通;
+  数据集合页不再出现服务目录;api 152 测全绿

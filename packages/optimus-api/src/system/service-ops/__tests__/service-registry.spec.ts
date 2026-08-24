@@ -1,19 +1,22 @@
 /**
  * 服务目录单测:钉住校验规则(URL 协议/用户信息段/字段联动/slug)、
  * 三个消费视图的过滤语义、事件旁路(发失败不影响登记)。
+ * mock 形状 = op_sys_service_registry 专表实体行(平铺字段)。
  */
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { ServiceRegistryService } from "../service-registry.service";
 
 const rows = [
-    { key: "api", sortOrder: 0, value: { name: "API", baseUrl: "http://a/api", toolsPath: "/system/agent/tools" } },
-    { key: "app", sortOrder: 10, value: { name: "APP", baseUrl: "http://b", entryType: "embed", embedUrl: "http://b/admin", permCode: "AppAdmin" } },
-    { key: "off", sortOrder: 20, value: { name: "OFF", baseUrl: "http://c", enabled: false, toolsPath: "/t", entryType: "embed", embedUrl: "http://c/x" } },
+    { key: "api", sortOrder: 0, name: "API", baseUrl: "http://a/api", toolsPath: "/system/agent/tools" },
+    { key: "app", sortOrder: 10, name: "APP", baseUrl: "http://b", entryType: "embed", embedUrl: "http://b/admin", permCode: "AppAdmin" },
+    { key: "off", sortOrder: 20, name: "OFF", baseUrl: "http://c", enabled: false, toolsPath: "/t", entryType: "embed", embedUrl: "http://c/x" },
 ];
 
+// findOne 按 where 等值条件在内存行里查,与真实 repo 行为对齐
 const mkRepo = (r: any[] = rows) => ({
     find: jest.fn().mockResolvedValue(r),
-    findOne: jest.fn().mockResolvedValue(null),
+    findOne: jest.fn().mockImplementation(async ({ where }: any) =>
+        r.find((row) => Object.entries(where).every(([k, v]) => (row as any)[k] === v)) ?? null),
     save: jest.fn().mockImplementation(async (x) => x),
     create: jest.fn().mockImplementation((x) => x),
     remove: jest.fn(),
@@ -44,20 +47,21 @@ describe("ServiceRegistryService 校验", () => {
     });
 
     it("合法登记走通,新建发 service.registered,更新发 service.updated", async () => {
-        const repo = mkRepo();
+        const data: any[] = [];
+        const repo = mkRepo(data);
         const events = mkEvents();
         const s = svc(repo, events);
         await s.upsert("new-svc", ok, "admin");
         expect(events.emit).toHaveBeenLastCalledWith("optimus-api", "service.registered", expect.objectContaining({ key: "new-svc" }), "admin");
 
-        repo.findOne.mockResolvedValue({ key: "new-svc", value: {} });
+        data.push({ key: "new-svc", name: "X", baseUrl: "http://x:1/api" });
         await s.upsert("new-svc", ok, "admin");
         expect(events.emit).toHaveBeenLastCalledWith("optimus-api", "service.updated", expect.anything(), "admin");
     });
 
     it("事件发失败不影响登记(旁路)", async () => {
         const events = { emit: jest.fn().mockRejectedValue(new Error("db down")) };
-        await expect(svc(mkRepo(), events).upsert("a", ok, "u")).resolves.toBeUndefined();
+        await expect(svc(mkRepo([]), events).upsert("a", ok, "u")).resolves.toBeUndefined();
     });
 
     it("删除不存在的服务抛 404", async () => {
@@ -83,7 +87,7 @@ describe("ServiceRegistryService zone 校验", () => {
     });
 
     it("pathPrefix 全域唯一,撞车报被谁占用", async () => {
-        const taken = [{ key: "other", sortOrder: 0, value: { name: "O", baseUrl: "http://o", entryType: "zone", pathPrefix: "/activity" } }];
+        const taken = [{ key: "other", sortOrder: 0, name: "O", baseUrl: "http://o", entryType: "zone", pathPrefix: "/activity" }];
         const s = svc(mkRepo(taken));
         await expect(
             s.upsert("z", { ...ok, entryType: "zone", pathPrefix: "/activity" } as any, "u"),
@@ -96,9 +100,9 @@ describe("ServiceRegistryService zone 校验", () => {
 
     it("listZoneRoutes 只出 enabled 的 zone 条目", async () => {
         const mixed = [
-            { key: "z1", sortOrder: 0, value: { name: "Z1", baseUrl: "http://z1", entryType: "zone", pathPrefix: "/activity" } },
-            { key: "z2", sortOrder: 1, value: { name: "Z2", baseUrl: "http://z2", entryType: "zone", pathPrefix: "/blog", enabled: false } },
-            { key: "e1", sortOrder: 2, value: { name: "E1", baseUrl: "http://e1", entryType: "embed", embedUrl: "http://e1" } },
+            { key: "z1", sortOrder: 0, name: "Z1", baseUrl: "http://z1", entryType: "zone", pathPrefix: "/activity" },
+            { key: "z2", sortOrder: 1, name: "Z2", baseUrl: "http://z2", entryType: "zone", pathPrefix: "/blog", enabled: false },
+            { key: "e1", sortOrder: 2, name: "E1", baseUrl: "http://e1", entryType: "embed", embedUrl: "http://e1" },
         ];
         const out = await svc(mkRepo(mixed)).listZoneRoutes();
         expect(out).toEqual([{ key: "z1", pathPrefix: "/activity", baseUrl: "http://z1" }]);
