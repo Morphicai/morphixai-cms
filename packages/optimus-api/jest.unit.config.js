@@ -11,22 +11,12 @@ module.exports = {
         "^@/(.*)$": "<rootDir>/$1",
     },
     testTimeout: 10000,
-    // partner/points-engine 的这批测试自 init project 拷入起就与实现不同步
-    // (测试引用实现里从未存在的 JoinMode/旧签名),从未通过过。该业务线无活跃
-    // 数据,已决策迁出为子服务(走服务目录接入)——测试随迁移一并修复,
-    // 现在屏蔽是为了让"全量绿"恢复为有效信号。同目录仍同步的测试继续跑
-    testPathIgnorePatterns: [
-        "/node_modules/",
-        "partner/__tests__/partner-team-name-validation.spec.ts",
-        "partner/channel.service.spec.ts",
-        "partner/hierarchy.service.spec.ts",
-        "partner/partner.service.spec.ts",
-        "partner/statistics.service.spec.ts",
-        "points-engine/handlers/__tests__/game-action-task.handler.spec.ts",
-        "points-engine/handlers/__tests__/invite-task.handler.spec.ts",
-        "points-engine/handlers/__tests__/register-task.handler.spec.ts",
-        "points-engine/services/__tests__/point-rule.service.spec.ts",
-    ],
+    // partner/points-engine/external-task 三个业务模块已整体迁到独立的
+    // partner-service(openspec/changes/extract-partner-service),这批曾经
+    // 屏蔽的存量失败测试(测试引用实现里从未存在的 JoinMode/旧签名)随源码
+    // 一起搬走,在新服务里逐个诊断修复(见该 change 的 Group 7),不再在这里
+    // 屏蔽——optimus-api 这边已经没有对应源码了
+    testPathIgnorePatterns: ["/node_modules/"],
     // Run utility tests and article management system tests
     testMatch: [
         "**/utils/storage-path.utils.spec.ts",
@@ -34,9 +24,7 @@ module.exports = {
         "**/article/**/*.spec.ts",
         "**/category/**/*.spec.ts",
         "**/article-version/**/*.spec.ts",
-        "**/partner/**/*.spec.ts",
         "**/game-management/**/*.spec.ts",
-        "**/points-engine/**/*.spec.ts",
         "**/guards/**/*.spec.ts",
         "**/form/**/*.spec.ts",
         "**/auth/**/*.spec.ts",

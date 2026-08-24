@@ -84,9 +84,17 @@
 
 ## 6. 收尾:确认分流生效后删除 optimus-api 侧代码
 
-- [ ] 6.1 optimus-api 里对应的 `src/business/{partner,points-engine,external-task}` 目录整体删除,`app.module.ts` 移除对应模块引用
-- [ ] 6.2 `jest.unit.config.js` 移除这三个模块相关的 `testPathIgnorePatterns` 条目
-- [ ] 6.3 删除后重跑一次 5.3/5.4 的浏览器验证,确认代理分流(而不是"恰好 optimus-api 还没删所以能用")才是让 C 端工作的真正原因
+删除前先写了一版自动化闭环验证脚本(`packages/partner-service/scripts/verify-closed-loop.mjs`,
+`npm run verify:closed-loop`),打真实运行中的 optimus-api:8084/optimus-next:8086 C 端代理/
+partner-service:8089 三个进程(不是 optimus-api 自带那套拉起独立进程+隔离库的 e2e 框架——
+那套只测单服务,测不出跨服务代理分流是否真的接通)。20 项断言(C 端全程走真实代理的
+注册→登录→加入→查档案→查积分→提交任务;管理端直连的合伙人列表+L1/L2统计→冻结→
+解冻→审核通过→积分发放→dashboard 统计;管理端操作后 C 端账本同步的交叉验证)删除前
+全绿,确认闭环已经打通,可以进入删除。
+
+- [x] 6.1 optimus-api 里对应的 `src/business/{partner,points-engine,external-task}` 目录整体删除(`git rm`,308K+192K+112K),`app.module.ts` 移除对应 import 和模块注册。删除前 grep 确认除 `app.module.ts` 外没有其它文件引用这三个目录,删除后 `tsc --noEmit` 零新增错误(残留的几个 spec 文件类型错误是无关的存量问题:`sensitive-word-validation` 装饰器测试、OSS 测试 helper 缺方法,和本次迁移无关)、`nest build` 干净、`npm test` 12 个套件 132 个用例全绿
+- [x] 6.2 `jest.unit.config.js` 移除这三个模块相关的 9 条 `testPathIgnorePatterns` 和对应的 2 条 `testMatch`(`**/partner/**/*.spec.ts`、`**/points-engine/**/*.spec.ts`)——源码已经不在这边,继续留着这些模式没有意义
+- [x] 6.3 删除后重跑 `verify:closed-loop` 脚本,20 项断言依然全绿;并直接 curl 验证 `GET /api/biz/partner/profile`、`GET /api/biz/points/me` 打 optimus-api 自己现在返回 404(真的没有这些路由了),证明能用完全是代理分流生效,不是"恰好 optimus-api 还没删所以能用"
 
 ## 7. 存量单测迁移
 
