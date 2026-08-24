@@ -54,9 +54,15 @@ export class HierarchyService {
 
         // 2. 检查2层循环：A -> B -> A
         // 如果 inviterId 是 newMemberId 的直接下线（level=1），则会形成2层循环
+        //
+        // 2026-08-24 修复:这个文件及 channel.service.ts/partner.service.ts/statistics.service.ts
+        // 里的原生 SQL 全部漏写了 op_ 前缀(实体表名是 op_biz_partner_hierarchy,这里之前直接写
+        // biz_partner_hierarchy),导致对应查询/删除必然 500——这是从 optimus-api 原样带过来的
+        // 存量 bug(两边代码一致存在,不是迁移引入的),验证 5.4 管理台合伙人列表时才被真实触发。
+        // 4 张表(hierarchy/channel/profile/task_completion_log)相关的十几处引用一并改正
         const query = `
             SELECT 1 as found
-            FROM biz_partner_hierarchy
+            FROM op_biz_partner_hierarchy
             WHERE parent_partner_id = ?
               AND child_partner_id = ?
               AND level = 1

@@ -578,7 +578,7 @@ export class StatisticsService {
             SELECT 
                 COALESCE(related_partner_id, 'self') as contributor_id,
                 COUNT(*) as task_count
-            FROM biz_task_completion_log
+            FROM op_biz_task_completion_log
             WHERE partner_id = ?
               AND status = 'completed'
             GROUP BY COALESCE(related_partner_id, 'self')

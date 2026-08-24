@@ -258,7 +258,7 @@ export class ChannelService {
         const memberCount = await this.channelRepository.manager.query(
             `
             SELECT COUNT(*) as count
-            FROM biz_partner_hierarchy
+            FROM op_biz_partner_hierarchy
             WHERE source_channel_id = ?
               AND level = 1
               AND is_active = 1
@@ -272,7 +272,7 @@ export class ChannelService {
         const channelMembers = await this.channelRepository.manager.query(
             `
             SELECT child_partner_id
-            FROM biz_partner_hierarchy
+            FROM op_biz_partner_hierarchy
             WHERE source_channel_id = ?
               AND level = 1
               AND is_active = 1
@@ -373,7 +373,7 @@ export class ChannelService {
                 const memberCountResult = await this.channelRepository.manager.query(
                     `
                     SELECT COUNT(*) as count
-                    FROM biz_partner_hierarchy
+                    FROM op_biz_partner_hierarchy
                     WHERE source_channel_id = ?
                       AND level = 1
                       AND is_active = 1
@@ -387,7 +387,7 @@ export class ChannelService {
                 const channelMembersResult = await this.channelRepository.manager.query(
                     `
                     SELECT child_partner_id
-                    FROM biz_partner_hierarchy
+                    FROM op_biz_partner_hierarchy
                     WHERE source_channel_id = ?
                       AND level = 1
                       AND is_active = 1

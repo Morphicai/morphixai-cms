@@ -349,7 +349,7 @@ export class PartnerService {
                 const totalL1 = overview.total;
 
                 const l2Count = await this.partnerProfileRepository.manager.query(
-                    `SELECT COUNT(*) as count FROM biz_partner_hierarchy WHERE parent_partner_id = ? AND level = 2 AND is_active = 1`,
+                    `SELECT COUNT(*) as count FROM op_biz_partner_hierarchy WHERE parent_partner_id = ? AND level = 2 AND is_active = 1`,
                     [profile.partnerId],
                 );
                 const totalL2 = parseInt(l2Count[0]?.count || "0", 10);
@@ -402,7 +402,7 @@ export class PartnerService {
         const totalL1 = overview.total;
 
         const l2Count = await this.partnerProfileRepository.manager.query(
-            `SELECT COUNT(*) as count FROM biz_partner_hierarchy WHERE parent_partner_id = ? AND level = 2 AND is_active = 1`,
+            `SELECT COUNT(*) as count FROM op_biz_partner_hierarchy WHERE parent_partner_id = ? AND level = 2 AND is_active = 1`,
             [partnerId],
         );
         const totalL2 = parseInt(l2Count[0]?.count || "0", 10);
@@ -724,25 +724,25 @@ export class PartnerService {
         // 使用事务执行清空操作
         await this.partnerProfileRepository.manager.transaction(async (transactionalEntityManager) => {
             // 1. 删除该合伙人的所有层级关系（作为上级）
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_hierarchy WHERE parent_partner_id = ?`, [
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_hierarchy WHERE parent_partner_id = ?`, [
                 partnerId,
             ]);
 
             // 2. 删除该合伙人的所有层级关系（作为下级）
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_hierarchy WHERE child_partner_id = ?`, [
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_hierarchy WHERE child_partner_id = ?`, [
                 partnerId,
             ]);
 
             // 3. 删除该合伙人的所有推广渠道
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_channel WHERE partner_id = ?`, [partnerId]);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_channel WHERE partner_id = ?`, [partnerId]);
 
             // 4. 删除该合伙人的所有任务完成记录
-            await transactionalEntityManager.query(`DELETE FROM biz_task_completion_log WHERE partner_id = ?`, [
+            await transactionalEntityManager.query(`DELETE FROM op_biz_task_completion_log WHERE partner_id = ?`, [
                 partnerId,
             ]);
 
             // 5. 删除合伙人档案
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_profile WHERE partner_id = ?`, [partnerId]);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_profile WHERE partner_id = ?`, [partnerId]);
         });
 
         // 6. 清除该合伙人的积分缓存
@@ -792,13 +792,13 @@ export class PartnerService {
         const beforeStats = {
             profiles: await this.partnerProfileRepository.count(),
             hierarchies: await this.partnerProfileRepository.manager.query(
-                `SELECT COUNT(*) as count FROM biz_partner_hierarchy`,
+                `SELECT COUNT(*) as count FROM op_biz_partner_hierarchy`,
             ),
             channels: await this.partnerProfileRepository.manager.query(
-                `SELECT COUNT(*) as count FROM biz_partner_channel`,
+                `SELECT COUNT(*) as count FROM op_biz_partner_channel`,
             ),
             taskLogs: await this.partnerProfileRepository.manager.query(
-                `SELECT COUNT(*) as count FROM biz_task_completion_log`,
+                `SELECT COUNT(*) as count FROM op_biz_task_completion_log`,
             ),
         };
 
@@ -815,19 +815,19 @@ export class PartnerService {
         // 使用事务执行清空操作
         await this.partnerProfileRepository.manager.transaction(async (transactionalEntityManager) => {
             // 1. 删除所有层级关系
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_hierarchy`);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_hierarchy`);
             this.logger.warn(`已删除所有层级关系`);
 
             // 2. 删除所有推广渠道
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_channel`);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_channel`);
             this.logger.warn(`已删除所有推广渠道`);
 
             // 3. 删除所有任务完成记录
-            await transactionalEntityManager.query(`DELETE FROM biz_task_completion_log`);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_task_completion_log`);
             this.logger.warn(`已删除所有任务完成记录`);
 
             // 4. 删除所有合伙人档案
-            await transactionalEntityManager.query(`DELETE FROM biz_partner_profile`);
+            await transactionalEntityManager.query(`DELETE FROM op_biz_partner_profile`);
             this.logger.warn(`已删除所有合伙人档案`);
         });
 
@@ -904,8 +904,8 @@ export class PartnerService {
                 p.partner_code,
                 p.uid,
                 p.join_time
-            FROM biz_partner_hierarchy h
-            LEFT JOIN biz_partner_profile p ON h.child_partner_id = p.partner_id
+            FROM op_biz_partner_hierarchy h
+            LEFT JOIN op_biz_partner_profile p ON h.child_partner_id = p.partner_id
             WHERE h.parent_partner_id = ?
               AND h.level = 1
               AND h.is_active = 1
@@ -921,7 +921,7 @@ export class PartnerService {
             `
             SELECT 
                 related_partner_id
-            FROM biz_task_completion_log
+            FROM op_biz_task_completion_log
             WHERE partner_id = ?
               AND task_code = 'INVITE_V1'
               AND status = 'completed'
@@ -1028,7 +1028,7 @@ export class PartnerService {
                     // 创建任务完成记录
                     await transactionalEntityManager.query(
                         `
-                        INSERT INTO biz_task_completion_log (
+                        INSERT INTO op_biz_task_completion_log (
                             task_code,
                             task_type,
                             partner_id,
