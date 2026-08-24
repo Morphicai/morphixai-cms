@@ -51,6 +51,22 @@ importers:
         specifier: ^5.0.0
         version: 5.8.3
 
+  packages/auth-ui:
+    dependencies:
+      react:
+        specifier: '>=18'
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.2.7
+      rimraf:
+        specifier: ^3.0.2
+        version: 3.0.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
   packages/client-sdk:
     dependencies:
       axios:
@@ -604,6 +620,9 @@ importers:
 
   packages/zone-activity:
     dependencies:
+      '@optimus/auth-ui':
+        specifier: workspace:*
+        version: link:../auth-ui
       next:
         specifier: 16.1.0
         version: 16.1.0(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
