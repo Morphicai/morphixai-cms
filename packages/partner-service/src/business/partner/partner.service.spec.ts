@@ -10,12 +10,14 @@ import { AdminOperationLogEntity } from "./entities/admin-operation-log.entity";
 import { PartnerStatus } from "./enums/partner-status.enum";
 import { StarLevel } from "./enums/star-level.enum";
 import { ChannelStatus } from "./enums/channel-status.enum";
-import { JoinMode } from "./dto/join-partner.dto";
 import {
     InvalidInviterException,
     InvalidChannelException,
     DuplicateUserIdException,
 } from "./exceptions/partner.exception";
+import { TaskCompletionLogEntity } from "../points-engine/entities/task-completion-log.entity";
+import { PointsCacheService } from "../points-engine/services/points-cache.service";
+import { PointsService } from "../points-engine/services/points.service";
 
 describe("PartnerService", () => {
     let service: PartnerService;
@@ -46,6 +48,21 @@ describe("PartnerService", () => {
         emit: jest.fn(),
     };
 
+    // PartnerService 构造函数后来加了这三个依赖(生成推广链接/查积分缓存用),
+    // 测试模块的 DI 配置没跟着补——这批用例本身不测这三者的行为,补空 mock
+    // 只是为了让构造函数能实例化
+    const mockTaskLogRepository = {
+        find: jest.fn(),
+        manager: { query: jest.fn(), transaction: jest.fn() },
+    };
+    const mockPointsCacheService = {
+        getTotalPoints: jest.fn(),
+        invalidate: jest.fn(),
+    };
+    const mockPointsService = {
+        getTotalPoints: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -63,12 +80,24 @@ describe("PartnerService", () => {
                     useValue: mockAdminLogRepository,
                 },
                 {
+                    provide: getRepositoryToken(TaskCompletionLogEntity),
+                    useValue: mockTaskLogRepository,
+                },
+                {
                     provide: HierarchyService,
                     useValue: mockHierarchyService,
                 },
                 {
                     provide: EventEmitter2,
                     useValue: mockEventEmitter,
+                },
+                {
+                    provide: PointsCacheService,
+                    useValue: mockPointsCacheService,
+                },
+                {
+                    provide: PointsService,
+                    useValue: mockPointsService,
                 },
             ],
         }).compile();
@@ -162,12 +191,18 @@ describe("PartnerService", () => {
             const result = await service.createProfile(uid, partnerCode);
 
             expect(result).toEqual(mockProfile);
+            // userId/uid 双写、username/teamName/extraData 是后来加的字段(userId 是新的
+            // 通用标识,uid 保留做向后兼容),测试原来的期望值是加这些字段之前的旧快照
             expect(mockProfileRepository.create).toHaveBeenCalledWith({
+                userId: uid,
                 uid,
+                username: null,
                 partnerCode,
                 status: PartnerStatus.ACTIVE,
                 currentStar: StarLevel.NEW,
                 totalMira: "0",
+                teamName: null,
+                extraData: null,
             });
         });
 
@@ -245,7 +280,13 @@ describe("PartnerService", () => {
     });
 
     describe("joinPartner", () => {
-        describe("self mode", () => {
+        // 这一整块原来断言的是一个叫 JoinMode(SELF/INVITE 二选一)的枚举字段,
+        // 但真实的 JoinPartnerDto 里从来没有过 mode 字段——自建团队还是走邀请人
+        // 完全由 inviterCode 是否传值隐式决定(见 joinPartner 实现里的
+        // `if (dto.inviterCode) {...}` 分支)。测试从写出来那天起就断言一个不存在
+        // 的功能,tsc 编译都过不了,这里改成按真实行为(有没有 inviterCode)断言,
+        // 不是给实现新增 mode 概念
+        describe("自建团队(不传 inviterCode)", () => {
             it("should create partner profile without uplink", async () => {
                 const uid = "test-uid";
                 const mockProfile = {
@@ -258,16 +299,17 @@ describe("PartnerService", () => {
                 mockProfileRepository.create.mockReturnValue(mockProfile);
                 mockProfileRepository.save.mockResolvedValue(mockProfile);
 
-                const result = await service.joinPartner(uid, { mode: JoinMode.SELF });
+                const result = await service.joinPartner(uid, { userRegisterTime: Date.now() });
 
                 expect(result).toEqual(mockProfile);
                 expect(mockProfileRepository.findOne).toHaveBeenCalledWith({
                     where: { uid },
                 });
+                expect(mockHierarchyService.createRelationship).not.toHaveBeenCalled();
             });
         });
 
-        describe("invite mode", () => {
+        describe("邀请加入(传 inviterCode)", () => {
             it("should create partner profile with valid inviter", async () => {
                 const uid = "test-uid";
                 const inviterCode = "LP123456";
@@ -288,8 +330,8 @@ describe("PartnerService", () => {
                 jest.spyOn(service, "createProfile").mockResolvedValue(mockProfile as any);
 
                 const result = await service.joinPartner(uid, {
-                    mode: JoinMode.INVITE,
                     inviterCode,
+                    userRegisterTime: Date.now(),
                 });
 
                 expect(result).toEqual(mockProfile);
@@ -324,9 +366,9 @@ describe("PartnerService", () => {
                 jest.spyOn(service, "createProfile").mockResolvedValue(mockProfile as any);
 
                 const result = await service.joinPartner(uid, {
-                    mode: JoinMode.INVITE,
                     inviterCode,
                     channelCode,
+                    userRegisterTime: Date.now(),
                 });
 
                 expect(result).toEqual(mockProfile);
@@ -342,8 +384,8 @@ describe("PartnerService", () => {
 
                 await expect(
                     service.joinPartner(uid, {
-                        mode: JoinMode.INVITE,
                         inviterCode,
+                        userRegisterTime: Date.now(),
                     }),
                 ).rejects.toThrow(InvalidInviterException);
             });
@@ -360,7 +402,7 @@ describe("PartnerService", () => {
 
                 mockProfileRepository.findOne.mockResolvedValue(existingProfile);
 
-                const result = await service.joinPartner(uid, { mode: JoinMode.SELF });
+                const result = await service.joinPartner(uid, { userRegisterTime: Date.now() });
 
                 expect(result).toEqual(existingProfile);
                 expect(mockProfileRepository.create).not.toHaveBeenCalled();

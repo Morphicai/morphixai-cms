@@ -98,8 +98,83 @@ partner-service:8089 三个进程(不是 optimus-api 自带那套拉起独立进
 
 ## 7. 存量单测迁移
 
-- [ ] 7.1 把 jest.unit.config.js 屏蔽清单里的 9 个 partner/points-engine 测试文件搬到 partner-service,逐个诊断:测试断言的是从未实现过的功能(如 JoinMode)则修正断言以匹配真实行为并记录说明;测试断言的是应该存在但代码没做到位的行为则修代码
-- [ ] 7.2 partner-service 全量单测跑绿
+这 9 个测试文件本身已经随源码一起搬到了 partner-service(6.1 删除 optimus-api 侧代码时,
+新服务里早就有对应文件了,只是一直被 `testPathIgnorePatterns` 屏蔽,没跑起来),这一步
+是逐个摘掉屏蔽、诊断失败原因、修好它。用 `/tmp/jest-all.config.json`(绕开
+`testPathIgnorePatterns` 的临时 jest 配置)逐个跑,确认修好后再从正式屏蔽清单里摘掉。
+
+9 个文件分三类问题,和 7.1 原定的判断标准完全对应:
+
+**(a) 纯 DI mock 过期(构造函数加了新依赖,测试模块没跟上)**——4 个文件:
+`statistics.service.spec.ts`、`channel.service.spec.ts`、`hierarchy.service.spec.ts`、
+`partner.service.spec.ts`、`partner-team-name-validation.spec.ts` 都命中同一个模式:
+`PartnerService`/`ChannelService`/`StatisticsService` 后来都加了
+`TaskCompletionLogEntity` 仓库和 `PointsService`/`PointsCacheService` 依赖(用于渠道页
+统计推广效果、合伙人详情页展示积分),测试模块的 `providers` 数组只有旧的依赖列表,
+NestJS DI 直接报"Nest can't resolve dependencies"。补对应的 mock provider 即可,不改
+被测代码。
+
+**(b) mock 对象本身缺方法,被防御性 try/catch 伪装成业务异常**——`hierarchy.service.spec.ts`
+单独多一层:`createRelationship` 后来在最前面加了 `checkCircularReference()`,内部用原生
+SQL(`hierarchyRepository.query(...)`)而不是 `findOne`,mock 对象没定义 `.query`,调用
+直接抛 `TypeError`,又被 `checkCircularReference` 自己"查询失败就当作有循环,保守起见拒绝"
+的容错逻辑吞掉——这个容错在生产环境是对的(宁可误报也不能漏判循环引用导致死循环),
+但在测试里把一个"忘记补 mock"的低级问题伪装成了"业务逻辑说检测到循环引用"的高级问题,
+一路把 9 个用例全部拦在 `CircularReferenceException` 上。补 `query: jest.fn().mockResolvedValue([])`
+即可,不动生产代码的容错逻辑。
+
+**(c) 测试断言的是从未实现过的功能,需要重写**——2 处:
+1. `partner.service.spec.ts` 的 `joinPartner` 测试组导入了一个从未被真实 DTO 导出过的
+   `JoinMode` 枚举(`{mode: JoinMode.SELF}` / `{mode: JoinMode.INVITE}`),真实行为是按
+   `inviterCode` 是否传入来分支,不存在 `mode` 字段这个概念。重写测试场景改用真实 DTO 形状。
+2. `partner-team-name-validation.spec.ts` 整个文件测的是"团队名称敏感词过滤",引用一个
+   在 partner-service 里根本不存在的 `../../../shared/services/validation.service`——
+   查 `partner.service.ts` 才发现这个功能是被主动删掉的(源码里留着注释
+   "ValidationService removed - game-specific sensitive word checking"),
+   `validateTeamName` 现在只做两件事:查重名(`DuplicateTeamNameException`)、一次性锁定
+   (`TeamNameImmutableException`,团队名称设置过就不能再改,这是比敏感词过滤更晚加的
+   业务规则,原测试完全没考虑到)。整份重写,测真实存在的这两条规则。
+
+**(d) 测试断言应该存在但代码没做到位的行为,是真 bug,修代码**——1 处:
+`statistics.service.spec.ts` 的"应该正确按层级过滤"用例发现 `getTeamMembers(partnerId, depth, ...)`
+方法签名接受 `depth: 1|2` 参数,但查询里硬编码写死了 `level: 1`,完全没用 `depth` 变量——
+也就是说真实的 C 端接口 `GET /biz/partner/team?depth=2`(以及管理端"二级下线"这个 tab)
+从上线起就一直只返回一级数据,`depth=2` 参数被静默忽略。改成 `level: depth`。
+
+**(e) 测试断言的字段/参数值和当前签名不匹配,但不是真 bug,是加了字段忘记同步**——
+2 处:
+1. `invite-task.handler.ts` 的重复奖励查询后来从"按 taskType 查"改成了"按 taskCode 查"
+   (代码里有注释"✅ 使用 taskCode 而不是 taskType"——同一个 taskType 下可以有多个
+   taskCode 的邀请任务分别计次,比如"邀请1人"和"邀请5人",按 taskType 查会把它们
+   混判为同一个已奖励记录),测试断言的 `findOne` 调用参数还停在旧版本,改成按
+   `taskCode` 断言。
+2. `partner.service.spec.ts` 的 `createProfile` 用例期望的 `create()` 调用参数比真实
+   调用少了 `userId`/`username`/`teamName`/`extraData` 几个字段——这几个字段是本次会话
+   前面做鉴权改造时加的 `userId`/`uid` 双写兼容字段的连带产物,补全期望值即可。
+
+另外 3 个 points-engine 的 handler/service 测试文件(`game-action-task.handler.spec.ts`、
+`register-task.handler.spec.ts`、`point-rule.service.spec.ts`)属于纯技术性问题:
+`ITaskHandler.handle()` 后来统一加了第二个 `config: TaskConfig` 参数(读取
+`config.maxCompletionCount` 做次数上限校验,`config.taskCode` 做去重查询),三个 handler
+的测试都还停在只传一个 event 参数的旧签名,TS 编译直接报参数数量不对;
+`point-rule.service.spec.ts` 是纯粹的 TypeScript 类型收窄问题(`const rule = {type: FIXED, value: 100}`
+被推断成 `{type: PointRuleType, value: number}` 而不是判别联合类型的字面量成员,不能赋值给
+`PointRule` 联合类型),补上 `FixedPointRule`/`PerAmountPointRule` 的显式类型标注即可,
+不涉及任何行为变化。补齐 `config` 参数、加 `TaskCompletionLogEntity` 仓库的 mock 后三个
+handler 测试全部通过,顺带给 `register-task`/`game-action-task`/`invite-task` 各补了一条
+"达到次数上限应该拒绝"的新用例,覆盖之前完全没测到的 `maxCompletionCount` 分支。
+
+- [x] 7.1 9 个屏蔽测试文件逐个诊断修复:4 处 DI mock 过期补 mock、1 处 mock 缺方法补 mock、
+      2 处测试从未实现过的功能重写(JoinMode、团队名称敏感词校验→改测重名+一次性锁定)、
+      1 处真实现 bug 修代码(`getTeamMembers` 的 `depth` 参数被硬编码 `level:1` 忽略)、
+      2 处字段/参数值随真实签名同步(`invite-task` 按 taskCode 查重、`createProfile` 补全
+      双写字段)、3 处 `handle(event, config)` 签名漂移和一处纯类型标注问题。全部不改动
+      与本次诊断无关的其它行为
+- [x] 7.2 `package.json` 的 `testPathIgnorePatterns` 从 10 条(1 条 node_modules + 9 条业务
+      屏蔽)精简为只剩 `["/node_modules/"]`;`npm test` 跑真实配置(非临时的
+      `/tmp/jest-all.config.json`),13 个套件 110 个用例全绿;`tsc --noEmit` 零错误;
+      修复后重跑一遍 `verify:closed-loop`,20 项闭环断言依然全部通过,确认这批测试修复
+      没有意外改动任何真实行为
 
 ## 8. 验收
 

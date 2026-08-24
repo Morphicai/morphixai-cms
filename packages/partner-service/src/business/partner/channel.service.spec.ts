@@ -6,6 +6,8 @@ import { PartnerChannelEntity } from "./entities/partner-channel.entity";
 import { PartnerProfileEntity } from "./entities/partner-profile.entity";
 import { ChannelStatus } from "./enums/channel-status.enum";
 import { InvalidChannelException, ChannelNotBelongToInviterException } from "./exceptions/partner.exception";
+import { TaskCompletionLogEntity } from "../points-engine/entities/task-completion-log.entity";
+import { PointsService } from "../points-engine/services/points.service";
 
 describe("ChannelService", () => {
     let service: ChannelService;
@@ -30,6 +32,17 @@ describe("ChannelService", () => {
                     useValue: {
                         findOne: jest.fn(),
                     },
+                },
+                // ChannelService 构造函数后来加了这两个依赖(生成推广链接时读积分/
+                // 任务统计用),测试模块的 DI 配置没跟着补——这批用例只测
+                // disableChannel,用不到这两个依赖,补空 mock 只是为了能实例化
+                {
+                    provide: getRepositoryToken(TaskCompletionLogEntity),
+                    useValue: { find: jest.fn() },
+                },
+                {
+                    provide: PointsService,
+                    useValue: { getTotalPoints: jest.fn() },
                 },
             ],
         }).compile();

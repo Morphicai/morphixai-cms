@@ -65,11 +65,13 @@ export class StatisticsService {
 
         this.logger.log(`查询团队成员: partnerId=${partnerId}, depth=${depth}, page=${page}, pageSize=${pageSize}`);
 
-        // 查询一级下线
+        // level 曾经硬编码成 1,depth 参数从未真正生效——管理台"二级下线" tab
+        // 无论怎么切都在查一级下线数据,是这次修 7.1 存量测试时发现的(测试断言
+        // level 该跟着 depth 走,实现没做到位),不是测试断言的假想行为
         const [hierarchyRecords, total] = await this.hierarchyRepository.findAndCount({
             where: {
                 parentPartnerId: partnerId,
-                level: 1,
+                level: depth,
                 isActive: true,
             },
             skip,

@@ -7,6 +7,8 @@ import { PartnerHierarchyEntity } from "./entities/partner-hierarchy.entity";
 import { PartnerChannelEntity } from "./entities/partner-channel.entity";
 import { PartnerStatus } from "./enums/partner-status.enum";
 import { StarLevel } from "./enums/star-level.enum";
+import { TaskCompletionLogEntity } from "../points-engine/entities/task-completion-log.entity";
+import { PointsService } from "../points-engine/services/points.service";
 
 describe("StatisticsService", () => {
     let service: StatisticsService;
@@ -46,6 +48,23 @@ describe("StatisticsService", () => {
                         find: jest.fn(),
                         save: jest.fn(),
                         create: jest.fn(),
+                    },
+                },
+                // 2026-08-24:StatisticsService 构造函数后来加了这两个依赖(累计发放积分
+                // 统计、总发放积分查询用),测试模块的 DI 配置没有跟着补,导致 Nest 解析
+                // 不出来直接报错——这批用例本身要测的 getTeamOverview/getTeamMembers
+                // 不会用到这两个依赖,补空 mock 只是为了让构造函数能实例化
+                {
+                    provide: getRepositoryToken(TaskCompletionLogEntity),
+                    useValue: {
+                        find: jest.fn(),
+                        createQueryBuilder: jest.fn(),
+                    },
+                },
+                {
+                    provide: PointsService,
+                    useValue: {
+                        getTotalPoints: jest.fn(),
                     },
                 },
             ],

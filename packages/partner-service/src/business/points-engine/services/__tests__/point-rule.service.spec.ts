@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { PointRuleService } from "../point-rule.service";
 import { PointRuleType } from "../../enums/point-rule-type.enum";
+import { FixedPointRule, PerAmountPointRule } from "../../types/point-rule.type";
 
 describe("PointRuleService", () => {
     let service: PointRuleService;
@@ -19,7 +20,7 @@ describe("PointRuleService", () => {
 
     describe("calculatePoints - FIXED", () => {
         it("应该返回固定积分值", () => {
-            const rule = {
+            const rule: FixedPointRule = {
                 type: PointRuleType.FIXED,
                 value: 100,
             };
@@ -30,7 +31,7 @@ describe("PointRuleService", () => {
         });
 
         it("应该支持不同的固定值", () => {
-            const rule = {
+            const rule: FixedPointRule = {
                 type: PointRuleType.FIXED,
                 value: 50,
             };
@@ -43,7 +44,7 @@ describe("PointRuleService", () => {
 
     describe("calculatePoints - PER_AMOUNT", () => {
         it("应该根据金额计算积分", () => {
-            const rule = {
+            const rule: PerAmountPointRule = {
                 type: PointRuleType.PER_AMOUNT,
                 rate: 10,
             };
@@ -58,7 +59,7 @@ describe("PointRuleService", () => {
         });
 
         it("应该向下取整", () => {
-            const rule = {
+            const rule: PerAmountPointRule = {
                 type: PointRuleType.PER_AMOUNT,
                 rate: 0.5,
             };
@@ -73,7 +74,7 @@ describe("PointRuleService", () => {
         });
 
         it("缺少 amount 参数时应该返回 0", () => {
-            const rule = {
+            const rule: PerAmountPointRule = {
                 type: PointRuleType.PER_AMOUNT,
                 rate: 10,
             };
@@ -84,7 +85,7 @@ describe("PointRuleService", () => {
         });
 
         it("amount 为无效值时应该返回 0", () => {
-            const rule = {
+            const rule: PerAmountPointRule = {
                 type: PointRuleType.PER_AMOUNT,
                 rate: 10,
             };
@@ -102,8 +103,8 @@ describe("PointRuleService", () => {
     describe("calculatePoints - 未知规则类型", () => {
         it("应该返回 0 并记录警告", () => {
             const rule = {
-                type: "UNKNOWN" as any,
-            };
+                type: "UNKNOWN",
+            } as any;
 
             const points = service.calculatePoints(rule);
 

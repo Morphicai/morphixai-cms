@@ -17,6 +17,12 @@ describe("HierarchyService", () => {
         create: jest.fn(),
         save: jest.fn(),
         findAndCount: jest.fn(),
+        // createRelationship 后来在最前面加了 checkCircularReference,内部用原生 SQL
+        // (this.hierarchyRepository.query(...))而不是 findOne——测试模块的 mock 没跟着
+        // 补,导致 query 是 undefined,调用直接抛 TypeError,又被 checkCircularReference
+        // 自己的 try/catch 当成"查询失败,为安全起见按循环处理"吞掉,于是每个用例都在
+        // 走到真正要测的逻辑之前就被 CircularReferenceException 拦掉了
+        query: jest.fn(),
     };
 
     const mockProfileRepository = {
@@ -50,6 +56,10 @@ describe("HierarchyService", () => {
         service = module.get<HierarchyService>(HierarchyService);
         hierarchyRepository = module.get(getRepositoryToken(PartnerHierarchyEntity));
         profileRepository = module.get(getRepositoryToken(PartnerProfileEntity));
+
+        // 默认没有循环引用,这批用例本来就不是在测循环检测本身
+        // (那部分由 __tests__/hierarchy.service.circular.spec.ts 专门覆盖)
+        mockHierarchyRepository.query.mockResolvedValue([]);
     });
 
     afterEach(() => {

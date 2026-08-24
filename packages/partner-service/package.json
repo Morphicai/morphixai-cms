@@ -51,17 +51,6 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "testEnvironment": "node",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "partner/__tests__/partner-team-name-validation.spec.ts",
-      "partner/channel.service.spec.ts",
-      "partner/hierarchy.service.spec.ts",
-      "partner/partner.service.spec.ts",
-      "partner/statistics.service.spec.ts",
-      "points-engine/handlers/__tests__/game-action-task.handler.spec.ts",
-      "points-engine/handlers/__tests__/invite-task.handler.spec.ts",
-      "points-engine/handlers/__tests__/register-task.handler.spec.ts",
-      "points-engine/services/__tests__/point-rule.service.spec.ts"
-    ]
+    "testPathIgnorePatterns": ["/node_modules/"]
   }
 }
