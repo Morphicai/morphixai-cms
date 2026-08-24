@@ -42,12 +42,13 @@ describe("ServiceEventService", () => {
 });
 
 describe("ServiceProbeService", () => {
+    // probe 经 ServiceRegistryService.list() 读目录,mock 目录服务即可
     const rows = [
-        { key: "api", value: { name: "API", baseUrl: "http://a", healthPath: "/health", metricsPath: "/metrics-lite" } },
-        { key: "off", value: { name: "OFF", baseUrl: "http://b", enabled: false } },
-        { key: "bad", value: { name: "BAD", baseUrl: "http://c" } },
+        { key: "api", name: "API", baseUrl: "http://a", healthPath: "/health", metricsPath: "/metrics-lite" },
+        { key: "off", name: "OFF", baseUrl: "http://b", enabled: false },
+        { key: "bad", name: "BAD", baseUrl: "http://c" },
     ];
-    const mkDictRepo = (r = rows) => ({ find: jest.fn().mockResolvedValue(r) });
+    const mkRegistry = (r = rows) => ({ list: jest.fn().mockResolvedValue(r) });
 
     // jest27 的 node 环境不透传 Node18 全局 fetch,spyOn 不了,直接顶替再还原
     const realFetch = (global as any).fetch;
@@ -61,7 +62,7 @@ describe("ServiceProbeService", () => {
             if (u.startsWith("http://c/health")) throw new Error("ECONNREFUSED");
             throw new Error(`unexpected fetch: ${u}`);
         });
-        const svc = new ServiceProbeService(mkDictRepo() as any);
+        const svc = new ServiceProbeService(mkRegistry() as any);
         await svc.probeAll();
 
         const status = svc.getStatus();
@@ -76,12 +77,12 @@ describe("ServiceProbeService", () => {
 
     it("清单里删掉的服务,下一轮状态跟着消失", async () => {
         (global as any).fetch = jest.fn().mockResolvedValue({ ok: true } as any);
-        const repo = mkDictRepo();
-        const svc = new ServiceProbeService(repo as any);
+        const registry = mkRegistry();
+        const svc = new ServiceProbeService(registry as any);
         await svc.probeAll();
         expect(svc.getStatus()).toHaveLength(2);
 
-        repo.find.mockResolvedValue([rows[0]]);
+        registry.list.mockResolvedValue([rows[0]]);
         await svc.probeAll();
         expect(svc.getStatus().map((s) => s.key)).toEqual(["api"]);
     });

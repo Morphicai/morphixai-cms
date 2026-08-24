@@ -1,4 +1,4 @@
--- service-ops 迭代:服务事件 outbox 表 + ServiceOps 权限码 + services-registry 集合
+-- service-ops:服务事件 outbox 表 + ServiceOps 权限码 + 服务目录专表(op_sys_service_registry)
 -- 执行方式(dev): docker exec -i morphixai-cms-db-1 mysql -uroot -p*** optimus --default-character-set=utf8mb4 < 本文件
 
 -- ----------------------------
@@ -20,54 +20,43 @@ BEGIN;
 -- ServiceOps 权限码:服务状态面板与事件流读取
 INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (68, 1, 'ServiceOps'), (69, 2, 'ServiceOps');
 
--- services-registry: 服务目录——探测/动态菜单/Agent 工具三个消费者的唯一事实源。
--- 行数据是部署配置,推荐经"服务状态"页的目录接口维护(有 URL/联动校验),
--- 数据集合页仍可改但只有 form schema 级校验。private:含内网地址,不对外。
--- 不硬编码集合 id:id 会被环境里后建的集合占用,按 name 唯一键幂等
-INSERT IGNORE INTO `op_sys_dictionary_collection` (`name`, `display_name`, `description`, `data_type`, `access_type`) VALUES
-('services-registry', '服务目录', '服务探测/动态入口/Agent工具的统一登记处,推荐经服务状态页维护', 'object', 'private');
 
--- schema 与描述随迭代演进,INSERT IGNORE 不会更新已存在行,这里显式 UPDATE 保持幂等
-UPDATE `op_sys_dictionary_collection` SET
-  `display_name` = '服务目录',
-  `description` = '服务探测/动态入口/Agent工具的统一登记处,推荐经服务状态页维护',
-  `schema` = '{"title":"服务目录","fields":[{"key":"name","label":"服务名","type":"text","required":true},{"key":"baseUrl","label":"基础地址","type":"text","required":true},{"key":"healthPath","label":"健康检查路径","type":"text","placeholder":"默认 /health"},{"key":"metricsPath","label":"指标路径","type":"text","placeholder":"可空,如 /metrics-lite"},{"key":"enabled","label":"是否启用","type":"switch"},{"key":"entryType","label":"入口形态","type":"select","options":[{"label":"无入口","value":"none"},{"label":"iframe 嵌入","value":"embed"},{"label":"C端路径分区(zone)","value":"zone"}]},{"key":"embedUrl","label":"嵌入地址","type":"text","placeholder":"entryType=embed 时必填"},{"key":"pathPrefix","label":"URL 前缀","type":"text","placeholder":"entryType=zone 时必填,如 /activity"},{"key":"menuTitle","label":"菜单标题","type":"text"},{"key":"menuIcon","label":"菜单图标","type":"text","placeholder":"antd 图标名,如 AppstoreOutlined"},{"key":"permCode","label":"权限码","type":"text","placeholder":"空=仅 ServiceOps 可见"},{"key":"toolsPath","label":"Agent工具端点","type":"text","placeholder":"如 /system/agent/tools"}]}'
-WHERE `name` = 'services-registry';
+-- ----------------------------
+-- 服务目录专表:探测/动态菜单/Agent 工具/zone 路由四个消费者的唯一事实源。
+-- 曾复用字典集合行,但字典页(DataCollections 权限)一个删除就能端掉整个目录——
+-- 基础设施数据与业务数据物理隔离,本表只有 ServiceOps 门后的接口能写。
+-- path_prefix 唯一索引兜底 zone 前缀撞车(MySQL 多个 NULL 不冲突)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `op_sys_service_registry` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `key` varchar(50) NOT NULL COMMENT '服务标识(slug)',
+  `name` varchar(100) NOT NULL COMMENT '服务名',
+  `base_url` varchar(500) NOT NULL COMMENT 'API 根,可含路径前缀,各 path 直接串接',
+  `health_path` varchar(200) DEFAULT NULL,
+  `metrics_path` varchar(200) DEFAULT NULL,
+  `tools_path` varchar(200) DEFAULT NULL COMMENT 'Agent 工具声明端点',
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `entry_type` varchar(10) NOT NULL DEFAULT 'none' COMMENT 'none/embed/zone',
+  `embed_url` varchar(500) DEFAULT NULL,
+  `menu_title` varchar(100) DEFAULT NULL,
+  `menu_icon` varchar(50) DEFAULT NULL,
+  `perm_code` varchar(50) DEFAULT NULL,
+  `path_prefix` varchar(50) DEFAULT NULL COMMENT 'zone 专用 URL 前缀,全域唯一',
+  `sort_order` int NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_key` (`key`),
+  UNIQUE KEY `uk_path_prefix` (`path_prefix`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务目录(基础设施,勿手工删改)';
 
--- 行插入:uk_collection_key_user 含 user_id,NULL 不参与唯一判定,INSERT IGNORE 对
--- 这类行不幂等(重复导入会翻倍)——用 NOT EXISTS 守护
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'optimus-api' k,
-  '{"name": "平台服务(optimus-api)", "baseUrl": "http://localhost:8084/api", "healthPath": "/health", "metricsPath": "/metrics-lite", "enabled": true, "toolsPath": "/system/agent/tools"}' v, 0 s, 'baseUrl 即 API 根(含全局前缀 /api),各 path 直接串接' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='optimus-api');
-
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'agent-service' k,
-  '{"name": "智能体服务(agent-service)", "baseUrl": "http://localhost:8087", "healthPath": "/health", "metricsPath": "/metrics-lite", "enabled": true}' v, 10 s, '独立进程,需模型密钥' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='agent-service');
-
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'optimus-ui' k,
-  '{"name": "管理基座(optimus-ui)", "baseUrl": "http://localhost:8082", "healthPath": "/", "enabled": true}' v, 20 s, '静态站,探根路径' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='optimus-ui');
-
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'optimus-next' k,
-  '{"name": "C端官网(optimus-next)", "baseUrl": "http://localhost:8086", "healthPath": "/", "enabled": true}' v, 30 s, '静态站,探根路径' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='optimus-next');
-
--- demo-activity: 外部团队子应用,经服务目录动态接入(embed 入口+DemoActivity 权限码),
--- 原 routes.js 静态节点已下线——这行就是"零代码接入"的最终形态
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'demo-activity' k,
-  '{"name": "演示活动(外部团队)", "baseUrl": "http://localhost:5190", "healthPath": "/", "enabled": true, "entryType": "embed", "embedUrl": "http://localhost:5190", "menuTitle": "演示活动", "menuIcon": "AppstoreAddOutlined", "permCode": "DemoActivity"}' v, 40 s, '嵌入协议验收样例,examples/demo-activity 下 node serve.mjs 拉起' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='demo-activity');
-
--- zone-activity: C 端 Multi-Zones 第一个 zone(packages/zone-activity,8088)。
--- 主 zone(optimus-next)启动时从 /api/public/zone-routes 拉本表生成 rewrites,
--- 改动 zone 条目后重启 optimus-next 生效
-INSERT INTO `op_sys_dictionary` (`collection`, `key`, `value`, `sort_order`, `remark`)
-SELECT * FROM (SELECT 'services-registry' c, 'zone-activity' k,
-  '{"name": "活动中心(zone)", "baseUrl": "http://localhost:8088", "healthPath": "/activity", "enabled": true, "entryType": "zone", "pathPrefix": "/activity"}' v, 50 s, 'Multi-Zones 样例,基座经 /activity 同域到达' r) t
-WHERE NOT EXISTS (SELECT 1 FROM `op_sys_dictionary` WHERE collection='services-registry' AND `key`='zone-activity');
+-- 内置服务 seed:key 有唯一索引,INSERT IGNORE 天然幂等
+INSERT IGNORE INTO `op_sys_service_registry`
+  (`key`, `name`, `base_url`, `health_path`, `metrics_path`, `tools_path`, `enabled`, `entry_type`, `embed_url`, `menu_title`, `menu_icon`, `perm_code`, `path_prefix`, `sort_order`) VALUES
+  ('optimus-api',   '平台服务(optimus-api)',   'http://localhost:8084/api', '/health',   '/metrics-lite', '/system/agent/tools', 1, 'none',  NULL, NULL, NULL, NULL, NULL, 0),
+  ('agent-service', '智能体服务(agent-service)', 'http://localhost:8087',     '/health',   '/metrics-lite', NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 10),
+  ('optimus-ui',    '管理基座(optimus-ui)',    'http://localhost:8082',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 20),
+  ('optimus-next',  'C端官网(optimus-next)',   'http://localhost:8086',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 30),
+  ('demo-activity', '演示活动(外部团队)',       'http://localhost:5190',     '/',         NULL, NULL, 1, 'embed', 'http://localhost:5190', '演示活动', 'AppstoreAddOutlined', 'DemoActivity', NULL, 40),
+  ('zone-activity', '活动中心(zone)',          'http://localhost:8088',     '/activity', NULL, NULL, 1, 'zone',  NULL, NULL, NULL, NULL, '/activity', 50);
 COMMIT;

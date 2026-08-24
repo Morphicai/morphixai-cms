@@ -9,7 +9,15 @@
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
 下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
 
-## 上一迭代：zone 路由动态化（2026-08-24 完成，已合 main）
+## 上一迭代：服务目录迁专表（2026-08-24 完成，已合 main）
+
+服务目录从字典集合行迁到专表 `op_sys_service_registry`（字段列化，key/path_prefix
+DB 唯一索引）。动机：字典是业务数据的地盘，DataCollections 权限在数据集合页一个
+删除就能端掉整个目录——**基础设施数据与业务数据物理隔离**，专表只有 ServiceOps
+门后的接口能写，字典侧任何操作够不着。probe 改经 registry service 读目录；
+消费视图/前端/agent/proxy 零改动。迁移脚本 db/migrate_registry_to_table.sql。
+
+## 前一迭代：zone 路由动态化（2026-08-24 完成，已合 main）
 
 zone 路由从 next.config 启动时 rewrites 迁到 src/proxy.ts：60s TTL 拉服务目录 +
 stale-while-revalidate（目录不可达沿用旧表），**登记/启停 zone 约 1 分钟生效、
