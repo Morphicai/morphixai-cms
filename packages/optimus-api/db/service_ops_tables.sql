@@ -60,3 +60,11 @@ INSERT IGNORE INTO `op_sys_service_registry`
   ('demo-activity', '演示活动(外部团队)',       'http://localhost:5190',     '/',         NULL, NULL, 1, 'embed', 'http://localhost:5190', '演示活动', 'AppstoreAddOutlined', 'DemoActivity', NULL, 40),
   ('zone-activity', '活动中心(zone)',          'http://localhost:8088',     '/activity', NULL, NULL, 1, 'zone',  NULL, NULL, NULL, NULL, '/activity', 50);
 COMMIT;
+
+-- DatabaseBackup 权限码:备份接口曾全员 @AllowNoPerm 裸奔(任何登录账号可下载整库备份),
+-- 2026-08-24 收权为 @Perm("DatabaseBackup"),码只发给管理员角色
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (70, 1, 'DatabaseBackup'), (71, 2, 'DatabaseBackup');
+
+-- ContentShortLink 权限码:短链管理接口曾无任何权限标注(无标注默认放行=登录即用),
+-- 收权对齐前端菜单码
+INSERT IGNORE INTO `op_sys_role_menu` (`id`, `role_id`, `permission_code`) VALUES (72, 1, 'ContentShortLink'), (73, 2, 'ContentShortLink');

@@ -6,17 +6,20 @@ import { FindBackupsDto } from "./dto/find-backups.dto";
 import { JwtAuthGuard } from "../../shared/guards/auth.guard";
 import { RolesGuard } from "../../shared/guards/roles.guard";
 import { ResultData } from "../../shared/utils/result";
-import { AllowNoPerm } from "../../shared/decorators/perm.decorator";
+import { Perm } from "../../shared/decorators/perm.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
 import { OperationLogInterceptor } from "../../shared/interceptors/operation-log.interceptor";
 
 /**
  * 数据库备份控制器
  * 提供备份管理相关的 API 接口
- * 权限：仅超级管理员可访问（通过 RolesGuard 自动检查）
+ * 权限门 @Perm("DatabaseBackup"):备份下载=整库数据,这里曾经全员 @AllowNoPerm
+ * 裸奔(AllowNoPerm 在 guard 里先于超管检查直接放行,注释还宣称"仅超管"),
+ * 任何登录账号都能拖走全量备份——教训同 dictionary-collection:方法级放行会盖掉一切
  */
 @ApiTags("数据库备份管理")
 @ApiBearerAuth()
+@Perm("DatabaseBackup")
 @Controller("backups")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(OperationLogInterceptor)
@@ -35,7 +38,6 @@ export class DatabaseBackupController {
     @ApiResponse({ status: 200, description: "备份任务已触发" })
     @ApiResponse({ status: 403, description: "权限不足" })
     @ApiResponse({ status: 500, description: "备份失败" })
-    @AllowNoPerm()
     @OperationLog({
         module: "backup",
         action: "trigger",
@@ -76,7 +78,6 @@ export class DatabaseBackupController {
     @ApiResponse({ status: 200, description: "获取备份列表成功" })
     @ApiResponse({ status: 403, description: "权限不足" })
     @ApiResponse({ status: 500, description: "获取备份列表失败" })
-    @AllowNoPerm()
     async listBackups(@Query() query: FindBackupsDto): Promise<ResultData> {
         try {
             this.logger.log(`Listing backups with query: ${JSON.stringify(query)}`);
@@ -110,7 +111,6 @@ export class DatabaseBackupController {
     @ApiResponse({ status: 200, description: "获取统计信息成功" })
     @ApiResponse({ status: 403, description: "权限不足" })
     @ApiResponse({ status: 500, description: "获取统计信息失败" })
-    @AllowNoPerm()
     async getBackupStats(): Promise<ResultData> {
         try {
             this.logger.log("Getting backup statistics");
@@ -139,7 +139,6 @@ export class DatabaseBackupController {
     @ApiResponse({ status: 403, description: "权限不足" })
     @ApiResponse({ status: 404, description: "文件不存在" })
     @ApiResponse({ status: 500, description: "下载或解密失败" })
-    @AllowNoPerm()
     @OperationLog({
         module: "backup",
         action: "download",
@@ -208,7 +207,6 @@ export class DatabaseBackupController {
     @ApiResponse({ status: 403, description: "权限不足" })
     @ApiResponse({ status: 404, description: "文件不存在" })
     @ApiResponse({ status: 500, description: "生成链接失败" })
-    @AllowNoPerm()
     async generateDownloadUrl(@Query("fileKey") fileKey: string): Promise<ResultData> {
         try {
             // 验证参数
