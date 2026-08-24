@@ -7,7 +7,8 @@
 单机规模的微服务模式已成型：multi-service（api/agent/ui/next/demo）+
 服务目录（注册即接入）+ 探测观测 + 事务性事件 outbox。升级路径已存档
 （事件延迟不可接受→NATS relay；服务数≥8→再评框架），当前不引任何新组件。
-下一个待启动方向：partner/points-engine 迁出为第一个真实业务子服务（见推迟区）。
+partner/points-engine/external-task 迁出为第一个真实业务子服务已启动，进行中
+（openspec: extract-partner-service，分支 feature-extract-partner-service-20260824）。
 
 ## 上一迭代：权限模型收紧为 fail-closed（2026-08-24 完成，已合 main）
 
@@ -191,19 +192,11 @@ examples/demo-activity 全流程验收过。
 
 ## 已明确推迟（闭环前不碰）
 
-- **partner/points-engine 迁出为子服务**：init project 拷入的存量业务线
-  （游戏合伙人/积分引擎），代码挂载但三张 partner 表 0 行、无活跃使用。
-  已决策走服务目录接入（entryType=embed + 自己的权限码 + toolsPath）。
-  其 9 个单测自 init 起就与实现不同步（引用从未存在的 JoinMode/旧签名），
-  已在 jest.unit.config.js testPathIgnorePatterns 屏蔽——**迁移时随行修复**，
-  屏蔽清单就是迁移范围的测试侧对账单
 - antd v4→v5 弃用 API 清理
 - dashboard 统计数据源
 - ~~无标注接口的"默认拒绝"收紧~~ **已完成（见下方 Completed）**
 - RolesGuard（旧守卫）清理：权限判断逻辑整段被注释掉、等同永远放行，
   UnifiedAuthGuard 全局先执行使其无害但属废弃代码，找机会删除
-- partner-admin.controller.ts 的 dashboard 接口 500（`op_biz_task_completion_log`
-  表不存在，权限收权时顺带发现，与本次改动无关，历史遗留）
 - i18n-platform 迁移为内部模块（现阶段 iframe 引用）
 - optimus-next 的 ComingSoon 文档页补全与文档搜索后端
 
