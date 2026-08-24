@@ -6,7 +6,6 @@ import {
     Body,
     Query,
     Param,
-    UseGuards,
     Req,
     UseInterceptors,
     UploadedFile,
@@ -18,9 +17,7 @@ import { ExternalTaskService } from "../services/external-task.service";
 import { SubmitExternalTaskDto } from "../dto/submit-external-task.dto";
 import { QuerySubmissionsDto } from "../dto/query-submissions.dto";
 import { UpdateSubmissionDto } from "../dto/update-submission.dto";
-import { ClientUserAuthGuard } from "../../../shared/guards/client-user-auth.guard";
-import { AllowAnonymous } from "../../../shared/decorators/allow-anonymous.decorator";
-import { RequireClientUserAuth } from "../../../shared/decorators/require-client-user-auth.decorator";
+import { ClientUserAuth } from "../../../shared/decorators/auth-mode.decorator";
 import { ResultData } from "../../../shared/utils/result";
 import { ApiResult } from "../../../shared/decorators/api-result.decorator";
 import { getEnabledExternalTaskConfigs } from "../constants/external-task-configs.constant";
@@ -65,12 +62,10 @@ export class ExternalTaskController {
      * POST /api/external-task/upload-proof
      */
     @Post("upload-proof")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @UseInterceptors(FileInterceptor("file"))
     @ApiOperation({
-        summary: "上传任务凭证图片（需要 ClientUserAuthGuard 认证）",
+        summary: "上传任务凭证图片",
         description: "用户上传外部任务的凭证图片，返回图片URL。支持 jpg、png、gif 格式，单个文件最大10MB",
     })
     @ApiConsumes("multipart/form-data")
@@ -173,11 +168,9 @@ export class ExternalTaskController {
      * GET /api/external-task/task-list
      */
     @Get("task-list")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取任务列表（需要 ClientUserAuthGuard 认证）",
+        summary: "获取任务列表",
         description: "获取所有启用的外部任务及其完成状态，用于前端展示任务列表",
     })
     @ApiResponse({
@@ -233,11 +226,9 @@ export class ExternalTaskController {
      * GET /api/external-task/types
      */
     @Get("types")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取可用的任务类型列表（需要 ClientUserAuthGuard 认证）",
+        summary: "获取可用的任务类型列表",
         description: "获取所有启用的外部任务类型及其配置信息",
     })
     @ApiResponse({
@@ -285,11 +276,9 @@ export class ExternalTaskController {
      * POST /api/biz/external-task/submit
      */
     @Post("submit")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "提交外部任务（需要 ClientUserAuthGuard 认证）",
+        summary: "提交外部任务",
         description: "用户提交外部任务，等待审核。需要用户已加入合伙人计划",
     })
     @ApiBody({
@@ -360,11 +349,9 @@ export class ExternalTaskController {
      * GET /api/biz/external-task/my-submissions
      */
     @Get("my-submissions")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "查询我的提交记录（需要 ClientUserAuthGuard 认证）",
+        summary: "查询我的提交记录",
         description: "查询当前用户的所有外部任务提交记录，支持分页和筛选",
     })
     @ApiQuery({ name: "page", required: false, description: "页码，从1开始", example: 1 })
@@ -427,11 +414,9 @@ export class ExternalTaskController {
      * PUT /api/external-task/submissions/:id
      */
     @Put("submissions/:id")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "修改被拒绝的提交（需要 ClientUserAuthGuard 认证）",
+        summary: "修改被拒绝的提交",
         description: "用户可以修改被拒绝的任务提交，修改后重新进入审核流程",
     })
     @ApiBody({

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, Query, Param, UseGuards, Req, UseInterceptors } from "@nestjs/common";
+import { Controller, Post, Get, Put, Body, Query, Param, Req, UseInterceptors } from "@nestjs/common";
 import {
     ApiTags,
     ApiOperation,
@@ -18,10 +18,7 @@ import { CreateChannelDto } from "./dto/create-channel.dto";
 import { QueryTeamDto } from "./dto/query-team.dto";
 import { SetUplinkDto } from "./dto/set-uplink.dto";
 import { UpdateTeamNameDto } from "./dto/update-team-name.dto";
-import { ClientUserAuthGuard } from "../../shared/guards/client-user-auth.guard";
-import { JwtAuthGuard } from "../../shared/guards/auth.guard";
-import { RequireClientUserAuth } from "../../shared/decorators/require-client-user-auth.decorator";
-import { AllowAnonymous } from "../../shared/decorators/allow-anonymous.decorator";
+import { ClientUserAuth } from "../../shared/decorators/auth-mode.decorator";
 import { ResultData } from "../../shared/utils/result";
 import { ApiResult } from "../../shared/decorators/api-result.decorator";
 import { OperationLog } from "../../shared/decorators/operation-log.decorator";
@@ -45,11 +42,9 @@ export class PartnerController {
      * POST /api/biz/partner/join
      */
     @Post("join")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "加入合伙人计划（需要 ClientUserAuthGuard 认证）",
+        summary: "加入合伙人计划",
         description: `用户加入合伙人计划，支持灵活的加入方式：
         
 **自建团队模式**：
@@ -149,11 +144,9 @@ export class PartnerController {
      * GET /api/biz/partner/profile
      */
     @Get("profile")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取我的合伙人档案（需要 ClientUserAuthGuard 认证）",
+        summary: "获取我的合伙人档案",
         description: "获取当前登录用户的合伙人档案信息，包括合伙人编号、星级、积分等，以及上级信息",
     })
     @ApiResponse({
@@ -203,11 +196,9 @@ export class PartnerController {
      * GET /api/biz/partner/team
      */
     @Get("team")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取我的团队列表（需要 ClientUserAuthGuard 认证）",
+        summary: "获取我的团队列表",
         description: "获取当前合伙人的团队成员列表，支持按深度过滤和分页。depth=2时返回树状结构（包含children）",
     })
     @ApiQuery({
@@ -280,11 +271,9 @@ export class PartnerController {
      * GET /api/biz/partner/overview
      */
     @Get("overview")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取我的团队概览（需要 ClientUserAuthGuard 认证）",
+        summary: "获取我的团队概览",
         description: "获取当前合伙人的团队统计概览，包括一级和二级下线总数",
     })
     @ApiResponse({
@@ -322,11 +311,9 @@ export class PartnerController {
      * POST /api/biz/partner/channels
      */
     @Post("channels")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "创建推广渠道（需要 ClientUserAuthGuard 认证）",
+        summary: "创建推广渠道",
         description:
             "为当前合伙人创建新的推广渠道。可以自定义6位渠道码（大写字母+数字），或不传则自动生成。shortUrl 返回短链token（6位字符），前端需拼接完整URL",
     })
@@ -397,11 +384,9 @@ export class PartnerController {
      * POST /api/biz/partner/set-uplink
      */
     @Post("set-uplink")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "设置上级（需要 ClientUserAuthGuard 认证）",
+        summary: "设置上级",
         description: "为当前合伙人设置上级，只能通过邀请人编号设置。注意：已有上级的合伙人无法再次设置",
     })
     @ApiBody({
@@ -453,11 +438,9 @@ export class PartnerController {
      * PUT /api/biz/partner/team-name
      */
     @Put("team-name")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "更新团队名称（需要 ClientUserAuthGuard 认证）",
+        summary: "更新团队名称",
         description: "更新当前合伙人的团队名称",
     })
     @ApiBody({
@@ -501,11 +484,9 @@ export class PartnerController {
      * GET /api/biz/partner/channels
      */
     @Get("channels")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取我的渠道列表（需要 ClientUserAuthGuard 认证）",
+        summary: "获取我的渠道列表",
         description: "获取当前合伙人创建的所有推广渠道",
     })
     @ApiResponse({
@@ -561,11 +542,9 @@ export class PartnerController {
      * PUT /api/biz/partner/channels/:channelId/disable
      */
     @Put("channels/:channelId/disable")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "禁用渠道（需要 ClientUserAuthGuard 认证）",
+        summary: "禁用渠道",
         description: "禁用指定的推广渠道，禁用后该渠道无法用于新的推广，但保留历史数据",
     })
     @ApiParam({ name: "channelId", description: "渠道ID", example: "1" })
@@ -620,11 +599,9 @@ export class PartnerController {
      * GET /api/biz/partner/team/statistics
      */
     @Get("team/statistics")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取团队高级统计（需要 ClientUserAuthGuard 认证）",
+        summary: "获取团队高级统计",
         description:
             "获取当前合伙人的团队高级统计。注意：thisMonthMira 是我本月获得的积分（来自所有贡献者），不是团队成员各自积分的总和",
     })
@@ -666,11 +643,9 @@ export class PartnerController {
      * GET /api/biz/partner/team/members-with-stats
      */
     @Get("team/members-with-stats")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取团队成员列表（含统计信息）（需要 ClientUserAuthGuard 认证）",
+        summary: "获取团队成员列表（含统计信息）",
         description:
             "获取团队成员对我的积分贡献列表。注意：cumulativeMira 和 thisMonthMira 是该成员为我贡献的积分，不是成员自己的积分。例如：邀请任务中，被邀请人为我贡献300分；注册任务中，我自己为自己贡献300分",
     })
@@ -741,11 +716,9 @@ export class PartnerController {
      * 注意：此路由定义在最后，避免与静态路由（如 team/statistics, team/members-with-stats）冲突
      */
     @Get("team/:partnerId")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取指定成员的一级下线列表（需要 ClientUserAuthGuard 认证）",
+        summary: "获取指定成员的一级下线列表",
         description:
             "查看指定合伙人的一级下线成员列表。注意：1) 只能查询一级下线，不支持depth参数；2) 目标合伙人必须是当前用户的下线",
     })
@@ -813,11 +786,9 @@ export class PartnerController {
      * GET /api/biz/partner/channels/:channelId/statistics
      */
     @Get("channels/:channelId/statistics")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取单个渠道统计（需要 ClientUserAuthGuard 认证）",
+        summary: "获取单个渠道统计",
         description: "获取指定推广渠道的统计信息，包括成员数、总MIRA、本月MIRA、转化率等",
     })
     @ApiParam({ name: "channelId", description: "渠道ID", example: "1" })
@@ -859,11 +830,9 @@ export class PartnerController {
      * GET /api/biz/partner/channels/summary
      */
     @Get("channels/summary")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取所有渠道汇总统计（需要 ClientUserAuthGuard 认证）",
+        summary: "获取所有渠道汇总统计",
         description: "获取当前合伙人所有推广渠道的汇总统计信息",
     })
     @ApiResponse({

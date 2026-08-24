@@ -4,6 +4,38 @@
 - [x] 1.2 删除 `partner.controller.ts` 里的 `update-mira`/`update-star`(已确认全局零调用方);删除前跑一次全量引用检查(`grep -rl "updateMira\|updateStar"`)兜底确认无遗漏调用方
 - [x] 1.3 api 全量单测 + 手工验证两条曾 500 的路径,确认修复生效,提交这一小步(可独立于后续迁移先合 main)
 
+## 1.5 补追加修复:C 端鉴权闭环(执行 2.4 端到端验证时发现,不能带着这个坑迁移)
+
+验证服务目录/C 端代理分流时,拿真实浏览器 cookie 会话去调 `/profile` 页唯一的两个生产接口
+(`GET /biz/partner/profile`、`GET /biz/points/me`),发现从写出来那天起就没被浏览器真正调通过——
+代码上用的是 `@AllowAnonymous() + @UseGuards(ClientUserAuthGuard) + @RequireClientUserAuth()`,
+这是给外部服务端调用方(`UserSource.WEMADE`)准备的 HMAC 签名鉴权,要求 `client-uid`/`client-sign`/
+`client-timestamp` 三个头,签名要用共享密钥 `CLIENT_USER_SIGN_KEY` 算——前端代码里根本没有算
+签名的逻辑,浏览器也不该拿到这个密钥去算。裸调实测直接 400 缺参数。真正的浏览器 cookie 鉴权
+模式(`@ClientUserAuth()`,走 `clientAccessToken` httpOnly cookie)在 `client-user.controller.ts`
+里本来就有、也在用,只是 partner/points-engine/external-task 这三个模块从头到尾没接对——
+`UserSource.WEMADE` 在这三个模块里只当默认值出现,从未被任何业务逻辑当判别条件用,说明这从来
+不是一个真被区分对待的外部身份,是复制粘贴挂错了守卫。
+
+- [x] 1.5.1 partner.controller.ts(14 个)、points.controller.ts(3 个:me/notify/monthly-summary)、
+  external-task.controller.ts(6 个)共 23 个端点,统一把
+  `@AllowAnonymous()+@UseGuards(ClientUserAuthGuard)+@RequireClientUserAuth()` 换成
+  `@ClientUserAuth()`——`req.clientUser.userId` 字段名和语义在两种模式下一致(均来自
+  `ClientUserEntity.userId`),控制器方法体不用改一行;顺带清理三个文件里失效的
+  `ClientUserAuthGuard`/`RequireClientUserAuth`/`AllowAnonymous`/`UseGuards` 引入和
+  Swagger 文案里"需要 ClientUserAuthGuard 认证"的过时说明
+- [x] 1.5.2 `op_biz_partner_profile.user_source` 默认值从 `wemade` 改回 `internal`(entity 注解 +
+  `db/partner_profile_user_source_default.sql` 迁移脚本,已在 dev 库执行验证)——这个字段此后
+  只会来自我们自己的 client-user 会话,继续默认 wemade 会让每条新数据都带错误来源标签
+- [x] 1.5.3 端到端验证(真实注册+登录+join+profile+points,全部经过 `optimus-next` 的
+  `/api/[...path]/route.ts` 代理,不是绕过代理直连后端):注册闭环用户→登录拿到
+  `clientAccessToken` cookie→`POST /biz/partner/join`(201,自动触发注册任务积分事件)→
+  `GET /biz/partner/profile` 显示 `totalMira:"300"`→`GET /biz/points/me` 显示
+  `totalPoints:300` 且明细含 `REGISTER_V1` 事件——验证完删除了全部测试数据(client_user/
+  partner_profile/task_completion_log 三张表清零)
+- [x] 1.5.4 无 cookie 请求确认降级为清晰的 401(`Client user token not found`),不再是误导性的
+  400 缺参数提示
+
 ## 2. 服务目录扩展:API 路径路由(C 端代理分流的前提)
 
 - [x] 2.1 `ServiceRegistryService`(`ServiceEntry` 接口)新增可选字段 `apiPathPrefixes: string[]`,与既有 `pathPrefix`(zone 页面路由)是两个独立概念——一个服务可以两者都有、都没有,或只有其中一个。存储用 JSON 列(`op_sys_service_registry.api_path_prefixes`),唯一性(跨服务不重叠)下沉到应用层全表扫描校验,格式校验允许多段小写路径(如 `/biz/partner`),并挡掉 `/auth`、`/public`、`/login`、`/embed` 这几个 C 端代理自身占用的保留前缀

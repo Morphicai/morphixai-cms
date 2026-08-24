@@ -13,10 +13,13 @@ export class PartnerProfileEntity {
     @Index()
     userId: string;
 
+    // 2026-08-24 起加入合伙人计划统一走自己的 client-user cookie 会话(见
+    // partner.controller.ts 鉴权改造记录),不再有真实的外部 WeMade 调用方,
+    // 默认值改回 INTERNAL 才对得上实际数据来源
     @Column({
         type: "varchar",
         length: 50,
-        default: UserSource.WEMADE,
+        default: UserSource.INTERNAL,
         name: "user_source",
     })
     @Index()

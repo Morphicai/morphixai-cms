@@ -4,10 +4,8 @@ import { PointsService } from "../services/points.service";
 import { TaskEngineService } from "../services/task-engine.service";
 import { QueryPointsDto } from "../dto/query-points.dto";
 import { NotifyTaskCompletionDto } from "../dto/notify-task-completion.dto";
-import { ClientUserAuthGuard } from "../../../shared/guards/client-user-auth.guard";
 import { JwtAuthGuard } from "../../../shared/guards/auth.guard";
-import { AllowAnonymous } from "../../../shared/decorators/allow-anonymous.decorator";
-import { RequireClientUserAuth } from "../../../shared/decorators/require-client-user-auth.decorator";
+import { ClientUserAuth } from "../../../shared/decorators/auth-mode.decorator";
 import { ResultData } from "../../../shared/utils/result";
 import { ApiResult } from "../../../shared/decorators/api-result.decorator";
 import { Perm } from "../../../shared/decorators/perm.decorator";
@@ -34,11 +32,9 @@ export class PointsController {
      * GET /api/biz/points/me
      */
     @Get("me")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "获取我的积分（需要 ClientUserAuthGuard 认证）",
+        summary: "获取我的积分",
         description: "C端用户查询自己的积分和明细",
     })
     @ApiQuery({
@@ -121,11 +117,9 @@ export class PointsController {
      * POST /api/biz/points/notify
      */
     @Post("notify")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "通知任务完成（需要 ClientUserAuthGuard 认证）",
+        summary: "通知任务完成",
         description: "C端通知后端某个任务已完成，系统会根据任务配置自动计算并记录积分",
     })
     @ApiBody({
@@ -348,11 +342,9 @@ export class PointsController {
      * GET /api/biz/points/monthly-summary
      */
     @Get("monthly-summary")
-    @AllowAnonymous()
-    @UseGuards(ClientUserAuthGuard)
-    @RequireClientUserAuth()
+    @ClientUserAuth()
     @ApiOperation({
-        summary: "按月统计积分（需要 ClientUserAuthGuard 认证）",
+        summary: "按月统计积分",
         description: "C端用户查询自己的积分按月统计，包括本月、上月和历史记录",
     })
     @ApiResponse({
