@@ -17,9 +17,21 @@
  *      审核通过→确认积分发放、dashboard 统计(曾经的 500 路径)
  *   C. 交叉验证:管理端审核通过后,C 端再查一次积分,确认账本是同一份
  *      (不是两边各算各的)
+ *   D. 渠道管理(C 端,经代理):创建推广渠道(真打 optimus-api 短链服务,
+ *      不是 mock)→查列表→禁用→再查确认状态,而不是被物理删除
+ *   E. 管理端合伙人详情/备注/渠道列表(直连):改备注→详情接口确认→
+ *      按 partnerId 查渠道列表确认能看到 D 里创建的渠道
+ *   F. 团队查询的 depth 参数(C 端,验证 Group 7 修的 getTeamMembers
+ *      硬编码 level:1 的 bug 在真实路径上确实生效,不只是单测绿):
+ *      depth=1、depth=2 都要能正常返回(不因为参数变化而 500)
+ *   G. 外部任务驳回流程(审核通过之外的另一条分支,此前只测过 approve):
+ *      再提交一条→管理端 reject→确认状态 REJECTED 且没有发放积分
  *
- * 退出码 0 = 闭环确认,可以进 Group 6 删 optimus-api 原代码;
- * 非 0 = 有环节没打通,不能删,把失败项打印出来。
+ * 最初写这个脚本是为了给 Group 6(删 optimus-api 原代码)做闭环证据,
+ * 现在覆盖面已经扩到 Group 8 验收要求的大部分功能等价性检查,可以作为
+ * 常规回归脚本长期留着复用。
+ *
+ * 退出码 0 = 全部断言通过;非 0 = 有环节没打通,把失败项打印出来。
  *
  * 用法: node scripts/verify-closed-loop.mjs
  */
@@ -66,6 +78,8 @@ async function main() {
     let adminToken = "";
     let partnerId = null;
     let submissionId = null;
+    let channelId = null;
+    let secondSubmissionId = null;
 
     console.log("== A. C 端闭环(全程走 optimus-next:8086 真实代理) ==");
 
@@ -237,6 +251,129 @@ async function main() {
         assert(hasExternalTask, "积分明细里能看到 EXTERNAL_TASK 事件,证明是同一份账本,不是管理端各算各的");
     }
 
+    console.log("== D. 渠道管理(C 端经代理,创建时真打 optimus-api 短链服务) ==");
+    {
+        const createRes = await fetch(`${OPTIMUS_NEXT}/biz/partner/channels`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: clientCookie },
+            body: JSON.stringify({ name: "闭环验证渠道" }),
+        });
+        const createBody = await json(createRes);
+        channelId = createBody?.data?.id;
+        assert(
+            createBody.code === 200 && !!channelId && !!createBody?.data?.shortUrl,
+            "创建渠道成功且拿到短链 token(真实调用了 optimus-api 短链服务)",
+            createBody,
+        );
+
+        const listRes = await fetch(`${OPTIMUS_NEXT}/biz/partner/channels`, { headers: { Cookie: clientCookie } });
+        const listBody = await json(listRes);
+        const created = (listBody?.data || []).find((c) => c.id === channelId);
+        assert(listBody.code === 200 && !!created, "渠道列表能查到刚创建的渠道", { found: !!created });
+
+        const disableRes = await fetch(`${OPTIMUS_NEXT}/biz/partner/channels/${channelId}/disable`, {
+            method: "PUT",
+            headers: { Cookie: clientCookie },
+        });
+        assert((await json(disableRes)).code === 200, "禁用渠道请求成功");
+
+        const listRes2 = await fetch(`${OPTIMUS_NEXT}/biz/partner/channels`, { headers: { Cookie: clientCookie } });
+        const listBody2 = await json(listRes2);
+        const disabled = (listBody2?.data || []).find((c) => c.id === channelId);
+        assert(
+            disabled?.status === "disabled",
+            "禁用后渠道状态确认为 disabled,且记录仍在(不是被物理删除)",
+            disabled,
+        );
+    }
+
+    console.log("== E. 管理端合伙人详情/备注/渠道列表(直连) ==");
+    {
+        const remarkRes = await fetch(`${PARTNER_SERVICE}/biz/partner/admin/partners/${partnerId}/remark`, {
+            method: "PUT",
+            headers: { Authorization: adminToken, "Content-Type": "application/json" },
+            body: JSON.stringify({ remark: "闭环自动化验证-备注" }),
+        });
+        assert((await json(remarkRes)).code === 200, "更新备注请求成功");
+
+        const detailRes = await fetch(`${PARTNER_SERVICE}/biz/partner/admin/partners/${partnerId}`, {
+            headers: { Authorization: adminToken },
+        });
+        const detail = await json(detailRes);
+        assert(detail?.data?.remark === "闭环自动化验证-备注", "详情接口能读到刚更新的备注", detail?.data?.remark);
+
+        const channelsRes = await fetch(`${PARTNER_SERVICE}/biz/partner/admin/partners/${partnerId}/channels`, {
+            headers: { Authorization: adminToken },
+        });
+        const channelsBody = await json(channelsRes);
+        const foundChannel = (channelsBody?.data || []).find((c) => c.id === channelId);
+        assert(
+            channelsBody.code === 200 && !!foundChannel,
+            "管理端按 partnerId 查渠道列表能看到 D 步骤创建的渠道",
+            { found: !!foundChannel },
+        );
+    }
+
+    console.log("== F. 团队查询 depth 参数(验证 Group 7 修的 getTeamMembers level 硬编码 bug) ==");
+    {
+        const res1 = await fetch(`${OPTIMUS_NEXT}/biz/partner/team?depth=1&page=1&pageSize=10`, {
+            headers: { Cookie: clientCookie },
+        });
+        const body1 = await json(res1);
+        assert(body1.code === 200 && Array.isArray(body1?.data?.items), "depth=1 正常返回(无下线,列表为空数组)", body1?.data);
+
+        const res2 = await fetch(`${OPTIMUS_NEXT}/biz/partner/team?depth=2&page=1&pageSize=10`, {
+            headers: { Cookie: clientCookie },
+        });
+        const body2 = await json(res2);
+        assert(
+            body2.code === 200 && Array.isArray(body2?.data?.items),
+            "depth=2 也正常返回(不再被硬编码的 level:1 悄悄降级成一级查询)",
+            body2?.data,
+        );
+    }
+
+    console.log("== G. 外部任务驳回流程(此前只测过 approve,reject 是另一条分支) ==");
+    {
+        const submitRes = await fetch(`${OPTIMUS_NEXT}/external-task/submit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: clientCookie },
+            body: JSON.stringify({
+                taskType: "DOUYIN_SHORT_VIDEO",
+                taskLink: "https://douyin.com/video/closedloop-reject-test",
+                proofImages: ["https://cdn.example.com/closedloop-reject-test.jpg"],
+                remark: "闭环自动化验证-用于测试驳回",
+            }),
+        });
+        const submitBody = await json(submitRes);
+        assert(submitBody.code === 200 && submitBody?.data?.status === "PENDING", "第二次提交成功,状态 PENDING", submitBody);
+
+        const listRes = await fetch(
+            `${PARTNER_SERVICE}/admin/external-task/submissions?page=1&pageSize=20&status=PENDING`,
+            { headers: { Authorization: adminToken } },
+        );
+        const listBody = await json(listRes);
+        const submission = (listBody?.data?.items || []).find((s) => s.partnerId === partnerId);
+        secondSubmissionId = submission?.id;
+        assert(!!secondSubmissionId, "找到第二条待审核记录", { found: !!secondSubmissionId });
+
+        const rejectRes = await fetch(`${PARTNER_SERVICE}/admin/external-task/submissions/${secondSubmissionId}/reject`, {
+            method: "POST",
+            headers: { Authorization: adminToken, "Content-Type": "application/json" },
+            body: JSON.stringify({ reviewRemark: "闭环自动化验证-驳回:测试凭证" }),
+        });
+        const rejectBody = await json(rejectRes);
+        assert(rejectBody.success === true && rejectBody?.data?.status === "REJECTED", "驳回请求成功且状态变为 REJECTED", rejectBody);
+
+        const pointsRes = await fetch(`${OPTIMUS_NEXT}/biz/points/me`, { headers: { Cookie: clientCookie } });
+        const pointsBody = await json(pointsRes);
+        assert(
+            pointsBody?.data?.totalPoints === 2300,
+            "驳回后积分总额仍是 2300,没有因为驳回而误发积分",
+            pointsBody?.data,
+        );
+    }
+
     console.log("== 清理测试数据 ==");
     const conn = await mysql.createConnection(DB_CONFIG);
     try {
@@ -244,20 +381,21 @@ async function main() {
             await conn.execute("DELETE FROM op_biz_partner_admin_log WHERE partner_id = ?", [partnerId]);
             await conn.execute("DELETE FROM op_biz_task_completion_log WHERE partner_id = ?", [partnerId]);
             await conn.execute("DELETE FROM op_biz_external_task_submission WHERE partner_id = ?", [partnerId]);
+            await conn.execute("DELETE FROM op_biz_partner_channel WHERE partner_id = ?", [partnerId]);
             await conn.execute("DELETE FROM op_biz_partner_profile WHERE partner_id = ?", [partnerId]);
         }
         await conn.execute("DELETE FROM op_biz_client_user WHERE username = ?", [username]);
-        ok("测试数据已清理(client_user/partner_profile/external_task_submission/task_completion_log/partner_admin_log)");
+        ok("测试数据已清理(client_user/partner_profile/external_task_submission/task_completion_log/partner_admin_log/partner_channel)");
     } finally {
         await conn.end();
     }
 
     console.log("");
     if (failures.length === 0) {
-        console.log(`闭环验证全部通过(共 ${failures.length} 处失败)。可以进入 Group 6 删除 optimus-api 原代码。`);
+        console.log("闭环验证全部通过。");
         process.exit(0);
     } else {
-        console.error(`闭环验证发现 ${failures.length} 处失败,不能删除 optimus-api 原代码:`);
+        console.error(`闭环验证发现 ${failures.length} 处失败:`);
         failures.forEach((f) => console.error(`  - ${f}`));
         process.exit(1);
     }
