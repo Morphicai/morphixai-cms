@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LoginModal } from "@optimus/auth-ui";
 
 /**
  * 报名交互区(客户端组件)。三态:未登录引导 / 可报名 / 已报名。
- * 未登录时弹共享登录窗——@optimus/auth-ui SDK(同栈子应用的正解,构建时集成,
- * 只含编译产物);异构/外部子应用则用主站 /auth/login-embed 的 iframe 通道。
+ * 未登录走主站登录页跳转(带 redirect 回跳)——zone 间共享 UI 先不引共享包,
+ * 等业务复杂到值得再上 @optimus/auth-ui;iframe 通道(/auth/login-embed)留给异构子应用。
  * 报名请求走同域相对路径,cookie 自动携带,身份校验在 zone 服务端。
  */
 export default function SignupPanel({
@@ -22,7 +21,6 @@ export default function SignupPanel({
 }) {
     const [state, setState] = useState<"idle" | "busy" | "done">(alreadySigned ? "done" : "idle");
     const [msg, setMsg] = useState("");
-    const [loginOpen, setLoginOpen] = useState(false);
 
     const signup = async () => {
         setState("busy");
@@ -51,23 +49,17 @@ export default function SignupPanel({
         return <div style={{ color: "#9CA3AF", fontSize: 14 }}>本期活动已结束,感谢关注。</div>;
     }
     if (!loggedIn) {
+        // 跨 zone 用 <a> 硬导航;redirect 让登录完成后送回本页
         return (
-            <>
-                <button
-                    onClick={() => setLoginOpen(true)}
-                    style={{
-                        padding: "10px 28px", borderRadius: 8, border: "none", cursor: "pointer",
-                        background: "#1F2937", color: "#fff", fontSize: 15,
-                    }}
-                >
-                    登录后报名
-                </button>
-                <LoginModal
-                    open={loginOpen}
-                    onClose={() => setLoginOpen(false)}
-                    onSuccess={() => window.location.reload()}
-                />
-            </>
+            <a
+                href="/auth?redirect=/activity"
+                style={{
+                    display: "inline-block", padding: "10px 28px", borderRadius: 8,
+                    background: "#1F2937", color: "#fff", fontSize: 15, textDecoration: "none",
+                }}
+            >
+                登录后报名
+            </a>
         );
     }
     if (state === "done") {

@@ -9,7 +9,6 @@
     "test": "echo \"covered by zone acceptance\" && exit 0"
   },
   "dependencies": {
-    "@optimus/auth-ui": "workspace:*",
     "next": "16.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
