@@ -280,3 +280,17 @@ export class ResolveShortLinkDto {
     })
     target: any;
 }
+
+/**
+ * C 端生成短链 DTO——供已拆分出去的业务子服务(如 partner-service 的推广渠道)
+ * 代自己的 client 用户生成短链使用,走 ShortLinkService.shorten() 同一条路径
+ */
+export class ClientShortenDto {
+    @ApiProperty({ description: "目标参数(对象会转成 querystring,字符串原样使用)" })
+    target: Record<string, any> | string;
+
+    @ApiPropertyOptional({ description: "备注" })
+    @IsOptional()
+    @IsString()
+    remark?: string;
+}

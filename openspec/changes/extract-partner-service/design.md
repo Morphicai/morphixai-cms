@@ -43,6 +43,19 @@
 ### 3. 三模块整体迁移,不拆成三个服务
 已验证的依赖图:points-engine→partner(4处只读)、external-task→partner+points-engine(1处写)。三者耦合度不算低,拆成三个独立服务只是把进程内函数调用换成三次网络调用外加三套鉴权配置,除了增加运维复杂度和引入需要 service token 的场景外没有实质收益。**决策:一个新进程装三个业务域**,内部仍是普通的 Nest module 依赖注入调用。
 
+### 3.5 OSS 存储、短链服务不随迁移复制,partner-service 走 HTTP 调 optimus-api
+
+实施 4.1/4.3 时发现设计阶段漏看的两处跨模块依赖(都不在 partner/points-engine/external-task 目录内,是它们引用的"外面的"能力):
+
+- `external-task` 的"上传任务凭证图片"依赖 `system/oss/`(45 个文件:多存储后端、签名 URL、文件代理、缓存、专属异常处理),是平台级能力
+- `partner` 的"创建推广渠道"依赖 `system/short-link/`,写入 `op_sys_short_link`——`op_sys_` 前缀本身就说明这是全局共享表,不是 partner 专属数据
+
+**决策:这两个不算业务域范畴,留在 optimus-api,partner-service 通过 HTTP 调用 optimus-api 现有接口,不复制实现。** 和"鉴权用 introspect 不搬 UnifiedAuthGuard"是同一个架构判断——身份验证、文件存储、短链都是平台级横切能力,新服务应该做的是"调用平台",不是"把整个平台系统再复制一份"。复制 OSS 45 个文件的维护成本和这次迁移里三个业务模块本身的体量完全不成比例,且会产生两份互不可见的存储/短链数据。
+
+（顺带确认:`system/user/` 虽被三个 `.module.ts` import,但 `UserService` 从未被实际调用,迁移时直接去掉这个 import,不需要处理）
+
+代价:`upload-proof`、`create-channel` 两个端点各多一次到 optimus-api 的网络往返;网络往返期间如果 optimus-api 不可达,这两个功能会跟着降级,这是把它们定义为"平台能力"而非"业务域自身能力"的自然结果,可接受。
+
 ### 4. 落地前修复两处断裂,不带着坏设计走
 - `update-mira`/`update-star`:全局零调用方,是被事件溯源方案取代后的遗留写口。**删除**,不带进新服务。如果将来真的需要"运营手动修正积分"这类操作,应该基于事件溯源模型设计一条新的修正记录写入路径(补一条负向/修正 `TaskCompletionLogEntity` 记录），而不是恢复一个绕过账本直接改字段的口子
 - `op_biz_task_completion_log`:随迁移在 partner-service 补一份正式建表迁移脚本(不依赖 `synchronize`),让 dashboard 统计和审批发放两条路径在新服务里从一开始就是好的
