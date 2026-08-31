@@ -37,7 +37,9 @@
 - `packages/optimus-api`：删除 `src/business/order`，`app.module.ts` 移除对应注册
 - `packages/order-service`：新建，结构参照 `partner-service`/`marketing-service`
 - `optimus-ui`：订单相关管理页面菜单从静态路由改为动态 embed 入口
-- 依赖：`platform-client-sdk`（SDK 强约束）、建议在
+- 依赖：`platform-client-sdk`（SDK 强约束）、`platform-gateway-topology`
+  （网关能正确路由到本服务是拆分后能被访问的前提，且本变更 embed 管理页
+  的可达范围要落地为具体部署配置，需要该变更先定下范围决策）、建议在
   `extract-marketing-service` 完成后再开始本次迁移
 - 与营销域的未来联动（优惠券/折扣规则影响订单定价、订单完成触发营销奖励）
   不在本次范围内实现，见 design.md Non-Goals

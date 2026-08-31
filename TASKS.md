@@ -2,11 +2,11 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前状态（2026-08-31）：服务身份能力完成，进入环境与 SDK 接入阶段
+## 当前状态（2026-08-31）：服务身份能力完成，网关拓扑缺口已排期，进入环境与 SDK 接入阶段
 
 extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层架构定了下来
 （L0 接入层 / L1 中台基础能力层 / L2 业务领域服务层，四个业务域：营销/订单/
-合伙人增长/商业合作）。据此拆出 7 个按依赖顺序排期的 openspec 变更（均已
+合伙人增长/商业合作）。据此拆出 8 个按依赖顺序排期的 openspec 变更（均已
 `openspec validate` 通过，proposal/design/specs/tasks 四件套齐全）：
 
 1. `platform-service-token` — 服务身份调用凭证（**已完成，OpenSpec 任务 11/11**）
@@ -14,8 +14,25 @@ extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层�
 3. `platform-client-sdk` — `@optimus/platform-client` 封装 + SDK 强约束
 4. `embed-submenu` — 服务目录支持一个服务多子菜单
 5. `platform-user-profile-query` — 跨服务用户资料查询（依赖①）
-6. `extract-marketing-service` — 营销域物理拆分（依赖③）
-7. `extract-order-service` — 订单域物理拆分（依赖③，晚于⑥）
+6. `platform-gateway-topology` — 生产网关拓扑修正（**新增，见下方说明**）
+7. `extract-marketing-service` — 营销域物理拆分（依赖③⑥）
+8. `extract-order-service` — 订单域物理拆分（依赖③⑥，晚于⑦）
+
+**新增 `platform-gateway-topology` 的由来**：核查"是否具备统一网关""跨服务
+身份能否透传"这两个问题时发现，唯一的生产网关配置（`Caddyfile` +
+`docker-entrypoint.sh`）自项目初始化提交后**从未被修改过**，比 Multi-Zones、
+agent-service、service-registry、extract-partner-service 全部更早。具体
+会炸两处：① `/api/*` 硬编码转发到 optimus-api，拦在 optimus-next 自己的
+服务目录驱动动态代理之前——partner-service 拆分完成后这条路径已经在生产
+拓扑下失效（8084 早就没有那些路由了），Multi-Zones 的 zone 路径也会被
+错误转发到 optimus-ui 而不是 optimus-next；② B 端 embed 管理页浏览器直接
+打子服务自己的源（不经过网关），但 `docker-entrypoint.sh` 根本没有启动
+partner-service（以及未来的 marketing-service/order-service/agent-
+service/zone-activity），这些服务在生产环境里既没被启动也没暴露。每多拆
+一个服务这个缺口就更深一次，现在（只有 partner-service 一个真实案例）是
+修复成本最低的窗口，因此插入在 `extract-marketing-service` 之前。
+`extract-order-service` design.md 里原本悬着的"支付回调地址网关侧配置"
+Open Question 已归入本变更统一处理，不再单独悬空。
 
 **交接文档见根目录 `HANDOFF.md`**（背景、已拍板的架构决策、依赖顺序、接手前必读的坑）。
 

@@ -74,3 +74,7 @@ tasks.md。
 - reward-claim-record 依赖的 `ActivityService.validateActivity`/`findByCode`
   是否已经覆盖原生 JOIN 查询所需的全部信息，还是需要新增方法——需要在
   "落地前修复"阶段实际读代码确认，不在设计阶段猜测
+- 本变更完成后拆出的 marketing-service 如何在生产环境被真正启动、C 端
+  流量如何正确路由到它——这不是本变更自己的问题，由 `platform-gateway-
+  topology` 统一解决，本变更的"落地前修复"阶段不需要重复处理，但正式
+  切流前需要确认该前置变更已完成

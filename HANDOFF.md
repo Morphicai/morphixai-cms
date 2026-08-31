@@ -1,7 +1,8 @@
-# 交接文档 — 中台分层架构与 7 个待实施变更
+# 交接文档 — 中台分层架构与 8 个待实施变更
 
 > 写给接手这项工作的下一个 session / agent。
-> 最后更新：2026-08-31，交接时 `main` 分支，`platform-service-token` 已完成。
+> 最后更新：2026-08-31，交接时 `main` 分支，`platform-service-token` 已完成，
+> 新增 `platform-gateway-topology`（核查网关/跨服务身份透传现状时发现的缺口）。
 
 ## 一、当前位置
 
@@ -11,13 +12,14 @@
 **最近一次实质交付**：`bb290b0` — partner-service 拆分完成（第一个真实业务子服务
 迁出 optimus-api）。详见 `openspec/changes/extract-partner-service/`。
 
-**这次交接带来的东西**：7 个 openspec 变更的完整四件套（proposal / design /
+**这次交接带来的东西**：8 个 openspec 变更的完整四件套（proposal / design /
 specs / tasks），全部 `openspec validate` 通过。其中 `platform-service-token` 已
-完成实现，其余 6 个变更尚未开始写代码。
+完成实现，其余 7 个变更尚未开始写代码。
 
-## 二、为什么会有这 7 个变更（背景，不要跳过）
+## 二、为什么会有这 8 个变更（背景，不要跳过）
 
-partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解法：
+partner-service 拆分暴露了两类问题，事后核查"是否具备统一网关"时又暴露了第三类，
+这 8 个变更是针对性的解法：
 
 **问题一：耦合债务。** partner 模块直接 `@InjectRepository` 了 points-engine 的
 `TaskCompletionLogEntity` 做统计聚合，还伴随 `forwardRef` 循环依赖。这在两个模块
@@ -29,6 +31,14 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
 在操作"的场景够用，但定时任务、队列消费、批量同步这类**没有用户背景**的调用完全
 无解。同时也没有"按 uid 查任意用户资料"的能力，导致 partner-service 只能在自己表里
 存一份创建时的 username 快照——这份快照不会跟着主表更新，是已验证的数据漂移案例。
+
+**问题三：部署拓扑没跟上架构。** partner-service 拆分完成、8 个变更定完计划后，
+分析"是否具备统一网关""跨服务用户身份能否正常透传"这两个问题时，发现唯一的
+生产网关配置（`Caddyfile` + `docker-entrypoint.sh`）自项目初始化提交后**从未被
+修改过**——比 Multi-Zones、agent-service、service-registry、partner-service
+拆分全部更早。它把 `/api/*` 硬编码转发到 optimus-api，拦在 optimus-next 自己
+的服务目录驱动动态代理之前（partner-service 的路由在生产拓扑下已经因此失效），
+也从没启动/暴露过任何一个拆出去的独立服务。详见 `platform-gateway-topology`。
 
 ## 三、已确认的架构决策（不要重新讨论）
 
@@ -67,7 +77,7 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
    把 SDK 做全做顺手（补 `@optimus/platform-client`），以及把约束落到代码评审 /
    CI 静态扫描这类可执行手段上。
 
-## 四、7 个变更与依赖顺序
+## 四、8 个变更与依赖顺序
 
 严格按此顺序实施，括号内是依赖：
 
@@ -78,11 +88,15 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
 | 3 | `platform-client-sdk` | `@optimus/platform-client` + SDK 强约束（依赖 ②） | 11 |
 | 4 | `embed-submenu` | 服务目录支持一个服务多子菜单 | 9 |
 | 5 | `platform-user-profile-query` | 跨服务用户资料查询（依赖 ①） | 9 |
-| 6 | `extract-marketing-service` | 营销域物理拆分（依赖 ③） | 24 |
-| 7 | `extract-order-service` | 订单域物理拆分（依赖 ③，建议晚于 ⑥） | 23 |
+| 6 | `platform-gateway-topology` | 生产网关拓扑修正（松耦合于 ②，其余独立） | 见 tasks.md |
+| 7 | `extract-marketing-service` | 营销域物理拆分（依赖 ③⑥） | 24 |
+| 8 | `extract-order-service` | 订单域物理拆分（依赖 ③⑥，建议晚于 ⑦） | 23 |
 
-①②④ 彼此独立可并行。⑥ 排在 ⑦ 之前是有意的：营销域内部耦合更简单，
-订单域涉及支付回调这条收入关键路径，先用营销域验证一遍迁移路径 + SDK 强约束。
+①②④⑥ 彼此独立可并行（⑥ 用到 ② 的环境信息概念，但不是硬依赖）。
+⑥ 排在 ⑦⑧ 之前是有意的：每多拆一个服务，网关/部署拓扑不认识新服务这个
+问题就重演一次，现在（只有 partner-service 一个真实案例）修复成本最低。
+⑦ 排在 ⑧ 之前的理由不变：营销域内部耦合更简单，订单域涉及支付回调这条
+收入关键路径，先用营销域验证一遍迁移路径 + SDK 强约束 + 新网关拓扑。
 
 ## 五、已完成：`platform-service-token`
 
@@ -101,15 +115,26 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
   （admin-embed / agent-service / auth-ui / client-sdk / common / optimus-api /
   optimus-next / optimus-ui / partner-service / server-sdk / zone-activity），
   且完全没提 partner-service。技术栈表和架构章节都停留在拆分之前的状态，
-  参考时注意甄别。**这本身是一项待办**，但不在这 7 个变更的范围内。
+  参考时注意甄别。**这本身是一项待办**，但不在这 8 个变更的范围内。
+- **`Caddyfile`/`docker-entrypoint.sh` 是化石文件，不要参考它们理解现在的
+  拓扑** — `git log -1` 显示两者自 2026-01-01 `init project` 后从未被改过，
+  只认识 optimus-api/optimus-ui/optimus-next 三个进程，`/api/*` 硬编码转发
+  到 optimus-api。这是 `platform-gateway-topology` 要修的对象，实施前不要
+  假设它反映了当前的服务拓扑。
 - **TASKS.md** 是迭代级的进展记录，比 CLAUDE.md 新，优先看它。
 - **启动要点在 CLAUDE.md 的"启动要点（踩过的坑，换机必读）"一节**，那部分仍然有效。
 - 每个 openspec 变更的 `design.md` 里都有 Risks / Open Questions 章节，
   实施前务必读完——有几处是**故意留给实施者确认的**，不是遗漏：
   - `platform-user-profile-query`：要不要限定"哪些服务能查全量用户资料"，
     这条没有拍板，实施前必须先定，直接影响接口鉴权实现。
+  - `platform-gateway-topology`：B 端 embed 管理页的可达范围（内网/VPN-only
+    还是需要公网访问）没有拍板，design.md 里给了推荐方向（内网/VPN-only，
+    结合用户已确认的常规办公模式）但不是已定结论，实施前需要用户明确。
+    网关实现方式（保留 Caddy 简化，还是去掉 Caddy 让 optimus-next 作为
+    唯一入口）也留给实现阶段验证后再定。
   - `extract-order-service`：支付回调地址迁移后不能断，是本次风险最高的点，
-    需要先确认回调地址是网关侧手动配置还是自动跟随。
+    这条已归入 `platform-gateway-topology` 统一处理，不再是独立悬空的
+    问题——但正式切流前仍需要在该变更完成后单独验证一遍回调路径没有变化。
   - `extract-marketing-service`：`ActivityService` 现有方法是否覆盖
     reward-claim-record 那处原生 JOIN 所需的全部字段，要读代码确认，不要在
     设计阶段猜测。
@@ -121,7 +146,7 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
 33 项断言覆盖 C 端全流程 + 管理端全流程 + 跨端账本一致性。
 
 这套方法解决的问题是：单服务隔离的 e2e 框架测不出"跨服务代理分流是否真的接通"。
-后续两个拆分变更（⑥⑦）的 tasks.md 里都要求复用这个结构。
+后续两个拆分变更（⑦⑧）的 tasks.md 里都要求复用这个结构。
 
 **另一条经验**：迁移本质上是给沉睡多年的代码路径做第一次真实体检。partner-service
 这次挖出的 bug（表名前缀漏写、审计表从未建过、鉴权守卫挂错类型、`depth` 参数被

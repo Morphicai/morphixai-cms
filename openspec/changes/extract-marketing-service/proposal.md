@@ -45,4 +45,7 @@ reward-claim-record）由独立团队维护，参照 `extract-partner-service`
 - `packages/marketing-service`：新建，结构参照 `partner-service`
 - `optimus-ui`：营销相关管理页面菜单从静态路由改为动态 embed 入口
 - 依赖 `platform-client-sdk` 已上线（决策④的强约束要求新服务从第一天起使用
-  官方 SDK）
+  官方 SDK）、依赖 `platform-gateway-topology` 已完成（生产环境唯一的网关
+  配置从项目初始化后从未跟上架构变化，本变更拆出的新服务如果照现有网关
+  部署，C 端请求会被拦在到达新服务之前；应在该变更定下网关拓扑和 B 端
+  可达范围策略后再开始本次迁移）
