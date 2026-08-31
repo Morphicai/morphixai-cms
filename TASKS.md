@@ -2,18 +2,33 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前状态（2026-08-24）：第一个真实业务子服务迁移完成
+## 当前状态（2026-08-25）：中台分层架构定案，7 个 openspec 变更已拆分排期
 
-partner/points-engine/external-task 从 optimus-api 整体迁出为独立的
-partner-service（openspec: extract-partner-service，分支
-feature-extract-partner-service-20260824），验证了"服务目录 + embed 动态菜单
-+ introspect 鉴权 + C 端 API 代理多后端路由"这套单机微服务基建接一个真实业务
-模块（不是 demo）是否顺畅。结论：核心链路（服务目录扩展、API 代理分流、
-introspect 鉴权）直接复用打通，没有额外踩坑；embed 端 React 集成的胶水代码
-(`useEmbedAuth` hook、请求归一化)值得抽进 `@optimus/admin-embed` 包本身，
-留作下一个业务模块迁移前的优化项。api+partner-service 全量单测
-132+110 全绿，自动化闭环脚本 `verify-closed-loop.mjs` 33 项断言覆盖
-C 端全流程+管理端全流程+跨端账本一致性，可作为常规回归脚本长期复用。
+extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层架构定了下来
+（L0 接入层 / L1 中台基础能力层 / L2 业务领域服务层，四个业务域：营销/订单/
+合伙人增长/商业合作）。据此拆出 7 个按依赖顺序排期的 openspec 变更（均已
+`openspec validate` 通过，proposal/design/specs/tasks 四件套齐全）：
+
+1. `platform-service-token` — 服务身份调用凭证（**实施中，见下方进度**）
+2. `platform-environment-info` — 环境信息查询（根域名等）
+3. `platform-client-sdk` — `@optimus/platform-client` 封装 + SDK 强约束
+4. `embed-submenu` — 服务目录支持一个服务多子菜单
+5. `platform-user-profile-query` — 跨服务用户资料查询（依赖①）
+6. `extract-marketing-service` — 营销域物理拆分（依赖③）
+7. `extract-order-service` — 订单域物理拆分（依赖③，晚于⑥）
+
+**交接文档见根目录 `HANDOFF.md`**（背景、已拍板的架构决策、依赖顺序、接手前必读的坑）。
+
+**`platform-service-token` 实施进度**：已读完 `system/auth` 现状，尚未写代码。
+关键发现记在 `openspec/changes/platform-service-token/tasks.md` 顶部的
+"实施记录"里，包含 JwtModule 的注册位置和现有 `auth-introspect.controller.ts`
+的 type 分支判断方式——续做时直接看那份记录，不用重新探索一遍。
+
+上一段迭代（partner-service 迁移）的结论：单机微服务基建（服务目录+embed+
+introspect+API代理）接一个真实业务模块（不是 demo）顺畅，核心链路直接复用
+打通；embed 端 React 集成胶水代码值得抽进 `@optimus/admin-embed` 包，已作为
+`platform-client-sdk` 变更的一部分排期。api+partner-service 全量单测
+132+110 全绿，自动化闭环脚本 `verify-closed-loop.mjs` 33 项断言可长期复用。
 详见 `openspec/changes/extract-partner-service/tasks.md` 第 8 组。
 
 ## 上一迭代：权限模型收紧为 fail-closed（2026-08-24 完成，已合 main）
