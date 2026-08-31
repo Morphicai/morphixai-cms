@@ -1,7 +1,7 @@
 {
   "name": "@optimus/server-sdk",
   "version": "1.0.0",
-  "description": "Optimus 服务端 SDK：introspect 封装，外部服务校验平台 token 用，零依赖",
+  "description": "Optimus 服务端 SDK：用户/服务身份 introspect 与 service token 封装，零运行时第三方依赖",
   "author": "Optimus Team <team@example.com>",
   "license": "ISC",
   "main": "dist/index.js",

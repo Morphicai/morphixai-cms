@@ -4,6 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { OptimusServerSdk } from "../index";
 
 function mockFetch(handler: () => Promise<Response>) {
@@ -57,4 +58,60 @@ test("hasPerm: 超管通配与普通码", async () => {
     mockFetch(async () => okResponse({ active: true, type: "admin", perms: ["*"] }));
     const sdk2 = new OptimusServerSdk({ baseUrl: "http://x/api" });
     assert.equal(await sdk2.hasPerm("t2", "Anything"), true);
+});
+
+test("getServiceToken: 生成带 service 身份且短期有效的 JWT", () => {
+    const sdk = new OptimusServerSdk({
+        baseUrl: "http://x/api",
+        serviceTokenSecret: "unit-test-service-secret",
+        serviceTokenExpiresIn: "5m",
+    });
+    const token = sdk.getServiceToken("partner-service");
+    const [, encodedPayload] = token.split(".");
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+
+    assert.equal(payload.sub, "partner-service");
+    assert.equal(payload.type, "service");
+    assert.equal(payload.exp - payload.iat, 300);
+});
+
+test("getServiceToken: 缺少密钥或非法 key 时拒绝签发", () => {
+    const withoutSecret = new OptimusServerSdk({ baseUrl: "http://x/api" });
+    assert.throws(() => withoutSecret.getServiceToken("partner-service"), /SERVICE_TOKEN_SECRET/);
+
+    const sdk = new OptimusServerSdk({ baseUrl: "http://x/api", serviceTokenSecret: "secret" });
+    assert.throws(() => sdk.getServiceToken("Partner Service"), /lowercase slug/);
+});
+
+test("getServiceToken: 修改 sub 后签名不再匹配", () => {
+    const sdk = new OptimusServerSdk({ baseUrl: "http://x/api", serviceTokenSecret: "unit-test-service-secret" });
+    const token = sdk.getServiceToken("partner-service");
+    const [header, encodedPayload, signature] = token.split(".");
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    payload.sub = "order-service";
+    const tamperedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+    const tampered = `${header}.${tamperedPayload}.${signature}`;
+
+    // SDK 本地只负责签发；真正的目录 enabled 校验由平台的 introspect 完成。
+    // 这里验证 token 的签名不会因为修改 sub 而继续成立，避免把一个服务冒充成另一个。
+    const expected = createHmac("sha256", "unit-test-service-secret")
+        .update(`${header}.${tamperedPayload}`)
+        .digest("base64url");
+    assert.notEqual(signature, expected);
+    assert.notEqual(tampered, token);
+});
+
+test("verifyServiceToken: 只接受 active 的 service 身份", async () => {
+    mockFetch(async () => okResponse({
+        active: true,
+        type: "service",
+        service: { key: "partner-service", name: "合伙人服务" },
+    }));
+    const sdk = new OptimusServerSdk({ baseUrl: "http://x/api", cacheTtlMs: 0 });
+    const result = await sdk.verifyServiceToken("service-token");
+    assert.deepEqual(result.service, { key: "partner-service", name: "合伙人服务" });
+
+    mockFetch(async () => okResponse({ active: true, type: "admin", perms: ["*"] }));
+    const inactive = await sdk.verifyServiceToken("admin-token");
+    assert.deepEqual(inactive, { active: false, type: "service" });
 });

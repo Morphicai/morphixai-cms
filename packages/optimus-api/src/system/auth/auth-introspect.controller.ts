@@ -6,6 +6,8 @@ import { ResultData } from "../../shared/utils/result";
 import { AuthService } from "./auth.service";
 import { UserService } from "../user/user.service";
 import { ClientUserService } from "../../business/client-user/client-user.service";
+import { ServiceRegistryService } from "../service-ops/service-registry.service";
+import { ServiceTokenService } from "./service-token.service";
 
 /**
  * Token 自省（RFC 7662 的极简子集）。
@@ -14,8 +16,8 @@ import { ClientUserService } from "../../business/client-user/client-user.servic
  * 翻译服务开在这。
  *
  * 匿名可调是想清楚的:token 本身就是秘密,能递 token 进来的人本来就能直接冒充
- * 该用户调业务接口,introspect 不放大任何权限。加 service key 就是提前造开放
- * 平台,现在没有那个消费者规模。防滥用靠 IP 限频。
+ * 该用户调业务接口,introspect 不放大任何权限。service token 仍然只返回已登记
+ * 服务的最小身份,不返回平台内部配置。防滥用靠 IP 限频。
  */
 const INTROSPECT_LIMIT_PER_MINUTE = 60;
 const buckets = new Map<string, { windowStart: number; count: number }>();
@@ -38,6 +40,8 @@ export class AuthIntrospectController {
         private readonly authService: AuthService,
         private readonly userService: UserService,
         private readonly clientUserService: ClientUserService,
+        private readonly serviceTokenService: ServiceTokenService,
+        private readonly serviceRegistry: ServiceRegistryService,
     ) {}
 
     @Post("introspect")
@@ -52,11 +56,23 @@ export class AuthIntrospectController {
         }
 
         const token = String(body?.token ?? "").trim();
-        const type = body?.type === "client" ? "client" : "admin";
+        const type = body?.type === "service" ? "service" : body?.type === "client" ? "client" : "admin";
         // 无效 token 一律 { active: false },HTTP 200。不区分过期/篡改/格式错——
         // 那些区分只对探测者有用,对合法调用方没用
         const inactive = ResultData.ok({ active: false });
         if (!token || token.length > 2048) return inactive;
+
+        if (type === "service") {
+            const payload = this.serviceTokenService.verify(token);
+            if (!payload) return inactive;
+            const service = await this.serviceRegistry.getByKey(payload.sub);
+            if (!service || service.enabled === false) return inactive;
+            return ResultData.ok({
+                active: true,
+                type: "service",
+                service: { key: service.key, name: service.name },
+            });
+        }
 
         if (type === "client") {
             const user = await this.clientUserService.verifyToken(token);

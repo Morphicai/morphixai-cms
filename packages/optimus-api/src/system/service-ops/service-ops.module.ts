@@ -14,5 +14,6 @@ import { PublicApiRoutesController } from "./public-api-routes.controller";
     imports: [TypeOrmModule.forFeature([ServiceEventEntity, ServiceRegistryEntity])],
     controllers: [ServiceOpsController, PublicZoneRoutesController, PublicApiRoutesController],
     providers: [ServiceEventService, ServiceProbeService, ServiceRegistryService],
+    exports: [ServiceRegistryService],
 })
 export class ServiceOpsModule {}

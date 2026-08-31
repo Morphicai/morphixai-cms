@@ -2,14 +2,14 @@
 
 > 保持精简，定期清理，只留进行中的事。
 
-## 当前状态（2026-08-25）：中台分层架构定案，7 个 openspec 变更已拆分排期
+## 当前状态（2026-08-31）：服务身份能力完成，进入环境与 SDK 接入阶段
 
 extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层架构定了下来
 （L0 接入层 / L1 中台基础能力层 / L2 业务领域服务层，四个业务域：营销/订单/
 合伙人增长/商业合作）。据此拆出 7 个按依赖顺序排期的 openspec 变更（均已
 `openspec validate` 通过，proposal/design/specs/tasks 四件套齐全）：
 
-1. `platform-service-token` — 服务身份调用凭证（**实施中，见下方进度**）
+1. `platform-service-token` — 服务身份调用凭证（**已完成，OpenSpec 任务 11/11**）
 2. `platform-environment-info` — 环境信息查询（根域名等）
 3. `platform-client-sdk` — `@optimus/platform-client` 封装 + SDK 强约束
 4. `embed-submenu` — 服务目录支持一个服务多子菜单
@@ -19,10 +19,12 @@ extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层�
 
 **交接文档见根目录 `HANDOFF.md`**（背景、已拍板的架构决策、依赖顺序、接手前必读的坑）。
 
-**`platform-service-token` 实施进度**：已读完 `system/auth` 现状，尚未写代码。
-关键发现记在 `openspec/changes/platform-service-token/tasks.md` 顶部的
-"实施记录"里，包含 JwtModule 的注册位置和现有 `auth-introspect.controller.ts`
-的 type 分支判断方式——续做时直接看那份记录，不用重新探索一遍。
+**`platform-service-token` 已完成**：新增短期 service JWT、自省分支、服务目录
+enabled 校验、server-sdk 签发/校验方法及文档。真实 HTTP 验收使用
+partner-service 目录记录完成“签发 → active → 禁用后 inactive → 恢复后 active”，
+API 13 套件/139 用例、server-sdk 9 用例全绿。当前未提供公开签发接口，服务通过
+环境变量共享密钥本地签发；业务子服务的本地 guard 暂不切换，等真正消费 service
+token 的业务接口出现后再接入。
 
 上一段迭代（partner-service 迁移）的结论：单机微服务基建（服务目录+embed+
 introspect+API代理）接一个真实业务模块（不是 demo）顺畅，核心链路直接复用

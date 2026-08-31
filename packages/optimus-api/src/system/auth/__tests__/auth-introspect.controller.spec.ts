@@ -5,11 +5,15 @@
 import { HttpException } from "@nestjs/common";
 import { AuthIntrospectController } from "../auth-introspect.controller";
 
-const mkController = (overrides: Partial<Record<"verifyToken" | "validateUser" | "verifyClient", any>> = {}) => {
+const mkController = (
+    overrides: Partial<Record<"verifyToken" | "validateUser" | "verifyClient" | "verifyService" | "getService", any>> = {},
+) => {
     const userService = { verifyToken: overrides.verifyToken ?? jest.fn().mockReturnValue(null) } as any;
     const authService = { validateUser: overrides.validateUser ?? jest.fn() } as any;
     const clientUserService = { verifyToken: overrides.verifyClient ?? jest.fn().mockResolvedValue(null) } as any;
-    return new AuthIntrospectController(authService, userService, clientUserService);
+    const serviceTokenService = { verify: overrides.verifyService ?? jest.fn().mockReturnValue(null) } as any;
+    const serviceRegistry = { getByKey: overrides.getService ?? jest.fn().mockResolvedValue(null) } as any;
+    return new AuthIntrospectController(authService, userService, clientUserService, serviceTokenService, serviceRegistry);
 };
 
 // 每个用例换一个 IP,避免撞进共享限频桶
@@ -71,6 +75,36 @@ describe("AuthIntrospectController", () => {
         const res = await c.introspect({ token: "ct", type: "client" }, mkReq());
         expect(res.data).toMatchObject({ active: true, type: "client", user: { id: "7" } });
         expect((res.data as any).perms).toBeUndefined();
+    });
+
+    it("service token 有效返回服务身份", async () => {
+        const c = mkController({
+            verifyService: jest.fn().mockReturnValue({ sub: "partner-service", type: "service" }),
+            getService: jest.fn().mockResolvedValue({ key: "partner-service", name: "合伙人服务", enabled: true }),
+        });
+        const res = await c.introspect({ token: "st", type: "service" }, mkReq());
+        expect(res.data).toEqual({
+            active: true,
+            type: "service",
+            service: { key: "partner-service", name: "合伙人服务" },
+        });
+    });
+
+    it("service 对应服务已下线时返回 inactive", async () => {
+        const c = mkController({
+            verifyService: jest.fn().mockReturnValue({ sub: "partner-service", type: "service" }),
+            getService: jest.fn().mockResolvedValue({ key: "partner-service", name: "合伙人服务", enabled: false }),
+        });
+        const res = await c.introspect({ token: "st", type: "service" }, mkReq());
+        expect(res.data).toEqual({ active: false });
+    });
+
+    it("过期或篡改的 service token 返回 inactive", async () => {
+        const verifyService = jest.fn().mockReturnValue(null);
+        const c = mkController({ verifyService });
+        const res = await c.introspect({ token: "expired-or-tampered", type: "service" }, mkReq());
+        expect(res.data).toEqual({ active: false });
+        expect(verifyService).toHaveBeenCalledWith("expired-or-tampered");
     });
 
     it("未知 type 按 admin 处理", async () => {

@@ -1,7 +1,7 @@
 # 交接文档 — 中台分层架构与 7 个待实施变更
 
 > 写给接手这项工作的下一个 session / agent。
-> 最后更新：2026-08-25，交接时 `main` 分支，工作区只有文档改动、零代码改动。
+> 最后更新：2026-08-31，交接时 `main` 分支，`platform-service-token` 已完成。
 
 ## 一、当前位置
 
@@ -12,8 +12,8 @@
 迁出 optimus-api）。详见 `openspec/changes/extract-partner-service/`。
 
 **这次交接带来的东西**：7 个 openspec 变更的完整四件套（proposal / design /
-specs / tasks），全部 `openspec validate` 通过，**全部尚未开始写代码**
-（任务完成度均为 0）。
+specs / tasks），全部 `openspec validate` 通过。其中 `platform-service-token` 已
+完成实现，其余 6 个变更尚未开始写代码。
 
 ## 二、为什么会有这 7 个变更（背景，不要跳过）
 
@@ -84,14 +84,16 @@ partner-service 拆分暴露了两类问题，这 7 个变更是针对性的解�
 ①②④ 彼此独立可并行。⑥ 排在 ⑦ 之前是有意的：营销域内部耦合更简单，
 订单域涉及支付回调这条收入关键路径，先用营销域验证一遍迁移路径 + SDK 强约束。
 
-## 五、下一步：`platform-service-token`
+## 五、已完成：`platform-service-token`
 
-**关键**：`openspec/changes/platform-service-token/tasks.md` 顶部有一段"实施记录"，
-里面是已经读过代码得出的结论——JwtModule 的两处注册位置、
-`auth-introspect.controller.ts` 现有 type 判断的隐患、`ServiceRegistryService`
-缺少按单个 key 查询的方法。**续做时先读那段，不要重新探索一遍。**
+已完成：`SERVICE_TOKEN_SECRET` 仅经环境变量注入；API 侧通过
+`ServiceTokenService` 用 HS256 签发/验签短期 JWT；`/auth/introspect` 新增
+`type=service` 分支并反查 `op_sys_service_registry.enabled`；`@optimus/server-sdk`
+提供 `getServiceToken()` 与 `verifyServiceToken()`。不要把这项重新当成待开发任务。
 
-用 `/opsx:apply platform-service-token` 进入实施流程。
+真实验收脚本验证了 partner-service 的目录状态切换。当前有意不改 partner-service
+现有用户身份 guard，也没有公开签发接口；下一个真正需要服务身份的接口再接入
+`verifyServiceToken()`。
 
 ## 六、接手前必读的项目约定
 

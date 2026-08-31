@@ -81,6 +81,12 @@ export class ServiceRegistryService {
         return (await this.rows()).map(toEntry);
     }
 
+    /** 按服务 key 查询目录。认证等平台内核场景只需要这一行,避免每次拉取完整目录。 */
+    async getByKey(key: string): Promise<({ key: string; sortOrder: number } & ServiceEntry) | null> {
+        const row = await this.repo.findOne({ where: { key } });
+        return row ? toEntry(row) : null;
+    }
+
     /** embed 入口条目(登录即可读,前端据 permCode 过滤菜单;真正的门在子应用后端) */
     async listEmbedEntries(): Promise<Array<{ key: string } & Pick<ServiceEntry, "menuTitle" | "menuIcon" | "permCode" | "embedUrl">>> {
         return (await this.rows())

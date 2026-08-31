@@ -152,6 +152,14 @@ describe("ServiceRegistryService apiPathPrefixes 校验", () => {
 });
 
 describe("ServiceRegistryService 消费视图", () => {
+    it("getByKey 只查询指定服务,不存在时返回 null", async () => {
+        const repository = mkRepo();
+        const service = svc(repository);
+        await expect(service.getByKey("api")).resolves.toMatchObject({ key: "api", name: "API" });
+        await expect(service.getByKey("missing")).resolves.toBeNull();
+        expect(repository.findOne).toHaveBeenCalledWith({ where: { key: "missing" } });
+    });
+
     it("listToolProviders 只出 enabled 且有 toolsPath 的,最小披露三字段", async () => {
         const out = await svc().listToolProviders();
         expect(out).toEqual([{ key: "api", baseUrl: "http://a/api", toolsPath: "/system/agent/tools" }]);
