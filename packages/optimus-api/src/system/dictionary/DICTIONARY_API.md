@@ -43,10 +43,10 @@
 
 ## 数据结构
 
-### 集合配置表（dictionary_collection）
+### 集合配置表（op_sys_dictionary_collection）
 
 ```sql
-dictionary_collection
+op_sys_dictionary_collection
 ├── id                  主键ID
 ├── name                集合名称（唯一标识）
 ├── display_name        显示名称
@@ -61,12 +61,12 @@ dictionary_collection
 └── updated_at          更新时间
 ```
 
-### 字典数据表（dictionary）
+### 字典数据表（op_sys_dictionary）
 
 ```sql
-dictionary
+op_sys_dictionary
 ├── id              主键ID
-├── collection      集合名称（外键关联 dictionary_collection.name）
+├── collection      集合名称（关联 op_sys_dictionary_collection.name）
 ├── key             字典键
 ├── user_id         用户ID（仅user_private类型集合使用）
 ├── value           字典值（JSON格式）
@@ -80,9 +80,33 @@ dictionary
 ### 约束关系
 
 - `UNIQUE KEY (collection, key, user_id)` - 同一集合内键+用户唯一
-- `FOREIGN KEY (collection)` - 集合名称关联到集合配置表
+- `collection` 只是按名字对应到集合配置表，**建表语句里没有真正的外键约束**，
+  实体上也没有 `@ManyToOne`。所以数据库不会替你把孤儿数据挡住，也不会级联删除
 
 ## API 接口
+
+### 路径前缀说明（务必先看）
+
+`main.ts` 里 `app.setGlobalPrefix("/api")`（值取自 `shared/config/*.yml` 的 `app.prefix`），
+所以所有路由都会被套上一层 `/api`。本文写的都是**加过全局前缀之后的真实路径**。
+
+两个控制器的 `@Controller()` 里自己又写了一次 `/api`：
+
+| 控制器 | `@Controller()` 里写的 | 加全局前缀后的真实路径 |
+| --- | --- | --- |
+| `public-dictionary.controller.ts` | `/api/dictionary` | `/api/api/dictionary/...` |
+| `user-dictionary.controller.ts` | `/api/user-data` | `/api/api/user-data/...` |
+
+**这是已知的路径瑕疵**——`/api` 重复了一层。调用方按 `/api/api/...` 才打得通，
+按 `/api/dictionary/...` 会 404。改掉需要同时改前端调用和已经在跑的 C 端，
+所以目前先照实记着，不要按「看起来对」的单层路径去写调用。
+
+### 权限说明
+
+后台管理的两个控制器都是类级 `@Perm("DataCollections")`。
+ADMIN 模式在 `unified-auth.guard.ts` 里 fail-closed：方法上没挂 `@AllowNoPerm`
+就继承类级权限门，所以**下面第一节（后台管理 API）的所有接口都需要 `DataCollections` 权限码**，
+没有"内部使用免权限"的口子。
 
 ---
 
@@ -93,8 +117,8 @@ dictionary
 #### 1.1 创建集合
 
 ```
-POST /system/dictionary-collection
-权限: system:dictionary:create
+POST /api/system/dictionary-collection
+权限: 类级 @Perm("DataCollections")
 ```
 
 **请求参数：**
@@ -135,30 +159,30 @@ POST /system/dictionary-collection
 #### 1.2 更新集合
 
 ```
-PUT /system/dictionary-collection/:id
-权限: system:dictionary:update
+PUT /api/system/dictionary-collection/:id
+权限: 类级 @Perm("DataCollections")
 ```
 
 #### 1.3 删除集合
 
 ```
-DELETE /system/dictionary-collection/:id
-权限: system:dictionary:delete
+DELETE /api/system/dictionary-collection/:id
+权限: 类级 @Perm("DataCollections")
 ```
 
 #### 1.4 查询集合列表
 
 ```
-GET /system/dictionary-collection
-权限: system:dictionary:query
+GET /api/system/dictionary-collection
+权限: 类级 @Perm("DataCollections")
 Query: name, accessType, status, page, pageSize
 ```
 
 #### 1.5 根据名称获取集合
 
 ```
-GET /system/dictionary-collection/:name
-权限: system:dictionary:query
+GET /api/system/dictionary-collection/:name
+权限: 类级 @Perm("DataCollections")
 ```
 
 ---
@@ -168,8 +192,8 @@ GET /system/dictionary-collection/:name
 #### 2.1 创建字典
 
 ```
-POST /system/dictionary
-权限: system:dictionary:create
+POST /api/system/dictionary
+权限: 类级 @Perm("DataCollections")
 ```
 
 **请求参数：**
@@ -190,53 +214,58 @@ POST /system/dictionary
 #### 2.2 更新字典
 
 ```
-PUT /system/dictionary/:id
-权限: system:dictionary:update
+PUT /api/system/dictionary/:id
+权限: 类级 @Perm("DataCollections")
 ```
 
 #### 2.3 删除字典
 
 ```
-DELETE /system/dictionary/:id
-权限: system:dictionary:delete
+DELETE /api/system/dictionary/:id
+权限: 类级 @Perm("DataCollections")
 ```
 
 #### 2.4 查询字典列表
 
 ```
-GET /system/dictionary
-权限: system:dictionary:query
+GET /api/system/dictionary
+权限: 类级 @Perm("DataCollections")
 Query: collection, key, status, page, pageSize
 ```
 
 #### 2.5 按集合获取字典
 
 ```
-GET /system/dictionary/collection/:collection
-权限: 无需权限（内部使用）
+GET /api/system/dictionary/collection/:collection
+权限: 类级 @Perm("DataCollections")（方法级没挂 @AllowNoPerm，继承类级权限门）
 ```
 
 #### 2.6 获取字典值
 
 ```
-GET /system/dictionary/:collection/:key
-权限: 无需权限（内部使用）
+GET /api/system/dictionary/:collection/:key
+权限: 类级 @Perm("DataCollections")（方法级没挂 @AllowNoPerm，继承类级权限门）
 ```
 
 ---
 
 ## 二、C端公开 API
 
+控制器类级 `@AnonymousAuth()`，不校验登录；真正的门禁在 service 层按集合的
+`accessType` 判（`public_read` / `public_write` 之外一律拒）。
+
+> 路径里的 `/api/api` 不是笔误，见开头「路径前缀说明」。
+
 ### 3.1 获取公开集合数据
 
 ```
-GET /api/dictionary/:collection
+GET /api/api/dictionary/:collection
 权限: 无需登录（集合 accessType 必须为 public_read 或 public_write）
 ```
 
 **示例：**
 ```bash
-GET /api/dictionary/app_config
+GET /api/api/dictionary/app_config
 ```
 
 **响应示例：**
@@ -266,13 +295,13 @@ GET /api/dictionary/app_config
 ### 3.2 获取公开集合中的单个数据
 
 ```
-GET /api/dictionary/:collection/:key
+GET /api/api/dictionary/:collection/:key
 权限: 无需登录（集合 accessType 必须为 public_read 或 public_write）
 ```
 
 **示例：**
 ```bash
-GET /api/dictionary/app_config/theme
+GET /api/api/dictionary/app_config/theme
 ```
 
 **响应示例：**
@@ -292,7 +321,7 @@ GET /api/dictionary/app_config/theme
 ### 3.3 在公开可写集合中创建数据
 
 ```
-POST /api/dictionary/:collection
+POST /api/api/dictionary/:collection
 权限: 无需登录（集合 accessType 必须为 public_write）
 ```
 
@@ -311,7 +340,7 @@ POST /api/dictionary/:collection
 ### 3.4 更新公开可写集合中的数据
 
 ```
-PUT /api/dictionary/:collection/:key
+PUT /api/api/dictionary/:collection/:key
 权限: 无需登录（集合 accessType 必须为 public_write）
 ```
 
@@ -330,16 +359,21 @@ PUT /api/dictionary/:collection/:key
 
 ## 三、用户私有数据 API
 
+控制器类级 `@AllowNoPerm()`：需要登录但不需要权限码，所有方法按 `req.user.id`
+只读写调用者自己的数据。
+
+> 路径里的 `/api/api` 同样是双前缀，见开头「路径前缀说明」。
+
 ### 4.1 获取用户在集合中的所有数据
 
 ```
-GET /api/user-data/:collection
+GET /api/api/user-data/:collection
 权限: 需要登录（集合 accessType 必须为 user_private）
 ```
 
 **示例：**
 ```bash
-GET /api/user-data/user_preferences
+GET /api/api/user-data/user_preferences
 ```
 
 **响应示例：**
@@ -368,13 +402,13 @@ GET /api/user-data/user_preferences
 ### 4.2 获取用户的单个数据
 
 ```
-GET /api/user-data/:collection/:key
+GET /api/api/user-data/:collection/:key
 权限: 需要登录（集合 accessType 必须为 user_private）
 ```
 
 **示例：**
 ```bash
-GET /api/user-data/user_preferences/language
+GET /api/api/user-data/user_preferences/language
 ```
 
 **响应示例：**
@@ -388,7 +422,7 @@ GET /api/user-data/user_preferences/language
 ### 4.3 设置用户数据
 
 ```
-PUT /api/user-data/:collection/:key
+PUT /api/api/user-data/:collection/:key
 权限: 需要登录（集合 accessType 必须为 user_private）
 ```
 
@@ -412,7 +446,7 @@ PUT /api/user-data/:collection/:key
 ### 4.4 删除用户数据
 
 ```
-DELETE /api/user-data/:collection/:key
+DELETE /api/api/user-data/:collection/:key
 权限: 需要登录（集合 accessType 必须为 user_private）
 ```
 
@@ -633,7 +667,7 @@ await this.dictionaryService.deleteUserValue('user_preferences', userId, 'langua
 **前端调用：**
 ```typescript
 // C端获取应用配置
-const response = await fetch('/api/dictionary/app_config');
+const response = await fetch('/api/api/dictionary/app_config');
 const { data } = await response.json();
 // 应用配置
 data.items.forEach(item => {
@@ -650,7 +684,7 @@ data.items.forEach(item => {
 **前端调用：**
 ```typescript
 // C端提交反馈
-await fetch('/api/dictionary/common_data', {
+await fetch('/api/api/dictionary/common_data', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -703,14 +737,14 @@ if (!serverMap.has(serverId)) {
 **前端调用：**
 ```typescript
 // 获取用户语言偏好
-const response = await fetch('/api/user-data/user_preferences/language', {
+const response = await fetch('/api/api/user-data/user_preferences/language', {
   headers: { 'Authorization': `Bearer ${token}` }
 });
 const { data } = await response.json();
 console.log('用户语言:', data); // "zh-CN"
 
 // 设置用户语言偏好
-await fetch('/api/user-data/user_preferences/language', {
+await fetch('/api/api/user-data/user_preferences/language', {
   method: 'PUT',
   headers: {
     'Authorization': `Bearer ${token}`,
@@ -858,7 +892,7 @@ export class GameServerService {
 ### 数据管理
 
 1. **唯一性约束**：同一集合内键必须唯一
-2. **外键约束**：删除集合会级联删除所有数据
+2. **没有外键约束**：删掉集合不会自动清掉 `op_sys_dictionary` 里的数据，删集合时得自己一并清
 3. **状态管理**：使用 status 字段而不是直接删除
 4. **排序顺序**：使用 sortOrder 控制显示顺序
 
@@ -882,27 +916,31 @@ try {
 
 ### 从旧版本迁移
 
-如果你已经在使用 dictionary 表，执行以下步骤：
+早期版本的表叫 `dictionary` / `dictionary_collection`（没有 `op_sys_` 前缀）。
+如果手上的库还是旧表名，按下面走：
 
 1. **备份数据**
 ```sql
 CREATE TABLE dictionary_backup AS SELECT * FROM dictionary;
+CREATE TABLE dictionary_collection_backup AS SELECT * FROM dictionary_collection;
 ```
 
-2. **执行迁移脚本**
-```bash
-mysql -u root -p your_database < scripts/migrations/create-dictionary-table.sql
-```
+2. **建新表**
 
-3. **验证数据**
+没有独立的迁移脚本，建表语句在种子数据 `db/optimus-minimal.sql` 里
+（搜 `op_sys_dictionary_collection` 和 `op_sys_dictionary`），
+连同 `dynamic-content` 集合和首页 Hero 文案的初始数据一起。
+
+3. **搬数据**
 ```sql
-SELECT * FROM dictionary_collection;
-SELECT * FROM dictionary LIMIT 10;
+INSERT INTO op_sys_dictionary_collection SELECT * FROM dictionary_collection;
+INSERT INTO op_sys_dictionary SELECT * FROM dictionary;
 ```
+旧表如果还是 `is_public` / `is_writable` 两个布尔列，得先手工映射成
+`access_type`（private / public_read / public_write / user_private）再插。
 
-### 初始化示例数据
-
+4. **验证数据**
 ```sql
--- 已在迁移脚本中包含示例集合配置
--- 可以根据需要添加更多集合
+SELECT * FROM op_sys_dictionary_collection;
+SELECT * FROM op_sys_dictionary LIMIT 10;
 ```

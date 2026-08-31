@@ -220,6 +220,33 @@ examples/demo-activity 全流程验收过。
   UnifiedAuthGuard 全局先执行使其无害但属废弃代码，找机会删除
 - i18n-platform 迁移为内部模块（现阶段 iframe 引用）
 - optimus-next 的 ComingSoon 文档页补全与文档搜索后端
+- **GameWemade 收尾**（原 GAMEWEMADE_DEPENDENCY_REMOVAL_PLAN.md 的唯一未完成项，
+  该方案已执行完，文档已删）：清掉 `packages/optimus-api/.env` 与 `.env.example`
+  第 39-40 行的 `GAMEWEMADE_SDK_OPEN_KEY` / `GAMEWEMADE_SDK_CALLBACK_KEY`
+  两个已废弃变量；顺带 `CLIENT_USER_SIGN_KEY`（.env.example:36）也已标注"旧版本兼容"
+- **optimus-api 侧死代码清理**：`ClientUserAuthGuard`（HMAC 签名鉴权）在 optimus-api
+  已无任何 `@UseGuards()` 调用点，只剩自己的 docstring——真实使用方是 partner-service
+  且用的是它自己的装饰器。连带 `require-client-user-auth.decorator.ts` 一起评估删除
+- **optimus-ui 迁移残留清理**：`src/pages/{partner,partner-management}`、
+  `src/pages/external-task-review`、`src/pages/system/views/PartnerDataManagement.jsx`、
+  `src/services/{AdminPartnerService,PartnerService,ExternalTaskService}.js` 均已无
+  import 引用（唯一提及是 routes.js 的一行注释），属 extract-partner-service 计划中
+  的待清理残留
+- **`batchTransformUrls` 尾斜杠 bug**（整理 oss 组件文档时发现，未擅自改）：
+  `optimus-next/src/components/oss/utils.ts:325` 直接用 `getCdnPrefix()` 的原始值做
+  `.replace(OSS_FILE_PROXY, ...)`，而 `OSS_FILE_PROXY` 常量是 `/OSS_FILE_PROXY/`
+  自带尾斜杠。同文件的 `OssImage.tsx:23-26` 有补尾斜杠的归一化，这里没有——
+  env 配成 `https://cdn.example.com`（无尾斜杠，正是文档推荐写法）时会拼出
+  `https://cdn.example.comimg1.jpg`。两处行为应统一
+- **`orderNum` 是死字段**（同上，整理菜单文档时发现）：`optimus-ui` 的 `routes.js`
+  和 `ConstantSiderMenus.jsx` 里**没有任何 sort**，菜单按数组顺序渲染，
+  `orderNum` 完全不生效。要么实现排序，要么删掉这个字段
+- **`@optimus/common` 未导出文件评估**：`constants/menus.js`、`utils/permission.js`、
+  `utils/images.js`、`utils/transformTree.js`、`hooks/useMount.js` 在 `index.ts` 里的
+  导出都是注释掉的，`dist/` 里也没有——包外 import 不到。菜单实际在 optimus-ui 的
+  `routes.js`、权限实际是 `@Perm` 权限码，这些文件应该是能删的，删前确认一遍
+- **测试 helper 表名过期**：`packages/optimus-api/test/utils/database-test.helper.ts`
+  的 209/288/297/433 行仍硬编码 `sys_user`（应为 `op_sys_user`），会让依赖它的测试失败
 
 ## Completed
 

@@ -31,7 +31,7 @@ export class DatabaseBackupController {
     /**
      * 手动触发备份
      * POST /backups/trigger
-     * 权限：仅超级管理员
+     * 权限：类级 @Perm("DatabaseBackup")
      */
     @Post("trigger")
     @ApiOperation({ summary: "手动触发数据库备份" })
@@ -71,7 +71,7 @@ export class DatabaseBackupController {
     /**
      * 列出所有备份文件
      * GET /backups
-     * 权限：仅超级管理员
+     * 权限：类级 @Perm("DatabaseBackup")
      */
     @Get()
     @ApiOperation({ summary: "获取备份文件列表" })
@@ -104,7 +104,7 @@ export class DatabaseBackupController {
     /**
      * 获取备份统计信息
      * GET /backups/stats
-     * 权限：仅超级管理员
+     * 权限：类级 @Perm("DatabaseBackup")
      */
     @Get("stats")
     @ApiOperation({ summary: "获取备份统计信息" })
@@ -129,7 +129,7 @@ export class DatabaseBackupController {
     /**
      * 下载并解密备份文件
      * GET /backups/download?fileKey=xxx
-     * 权限：仅超级管理员
+     * 权限：类级 @Perm("DatabaseBackup")
      * 返回解密后的 .sql.gz 文件流
      */
     @Get("download")
@@ -196,7 +196,7 @@ export class DatabaseBackupController {
     /**
      * 生成备份文件下载 URL
      * GET /backups/download-url?fileKey=xxx
-     * 权限：仅超级管理员
+     * 权限：类级 @Perm("DatabaseBackup")
      * 返回临时访问 URL（JSON 格式）
      * 注意：此接口返回的是加密文件的直接下载链接，不会自动解密
      */

@@ -2,18 +2,38 @@
 
 ## Project Overview
 
-Optimus CMS (morphixai-cms) — MorphixAI 的全栈内容管理系统。pnpm monorepo，含 4 个包。
+Optimus CMS (morphixai-cms) — MorphixAI 的全栈内容管理系统。pnpm monorepo，11 个包。
+
+架构上已从单体演进为**单机规模的微服务模式**：optimus-api 是主服务（承载平台基础
+能力），业务域按团队归属逐步拆为独立服务（partner-service 是第一个），通过服务目录
+统一登记、embed iframe 挂载管理页、introspect 换取身份、C 端 API 代理按前缀分流。
+分层边界与后续拆分计划见根目录 `HANDOFF.md`。
 
 ## Tech Stack
 
+### 服务（独立进程）
+
 | Package | Stack | Port |
 |---------|-------|------|
-| `packages/common` | TypeScript 工具库, crypto-js | - |
 | `packages/optimus-api` | NestJS 8 + TypeORM 0.2 + MySQL 8 + JWT + CASL + Socket.io | 8084 |
-| `packages/optimus-ui` | React 18 + Ant Design 5 + Craco + Tailwind 3 + SASS | 8082 |
-| `packages/optimus-next` | Next.js 16 + React 19 + Tailwind 4 + CVA | 8086 |
+| `packages/optimus-ui` | React 18 + Ant Design 5 + Craco + Tailwind 3 + SASS（管理后台） | 8082 |
+| `packages/optimus-next` | Next.js 16 + React 19 + Tailwind 4 + CVA（C 端 + API 代理） | 8086 |
+| `packages/agent-service` | ESM + pi-agent-core + OneRouter（AI 执行引擎） | 8087 |
+| `packages/zone-activity` | Next.js（C 端 Multi-Zones 示例 zone） | 8088 |
+| `packages/partner-service` | NestJS（合伙人/积分/外部任务，含自带 React admin-app） | 8089 |
 
-Infrastructure: MySQL 8, MinIO (dev storage), Caddy (reverse proxy in Docker)
+### 共享包（无独立进程）
+
+| Package | 用途 |
+|---------|------|
+| `packages/common` | TypeScript 工具库, crypto-js |
+| `packages/client-sdk` | C 端 SDK，封装面向浏览器的平台能力调用 |
+| `packages/server-sdk` | 服务端 SDK，introspect 身份自省封装 |
+| `packages/admin-embed` | embed iframe 嵌入协议（宿主 ↔ 子应用握手） |
+| `packages/auth-ui` | 共享登录 UI 组件（同栈构建时复用） |
+
+Infrastructure: MySQL 8（所有服务共用同一实例，dev 阶段不拆库）, MinIO (dev storage),
+Caddy (reverse proxy in Docker)
 
 ## Quick Start
 
@@ -32,9 +52,14 @@ cp packages/optimus-api/.env.example packages/optimus-api/.env
 # 导入 packages/optimus-api/db/optimus-minimal.sql 到 optimus 数据库
 
 # 5. 启动开发
-pnpm dev          # 全部启动
+pnpm dev:all      # 6 个服务并行启动（推荐）
 pnpm dev:next     # 仅 Next.js
+pnpm --filter @optimus/partner-service dev   # 单起某个子服务
 ```
+
+**不必每次都全起。** 改主服务/后台只要 `optimus-api` + `optimus-ui`；调 C 端加
+`optimus-next`；动到合伙人业务才需要 `partner-service`。注意 `pnpm dev`（不带 `:all`）
+是**串行**跑各包的 dev，前一个不退出后面就起不来，日常用 `dev:all`。
 
 ### 启动要点（踩过的坑，换机必读）
 
@@ -116,11 +141,30 @@ pnpm dev           # Next.js dev on :8086
 - **认证**: `AuthProvider` context
 - **组件**: `src/design-system/` + lucide-react icons
 - **样式**: Tailwind CSS 4, CVA for variants
+- **API 代理**: `src/app/api/[...path]/route.ts` 按服务目录的 `apiPathPrefixes`
+  分流到不同后端（60s TTL 拉路由表），未命中前缀转发给 optimus-api
+
+### 微服务基建（跨服务的四条主链路）
+
+- **服务目录** — 专表 `op_sys_service_registry`，是探测/动态菜单/Agent 工具发现/
+  路由分流的唯一事实源。登记即接入，`entryType` 为 `embed`（管理页）或 `zone`
+  （C 端页面）
+- **embed 挂载** — 子服务自带管理前端，经 `@optimus/admin-embed` 握手协议嵌进
+  optimus-ui 的 `/embed/:serviceKey` 宿主路由。**菜单是页面加载时拉取的，
+  登记后已开页面需刷新**
+- **introspect 鉴权** — 子服务不复制用户体系，拿请求里的 token 调
+  `POST /auth/introspect` 换身份与权限码（`type` 传 `admin` 或 `client`）
+- **探测** — 各服务暴露 `/health` 与 `/metrics-lite`，主服务 15s 轮询，
+  结果在管理端服务状态页可见
 
 ## Code Style
 
 - **Prettier**: tabWidth 4, semi, double quotes, trailing commas
 - **ESLint**: @typescript-eslint recommended + prettier
+- **数据库表名**: 全部带 `op_` 前缀，按归属分两类——系统/平台能力用 `op_sys_*`
+  （user/role/article/dictionary/oss/service_registry…），业务数据用 `op_biz_*`
+  （order/activity/appointment/partner_profile/client_user…）。这条早期做过一次
+  全库重命名，现存表已全部符合，新建表直接按此命名
 - **命名**:
   - Entity: `PascalCase` + `.entity.ts`
   - Service: `PascalCase` + `.service.ts`
@@ -149,7 +193,10 @@ pnpm dev           # Next.js dev on :8086
 
 ## Key Files
 
-- `TASKS.md` — 当前任务和优先级
+- `TASKS.md` — 迭代级进展记录，比本文件更新更勤，优先看它
+- `HANDOFF.md` — 交接文档：分层架构、已拍板的决策、待实施变更的依赖顺序
+- `openspec/changes/<name>/` — 每个变更的 proposal / design / specs / tasks
+  四件套；`design.md` 里的 Open Questions 是**故意留给实施者确认的**，不是遗漏
 - `.cursorrules` — AI 辅助规则
 - `scripts/doctor.sh` — 环境检查
 - `scripts/clean.sh` — 清理构建产物

@@ -194,6 +194,6 @@ ALIYUN_OSS_THUMBNAIL_BUCKET=your-thumbnail-bucket
 
 ## 相关文档
 
-- [临时URL缓存功能说明](./services/TEMPORARY_URL_CACHE.md)
+- 临时URL缓存：见本文「临时URL缓存」一节，实现在 `./services/temporary-url.service.ts`
 - [存储接口文档](./interfaces/storage.interface.ts)
 - [工具函数文档](./utils/index.ts)

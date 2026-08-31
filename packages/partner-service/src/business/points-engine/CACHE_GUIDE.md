@@ -4,6 +4,9 @@
 
 积分缓存系统用于提升积分查询性能，减少数据库查询压力。当前使用内存缓存（MemoryCache），后续可扩展为 Redis。
 
+`PointsCacheService` 里是**三个**互相独立的 MemoryCache 实例：积分总额、积分明细、本月积分。
+三个都是 5 分钟 TTL，`invalidateUserCache(partnerId)` 一次性清掉这个人在三层里的条目。
+
 ## 架构设计
 
 ### 缓存层次
@@ -29,16 +32,20 @@
 ┌─────────────────────────────────────────────────────────┐
 │                  缓存层                                  │
 │            PointsCacheService                            │
-│  ┌──────────────────┐  ┌──────────────────┐            │
-│  │  积分总额缓存    │  │  积分明细缓存    │            │
-│  │  (1000 entries)  │  │  (500 entries)   │            │
-│  │  TTL: 5分钟      │  │  TTL: 5分钟      │            │
-│  └──────────────────┘  └──────────────────┘            │
+│  ┌────────────────┐ ┌────────────────┐ ┌──────────────┐ │
+│  │ 积分总额缓存   │ │ 积分明细缓存   │ │ 本月积分缓存 │ │
+│  │ pointsCache    │ │ detailCache    │ │ monthlyCache │ │
+│  │ (1000 entries) │ │ (500 entries)  │ │(1000 entries)│ │
+│  │ TTL: 5分钟     │ │ TTL: 5分钟     │ │ TTL: 5分钟   │ │
+│  │ idx: partnerId │ │ idx: partnerId │ │ idx:         │ │
+│  │                │ │                │ │ partnerId+   │ │
+│  │                │ │                │ │ month        │ │
+│  └────────────────┘ └────────────────┘ └──────────────┘ │
 └─────────────────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────────────────┐
 │                  数据库层                                │
-│         biz_task_completion_log                          │
+│         op_biz_task_completion_log                       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -47,14 +54,24 @@
 ### 当前配置
 
 ```typescript
-// 积分总额缓存
+// 积分总额缓存 pointsCache —— 服务 GET /api/biz/points/me 的 totalPoints
 maxSize: 1000        // 最多缓存 1000 个用户
+indexKeys: ["partnerId"]
 TTL: 5 * 60 * 1000   // 5 分钟过期
 
-// 积分明细缓存
+// 积分明细缓存 detailCache —— 服务 GET /api/biz/points/me 的 detail 列表
 maxSize: 500         // 最多缓存 500 个用户
+indexKeys: ["partnerId"]
+TTL: 5 * 60 * 1000   // 5 分钟过期
+
+// 本月积分缓存 monthlyCache —— 服务 GET /api/biz/points/monthly-summary
+maxSize: 1000        // 最多缓存 1000 个用户
+indexKeys: ["partnerId", "month"]   // 缓存键是 monthly:{partnerId}:{YYYY-MM}
 TTL: 5 * 60 * 1000   // 5 分钟过期
 ```
+
+月份不传时取当前月（`getCurrentMonth()` 拼 `YYYY-MM`）。命中判定除了索引查到条目，
+还要 `entry.month === targetMonth`——跨月的旧条目按未命中处理，不会把上个月的分当本月返回。
 
 ### 缓存策略
 
@@ -67,8 +84,11 @@ TTL: 5 * 60 * 1000   // 5 分钟过期
 ### 1. 查询积分（自动使用缓存）
 
 ```typescript
-// C端接口
+// C端接口（走 pointsCache + detailCache）
 GET /api/biz/points/me
+
+// C端接口（走 monthlyCache）
+GET /api/biz/points/monthly-summary
 
 // 管理后台接口
 GET /api/biz/points/admin/:partnerId
@@ -91,30 +111,37 @@ await this.taskLogRepository.save(log);
 this.pointsCacheService.invalidateUserCache(result.partnerId);
 ```
 
-### 3. 手动清除缓存（调试用）
+### 3. 手动清除缓存（调试用，锁超管）
+
+> 这个接口和下面的 `cache/stats` 都挂了 `@RequireSuperAdmin()`——纯调试用途，
+> 没有正当的普通管理员用例，普通后台账号（哪怕有 `PartnerManagement` 权限码）调用一律 403。
+> 拿超管 token 走 `Authorization: Bearer` 头，admin 模式不读 cookie。
 
 ```typescript
-// 清除指定用户缓存
+// 清除指定用户的三层缓存（pointsCache / detailCache / monthlyCache 一起清）
 POST /api/biz/points/cache/invalidate/:partnerId
 
-// 响应
+// 响应（ResultData）
 {
     "code": 200,
-    "message": "缓存已清除",
-    "data": null
+    "msg": "缓存已清除",
+    "data": null,
+    "systime": 1787584279362
 }
 ```
 
-### 4. 查看缓存统计
+### 4. 查看缓存统计（调试用，锁超管）
+
+同样是 `@RequireSuperAdmin()`。
 
 ```typescript
 // 获取缓存统计信息
 GET /api/biz/points/cache/stats
 
-// 响应
+// 响应（ResultData），三层各自一组 size / hitRate
 {
     "code": 200,
-    "message": "success",
+    "msg": "ok",
     "data": {
         "points": {
             "size": 150,      // 当前缓存的用户数
@@ -123,8 +150,13 @@ GET /api/biz/points/cache/stats
         "detail": {
             "size": 80,
             "hitRate": 0.78
+        },
+        "monthly": {
+            "size": 120,
+            "hitRate": 0.82
         }
-    }
+    },
+    "systime": 1787584279362
 }
 ```
 
@@ -147,12 +179,15 @@ GET /api/biz/points/cache/stats
 ### 手动失效
 
 ```typescript
-// 在代码中手动失效
+// 在代码中手动失效（一次清掉三层里该用户的条目）
 this.pointsService.invalidateUserCache(partnerId);
 
-// 通过 API 手动失效
+// 通过 API 手动失效（需超管，见上）
 POST /api/biz/points/cache/invalidate/:partnerId
 ```
+
+`invalidateUserCache` 删 monthlyCache 时用的是**当前月**的键 `monthly:{partnerId}:{当前YYYY-MM}`，
+历史月份的条目不会被删——它们靠 TTL 自然过期，且命中判定会比对 `month`，不会串月。
 
 ## 性能优化
 
@@ -163,7 +198,7 @@ POST /api/biz/points/cache/invalidate/:partnerId
    - 建议：根据业务特点调整（活跃用户可以更长）
 
 2. **合理设置缓存大小**
-   - 当前：积分总额 1000 个，明细 500 个
+   - 当前：积分总额 1000 个，明细 500 个，本月积分 1000 个
    - 建议：根据内存和用户量调整
 
 3. **预热热点数据**

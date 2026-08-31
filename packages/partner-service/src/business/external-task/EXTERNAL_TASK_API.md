@@ -6,12 +6,13 @@
 
 ## 技术实现
 
-- **文件上传**: 使用统一的存储服务（StorageConfigService），支持多种存储提供商（阿里云OSS、MinIO等）
-- **重试机制**: 文件上传使用 RetryHandler 实现自动重试（最多3次，指数退避）
-- **认证方式**: C端使用 GameWemadeAuthGuard，管理后台使用 JwtAuthGuard + RolesGuard
+- **文件上传**: 本服务不直连对象存储。`shared/utils/optimus-api-client.ts` 的 `uploadFileViaOptimusApi()` 用 fetch 把文件转发到 optimus-api 的 `/files/client-upload`，转发的是请求者自己的 clientAccessToken，超时 `AbortSignal.timeout(30000)`
+- **重试机制**: 没有。上传失败直接返回错误，由前端决定是否重试
+- **认证方式**: 全局挂 `IntrospectAuthGuard`（`APP_GUARD`），token 换身份的活交给 optimus-api 的 `/auth/introspect`。C端方法上标 `@ClientUserAuth()` 走 client 模式；管理后台控制器类上标 `@Perm("ExternalTaskReview")` 走 admin 模式，比对的是权限码不是角色名
 - **积分发放**: 审核通过后自动调用积分引擎发放积分
 - **次数限制**: 每个任务类型可配置最大完成次数（审核中+审核通过的总数）
 - **修改功能**: 用户可以修改被拒绝的提交，修改后重新进入审核流程
+- **响应格式**: 两套，别混。C端控制器统一返回 `ResultData`（`{code, msg, data, systime}`，见 `shared/utils/result.ts`）；管理后台控制器是搬迁前就留下的手写字面量 `{success, data}`（部分带 `message`）。服务没挂全局响应拦截器，所以返回什么就是什么，下面的示例按各自实际形状写
 
 ## Node.js 调用文件上传接口
 
@@ -38,29 +39,31 @@ form2.append('file', fileBuffer, {
 const response = await axios.post('https://api.example.com/api/external-task/upload-proof', form, {
   headers: {
     ...form.getHeaders(),
-    'Authorization': 'Bearer <wemade_token>'
+    // C 端凭据是 clientAccessToken httpOnly cookie。浏览器里自动带上；
+    // Node.js 侧没有 cookie jar，需要手动拼 Cookie 头
+    'Cookie': 'clientAccessToken=<clientAccessToken>'
   }
 });
 ```
 
 ## 接口路径规范
 
-- **C端接口**: `/api/external-task/*` - 使用 GameWemadeAuthGuard 认证
-- **管理后台接口**: `/admin/external-task/*` - 使用 JwtAuthGuard + RolesGuard 认证
+- **C端接口**: `/api/external-task/*` - `IntrospectAuthGuard` client 模式（`@ClientUserAuth()`）
+- **管理后台接口**: `/admin/external-task/*` - `IntrospectAuthGuard` admin 模式，权限码 `ExternalTaskReview`
 
 ## C端接口
 
-所有C端接口使用 **GameWemadeAuthGuard** 认证（游戏SDK认证），与合伙人计划接口保持一致。
+所有C端接口走全局 `IntrospectAuthGuard` 的 client 模式（方法上标 `@ClientUserAuth()`），凭据是 `clientAccessToken` httpOnly cookie，与合伙人计划、积分系统接口保持一致。
 
 ### 1. 上传任务凭证图片
 
 **接口地址**: `POST /api/external-task/upload-proof`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 Content-Type: multipart/form-data
 ```
 
@@ -77,12 +80,13 @@ file: <binary> (图片文件)
 ```json
 {
   "code": 200,
-  "message": "上传成功",
+  "msg": "上传成功",
   "data": {
     "url": "https://cdn.example.com/external-task/proof/1733472000001234.jpg",
     "filename": "proof_image.jpg",
     "size": 102400
-  }
+  },
+  "systime": 1733472000000
 }
 ```
 
@@ -90,18 +94,18 @@ file: <binary> (图片文件)
 
 **接口地址**: `GET /api/external-task/task-list`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 ```
 
 **响应示例**:
 ```json
 {
   "code": 200,
-  "message": "success",
+  "msg": "ok",
   "data": [
     {
       "taskType": "DOUYIN_SHORT_VIDEO",
@@ -142,7 +146,8 @@ Authorization: Bearer <wemade_token>
       "minImages": 1,
       "maxImages": 5
     }
-  ]
+  ],
+  "systime": 1733472000000
 }
 ```
 
@@ -167,17 +172,18 @@ Authorization: Bearer <wemade_token>
 
 **接口地址**: `GET /api/external-task/types`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 ```
 
 **响应示例**:
 ```json
 {
-  "success": true,
+  "code": 200,
+  "msg": "ok",
   "data": [
     {
       "taskType": "SOCIAL_SHARE",
@@ -197,7 +203,8 @@ Authorization: Bearer <wemade_token>
       "requireLink": true,
       "requireImages": false
     }
-  ]
+  ],
+  "systime": 1733472000000
 }
 ```
 
@@ -205,11 +212,11 @@ Authorization: Bearer <wemade_token>
 
 **接口地址**: `POST /api/external-task/submit`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 Content-Type: application/json
 ```
 
@@ -235,14 +242,15 @@ Content-Type: application/json
 **响应示例**:
 ```json
 {
-  "success": true,
-  "message": "提交成功，请等待审核",
+  "code": 200,
+  "msg": "提交成功，请等待审核",
   "data": {
     "submissionCode": "ES1733472000001234",
     "taskType": "SOCIAL_SHARE",
     "status": "PENDING",
     "createdAt": "2025-12-07T10:00:00.000Z"
-  }
+  },
+  "systime": 1733472000000
 }
 ```
 
@@ -256,11 +264,11 @@ Content-Type: application/json
 
 **接口地址**: `PUT /api/external-task/submissions/:id`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 Content-Type: application/json
 ```
 
@@ -288,11 +296,12 @@ Content-Type: application/json
 ```json
 {
   "code": 200,
-  "message": "修改成功，已重新提交审核",
+  "msg": "修改成功，已重新提交审核",
   "data": {
     "submissionCode": "ES1733472000001234",
     "status": "PENDING"
-  }
+  },
+  "systime": 1733472000000
 }
 ```
 
@@ -305,11 +314,11 @@ Content-Type: application/json
 
 **接口地址**: `GET /api/external-task/my-submissions`
 
-**认证方式**: GameWemadeAuthGuard
+**认证方式**: `IntrospectAuthGuard`（client 模式，`@ClientUserAuth()`）
 
 **请求头**:
 ```
-Authorization: Bearer <wemade_token>
+Cookie: clientAccessToken=<clientAccessToken>
 ```
 
 **查询参数**:
@@ -327,7 +336,7 @@ GET /api/external-task/my-submissions?page=1&pageSize=20&status=PENDING
 ```json
 {
   "code": 200,
-  "message": "success",
+  "msg": "ok",
   "data": {
     "items": [
       {
@@ -349,7 +358,8 @@ GET /api/external-task/my-submissions?page=1&pageSize=20&status=PENDING
     "total": 10,
     "page": 1,
     "pageSize": 20
-  }
+  },
+  "systime": 1733472000000
 }
 ```
 
@@ -361,17 +371,17 @@ GET /api/external-task/my-submissions?page=1&pageSize=20&status=PENDING
 
 ## 管理后台接口
 
-所有管理后台接口使用 **JwtAuthGuard + RolesGuard** 认证，需要管理员权限（admin 或 super_admin 角色）。
+所有管理后台接口走全局 `IntrospectAuthGuard` 的 admin 模式，控制器类上标了 `@Perm("ExternalTaskReview")`——比对的是**权限码**，不是角色名。超级管理员（`user.type === 0`）直接放行，其余账号的 `perms` 数组必须包含 `ExternalTaskReview`。
 
 ### 1. 查询提交记录列表
 
 **接口地址**: `GET /admin/external-task/submissions`
 
-**认证方式**: JwtAuthGuard + RolesGuard (admin/super_admin)
+**认证方式**: `IntrospectAuthGuard`（admin 模式，`@Perm("ExternalTaskReview")`）
 
 **请求头**:
 ```
-Authorization: Bearer <admin_jwt_token>
+Authorization: Bearer <admin_access_token>
 ```
 
 **查询参数**:
@@ -424,11 +434,11 @@ GET /admin/external-task/submissions?page=1&pageSize=20&status=PENDING
 
 **接口地址**: `GET /admin/external-task/submissions/:id`
 
-**认证方式**: JwtAuthGuard + RolesGuard (admin/super_admin)
+**认证方式**: `IntrospectAuthGuard`（admin 模式，`@Perm("ExternalTaskReview")`）
 
 **请求头**:
 ```
-Authorization: Bearer <admin_jwt_token>
+Authorization: Bearer <admin_access_token>
 ```
 
 **路径参数**:
@@ -488,11 +498,11 @@ Authorization: Bearer <admin_jwt_token>
 
 **接口地址**: `POST /admin/external-task/submissions/:id/approve`
 
-**认证方式**: JwtAuthGuard + RolesGuard (admin/super_admin)
+**认证方式**: `IntrospectAuthGuard`（admin 模式，`@Perm("ExternalTaskReview")`）
 
 **请求头**:
 ```
-Authorization: Bearer <admin_jwt_token>
+Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 ```
 
@@ -523,11 +533,11 @@ Content-Type: application/json
 
 **接口地址**: `POST /admin/external-task/submissions/:id/reject`
 
-**认证方式**: JwtAuthGuard + RolesGuard (admin/super_admin)
+**认证方式**: `IntrospectAuthGuard`（admin 模式，`@Perm("ExternalTaskReview")`）
 
 **请求头**:
 ```
-Authorization: Bearer <admin_jwt_token>
+Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 ```
 
@@ -557,11 +567,11 @@ Content-Type: application/json
 
 **接口地址**: `GET /admin/external-task/statistics`
 
-**认证方式**: JwtAuthGuard + RolesGuard (admin/super_admin)
+**认证方式**: `IntrospectAuthGuard`（admin 模式，`@Perm("ExternalTaskReview")`）
 
 **请求头**:
 ```
-Authorization: Bearer <admin_jwt_token>
+Authorization: Bearer <admin_access_token>
 ```
 
 **响应示例**:
@@ -616,20 +626,21 @@ Authorization: Bearer <admin_jwt_token>
 ## 认证说明
 
 ### C端接口认证
-- **认证方式**: GameWemadeAuthGuard（游戏SDK认证）
-- **Token获取**: 通过游戏SDK登录后获取 wemade_token
-- **用户要求**: 必须已加入合伙人计划（有 partnerId）
+- **认证方式**: 全局 `IntrospectAuthGuard` + 方法级 `@ClientUserAuth()`，走 optimus-api 的 `POST /auth/introspect`（`type=client`），只要求 `active: true`，不比对权限码
+- **凭据**: `clientAccessToken` httpOnly cookie。守卫先看 `Authorization: Bearer`，取不到再回落到 cookie，所以两种都能用；浏览器场景走 cookie，不需要前端手动带
+- **用户要求**: 必须已加入合伙人计划（有 partnerId），否则接口返回 404「您还未加入合伙人计划」
 - **与其他接口一致**: 与合伙人计划、积分系统接口使用相同的认证方式
 
 ### 管理后台接口认证
-- **认证方式**: JwtAuthGuard + RolesGuard
-- **Token获取**: 通过管理后台登录接口获取 JWT token
-- **权限要求**: 需要 `admin` 或 `super_admin` 角色
+- **认证方式**: 全局 `IntrospectAuthGuard` 的 admin 模式，走 `POST /auth/introspect`（`type=admin`）
+- **凭据**: `Authorization: Bearer <admin_access_token>` 请求头。admin 模式**不读 cookie**，没有这个头直接 401
+- **权限要求**: 控制器类上是 `@Perm("ExternalTaskReview")`，校验的是 introspect 返回的 `perms` 数组里有没有 `ExternalTaskReview` 这个**权限码**；超级管理员（`user.type === 0`）跳过权限码比对直接放行
+- **fail-closed**: 没声明 `@Perm` / `@AllowNoPerm` / `@RequireSuperAdmin` 的管理端接口一律 403，不会因为漏标而放行
 
 ## 注意事项
 
-1. **认证要求**: C端接口使用游戏SDK认证，需要用户已加入合伙人计划
-2. **权限要求**: 管理后台接口需要管理员权限（admin 或 super_admin）
+1. **认证要求**: C端接口凭 `clientAccessToken` cookie 识别身份，且用户必须已加入合伙人计划
+2. **权限要求**: 管理后台接口需要 `ExternalTaskReview` 权限码（超级管理员例外，直接放行）
 3. **审核规则**: 
    - 提交记录一旦审核完成（通过或拒绝）不能再次审核
    - 被拒绝的提交可以修改后重新提交

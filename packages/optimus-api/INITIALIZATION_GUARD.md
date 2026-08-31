@@ -45,13 +45,12 @@
 
 系统通过以下方式检查是否已初始化：
 
-1. **查询 `op_sys_database_info` 表**
-   - 根据当前环境查询对应的初始化记录
-   - 如果记录存在，认为已初始化
+1. **检查 `op_sys_database_info` 表是否存在**
+   - 表不存在直接返回 `null`（视为未初始化），不再做其他探测
 
-2. **备用检查机制**
-   - 如果 `op_sys_database_info` 表不存在，检查 `op_sys_user` 表是否存在
-   - 如果表都不存在，认为未初始化
+2. **按环境查询初始化记录**
+   - 表存在时，根据当前环境（`environment`）查询对应记录
+   - 查到记录认为已初始化；查不到或查询异常返回 `null`，视为未初始化
 
 ## 初始化守卫实现
 
@@ -120,10 +119,18 @@ export class SetupController {
 
 ## 允许未初始化时访问的接口
 
-目前以下接口允许未初始化时访问：
+目前以下接口挂了 `@AllowBeforeInitialization()`，允许未初始化时访问：
 
-1. `GET /api/setup/status` - 获取系统状态
-2. `POST /api/setup/initialize` - 初始化系统
+| 接口 | 来源 | 说明 |
+| --- | --- | --- |
+| `GET /api/setup/status` | `src/system/setup/setup.controller.ts` | 获取系统状态 |
+| `POST /api/setup/initialize` | `src/system/setup/setup.controller.ts` | 初始化系统 |
+| `GET /api` | `src/health.controller.ts` | 健康检查（返回 `OK`） |
+| `GET /api/health` | `src/health.controller.ts` | 详细健康检查 |
+| `GET /api/metrics-lite` | `src/health.controller.ts` | 轻量进程指标，给探测器消费 |
+
+> 健康检查这三个挂在 `@Controller()`（无控制器前缀）上，路径里的 `/api` 来自 `main.ts` 的
+> `setGlobalPrefix`，所以实际路径是 `/api`、`/api/health`、`/api/metrics-lite`。
 
 ## 错误处理
 
@@ -141,11 +148,9 @@ HTTP 状态码: `403 Forbidden`
 
 ## 注意事项
 
-1. **健康检查接口**: 如果 `/health` 等健康检查接口需要在未初始化时访问，也需要添加 `@AllowBeforeInitialization()` 装饰器
+1. **缓存一致性**: 初始化完成后会自动清除缓存，但如果在初始化过程中有其他请求，可能会短暂使用旧的缓存值（最多 5 秒）
 
-2. **缓存一致性**: 初始化完成后会自动清除缓存，但如果在初始化过程中有其他请求，可能会短暂使用旧的缓存值（最多 5 秒）
+2. **数据库连接**: 守卫需要数据库连接来检查初始化状态，如果数据库连接失败，为了安全起见，会假设系统未初始化
 
-3. **数据库连接**: 守卫需要数据库连接来检查初始化状态，如果数据库连接失败，为了安全起见，会假设系统未初始化
-
-4. **性能考虑**: 使用缓存机制减少数据库查询，避免每次请求都查询数据库
+3. **性能考虑**: 使用缓存机制减少数据库查询，避免每次请求都查询数据库
 

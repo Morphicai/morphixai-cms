@@ -15,7 +15,7 @@ export const UseAuthMode = (mode: AuthMode) => SetMetadata(AUTH_MODE_KEY, mode);
 export const AdminAuth = () => UseAuthMode(AuthMode.ADMIN);
 
 /**
- * 客户端用户模式 - 需要签名认证
+ * 客户端用户模式 - clientAccessToken cookie（或同 token 走 Bearer）验 JWT，不是签名认证
  */
 export const ClientUserAuth = () => UseAuthMode(AuthMode.CLIENT_USER);
 

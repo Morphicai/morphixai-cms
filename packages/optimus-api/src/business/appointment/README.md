@@ -1,87 +1,54 @@
-# Appointment Module
+# 预约模块（Appointment）
 
-## Feature Overview
+> 接口契约（路径、参数、响应、认证细节）以 [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) 为准，本文只讲模块结构和怎么跑起来。
 
-The appointment module is used to collect user appointment information, including:
-- Phone number
-- Stage
-- Channel
-- Appointment time
-- Extra field 1
+## 功能概述
 
-## Module Structure
+收集用户预约信息：手机号、用户 UID、阶段、渠道、预约时间、额外字段 1。
+数据落在 `op_biz_appointment` 表，**只增不删**——业务上要求预约记录不可删除，所以没有 delete 接口。
+
+## 模块结构
 
 ```
 appointment/
 ├── dto/
-│   ├── create-appointment.dto.ts    # Create appointment DTO
-│   └── query-appointment.dto.ts     # Query appointment DTO
+│   ├── create-appointment.dto.ts         # 创建预约入参
+│   ├── query-appointment.dto.ts          # 列表查询入参 + 列表响应
+│   ├── query-appointment-status.dto.ts   # 预约状态查询入参 + 响应
+│   └── appointment-stats.dto.ts          # 公开统计接口的响应
 ├── entities/
-│   └── appointment.entity.ts        # Appointment entity
-├── appointment.controller.ts        # Controller
-├── appointment.service.ts           # Service layer
-├── appointment.module.ts            # Module definition
-├── API_DOCUMENTATION.md             # API documentation
-└── README.md                        # This file
+│   └── appointment.entity.ts             # 预约实体（op_biz_appointment）
+├── appointment.controller.ts             # 业务接口：create / status / list / export
+├── public-appointment.controller.ts      # 匿名统计接口：stats 系列
+├── appointment.service.ts                # 服务层
+├── appointment.module.ts                 # 模块定义
+├── API_DOCUMENTATION.md                  # 接口文档
+└── README.md                             # 本文件
 ```
 
-## Main Features
+## 两个控制器的分工
 
-### 1. External Interface (Uses GameWemade Guard)
+**`appointment.controller.ts`**（前缀 `biz/appointment`）
 
-- **POST /biz/appointment/create**: Create appointment record
-  - Uses GameWemade guard authentication
-  - Requires `gamewemade-uid`, `business-sign`, `business-timestamp` in Headers
-  - Does not require JWT Token
+- `POST /create`、`GET /status`：`@ClientUserAuth()`，客户端用户 JWT
+  （`Authorization: Bearer` 或 `clientAccessToken` cookie）
+- `GET /list`、`GET /export`：管理后台走 ADMIN 模式，需要 `@Perm("Appointment")` 权限码。
+  ADMIN 模式是 fail-closed 的，光有一个有效 JWT 进不来，角色必须带这个权限码
 
-### 2. Admin Interface (Requires JWT Authentication)
+**`public-appointment.controller.ts`**（前缀 `public/appointment`）
 
-- **GET /biz/appointment/list**: Query appointment record list
-  - Supports filtering by phone number, stage, channel
-  - Supports pagination and sorting
-  
-- **GET /biz/appointment/export**: Export appointment records as Excel
-  - Supports export by query conditions
-  - Automatically generates filename
+类级 `@AllowAnonymous()`，四个统计接口（`stats`、`stats/stage`、`stats/channel`、`stats/detail`）匿名可访问。
+只吐聚合数字，往里加字段前先想清楚会不会把手机号带出去。
 
-### 3. Data Features
+## 前端页面
 
-- Appointment records **cannot be deleted** (meets business requirements)
-- Supports view and export functions
-- Automatically records creation time and update time
+管理后台页面在 `packages/optimus-ui/src/pages/appointment/`。
 
-## Frontend Page
+- ProTable 展示数据，支持按手机号 / 阶段 / 渠道搜索
+- 支持 Excel 导出
+- 没有删除按钮（数据不可删）
+- 菜单挂在系统管理下，入口名「预约管理」；看不到菜单先查角色有没有 `Appointment` 权限码
 
-Frontend admin interface is located at `packages/optimus-ui/src/pages/appointment/`
+## 部署
 
-### Features
-
-- Uses ProTable component to display data
-- Supports search by phone number, stage, channel
-- Supports Excel export
-- Does not provide delete function (data cannot be deleted)
-
-## Usage
-
-### Backend Deployment
-
-1. Module is automatically registered in `app.module.ts`
-2. Database table is automatically created (via TypeORM)
-
-### Frontend Usage
-
-1. Can see "Appointment Management" under system management menu
-2. Click to enter and view all appointment records
-3. Supports search and export functions
-
-## API Examples
-
-See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
-
-## Development Standards
-
-This module follows project development standards:
-- Uses pnpm as package manager
-- Uses dayjs for date handling
-- Page numbers start from 1
-- All API calls go through Service layer
+模块在 `app.module.ts` 里注册，表结构随 `db/optimus-minimal.sql` 的种子数据一起建。

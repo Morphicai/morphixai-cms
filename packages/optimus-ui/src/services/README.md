@@ -2,9 +2,14 @@
 
 ## 概述
 
-本目录包含文章管理系统的所有 API 服务封装，提供统一的错误处理机制和一致的调用接口。
+**本文档只覆盖文章模块的三个服务**：`ArticleService`、`CategoryService`、`VersionService`。
 
-## 服务列表
+`src/services/` 下当前有 20 个 Service 文件（用户、角色、文件、字典、订单、商品、短链、
+操作日志、备份、活动、预约、合伙人、外部任务……），下面的「服务列表」**不是全量清单**。
+其余服务的方法签名以各自源码为准；但它们共用同一套基类、同一套 `options` 约定和同一套
+错误处理机制，所以本文后半部分（错误处理、最佳实践、注意事项）对全部服务都适用。
+
+## 服务列表（文章模块）
 
 ### ArticleService - 文章服务
 
@@ -45,7 +50,7 @@
 - `list(articleId, params, options)` - 获取版本列表
 - `getById(articleId, versionId, options)` - 获取版本详情
 - `revert(articleId, versionId, options)` - 回退版本
-- `publish(articleId, versionId, options)` - 发布版本
+- `setCurrent(articleId, versionId, options)` - 把该版本设为当前版本（`POST /article/:articleId/version/:versionId/set-current`）
 - `compare(articleId, versionId1, versionId2, options)` - 比较版本
 - `getStats(articleId, options)` - 获取版本统计
 
