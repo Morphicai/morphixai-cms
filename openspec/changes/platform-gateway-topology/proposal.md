@@ -36,11 +36,15 @@ agent-service、service-registry、`extract-partner-service` 全部更早，完�
 
 ## What Changes
 
-- 重新设计生产网关拓扑，让 C 端流量的路由权威回到"服务目录"这一份数据，
-  不再允许一份独立维护、会过期的静态转发表挡在动态代理前面
-- 为服务目录的每条记录明确"可达范围"——是需要被浏览器直接访问
-  （C 端 zone、需要独立公开的 API），还是只需要在受控网络内可达
-  （B 端 embed 管理页，如果决定采用内网/VPN 方案）
+- **C 端确定不经过 Caddy**：`optimus-next` 自托管为 C 端流量的直接入口，
+  利用它本身能跑动态逻辑的能力（服务目录驱动的 `proxy.ts`/
+  `api-route-directory.ts`），不再需要任何东西替它做路由决策
+- **B 端 embed 子应用可达范围统一跟随管理后台整体，不单独设内网限制**：
+  管理后台整体在哪个网络层可达，每个 `entryType=embed` 的服务
+  （partner-service 起步）就在同一层可达，不再需要给服务目录加可达范围
+  字段做差异化——这两条都是用户已拍板的决策，不再是候选方案
+- 每个 embed 服务需要自己独立的公网地址（域名/子域名）+ TLS，作为拆分
+  一个新业务服务时的清单化步骤之一，不做成自动化配置生成
 - **每个按业务域拆分出的独立服务（partner-service 起步）新增自己的
   Dockerfile + 生产启动脚本，能够独立构建为部署产物**，不再依赖根目录
   `Dockerfile` 把它一起打包才能跑——这是"支持独立部署"从代码结构上的
@@ -50,10 +54,6 @@ agent-service、service-registry、`extract-partner-service` 全部更早，完�
   optimus-ui/optimus-next，继续用现有根目录 `Dockerfile` 打包，不拆）
   和各个独立服务的镜像编排在一起，替代现在"一份共享 shell 脚本按顺序
   拉起多进程"的模式
-- 仍然留给实现阶段决定的：网关本身的实现方式（保留 Caddy 简化为纯
-  转发，还是去掉 Caddy 让 optimus-next 作为唯一入口），见 design.md
-  的 Open Questions——这条和"部署模型用不用 compose"是两件独立的事，
-  部署模型已经定了，网关实现方式还没有
 
 **BREAKING**：是。当前唯一的部署路径（单容器 + `docker-entrypoint.sh`
 拉起三个进程）替换为多容器 + docker-compose，`Caddyfile` 需要重写，
@@ -75,15 +75,17 @@ agent-service、service-registry、`extract-partner-service` 全部更早，完�
 
 ## Impact
 
-- `Caddyfile`：需要重写，不能再硬编码固定的服务列表和端口
+- `Caddyfile`：需要重写为两条独立的线——C 端整体移除路由判断（或去掉
+  Caddy），管理后台收窄为固定的 optimus-ui+optimus-api 站点配置 +
+  每个 embed 服务各自的子域名站点配置块
 - `packages/partner-service`：新增 `Dockerfile` + `start:prod` 脚本
 - 新增 `docker-compose.prod.yml`（当前只有 `docker-compose.dev.yml`，
   只含 DB/MinIO/adminer），编排核心平台包镜像 + partner-service 镜像
-- `op_sys_service_registry`：schema 新增一个字段表达"可达范围"
-  （公开 / 内网），具体在 design.md 里定
+- `op_sys_service_registry`：**不需要 schema 变更**——原计划的可达范围
+  字段已被"统一跟随管理后台"这条规则取代，不需要在数据层表达差异
 - 是 `extract-marketing-service`、`extract-order-service` 的前置条件——
   这两个变更拆出的新服务照抄同一套模式（自己的 Dockerfile + 加入
-  compose 编排），不用重新想一遍部署方式，也不会让"网关不认识新服务"
-  这个问题再复现
+  compose 编排 + 自己的子域名站点配置），不用重新想一遍部署方式，也
+  不会让"网关不认识新服务"这个问题再复现
 - 松耦合于 `platform-environment-info`：设计网关时会用到"当前环境的
   规范域名是什么"这类信息，但不是硬依赖，可以并行推进

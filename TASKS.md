@@ -34,6 +34,15 @@ service/zone-activity），这些服务在生产环境里既没被启动也没�
 `extract-order-service` design.md 里原本悬着的"支付回调地址网关侧配置"
 Open Question 已归入本变更统一处理，不再单独悬空。
 
+**范围决策已由用户拍板（可直接进入实施）**：① embed 管理页可达范围
+**统一跟随管理后台整体**，不做内网/VPN-only 的差异化限定（原设计的
+"内网/VPN-only"推荐方向已否掉，理由是会造成"权限够但因为不在 VPN 里
+进不去某个具体页面"的可用性陷阱，`op_sys_service_registry` 因此不再
+需要新增可达范围字段）；② **C 端确定不经过 Caddy**，`optimus-next`
+自托管为直接入口，管理后台这条线保留精简版 Caddy（optimus-ui 静态站 +
+固定转发 optimus-api），每个 embed 服务各自配一个公网子域名站点配置。
+`openspec/changes/platform-gateway-topology/design.md` 已按此重写。
+
 **交接文档见根目录 `HANDOFF.md`**（背景、已拍板的架构决策、依赖顺序、接手前必读的坑）。
 
 **`platform-service-token` 已完成**：新增短期 service JWT、自省分支、服务目录

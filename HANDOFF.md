@@ -2,7 +2,9 @@
 
 > 写给接手这项工作的下一个 session / agent。
 > 最后更新：2026-08-31，交接时 `main` 分支，`platform-service-token` 已完成，
-> 新增 `platform-gateway-topology`（核查网关/跨服务身份透传现状时发现的缺口）。
+> 新增 `platform-gateway-topology`（核查网关/跨服务身份透传现状时发现的缺口），
+> 其两处范围决策（B 端可达范围、网关实现方式）已由用户拍板关闭，design.md
+> 已按拍板结果重写，可以直接进入实施而不需要再确认这两条。
 
 ## 一、当前位置
 
@@ -127,11 +129,14 @@ partner-service 拆分暴露了两类问题，事后核查"是否具备统一网
   实施前务必读完——有几处是**故意留给实施者确认的**，不是遗漏：
   - `platform-user-profile-query`：要不要限定"哪些服务能查全量用户资料"，
     这条没有拍板，实施前必须先定，直接影响接口鉴权实现。
-  - `platform-gateway-topology`：B 端 embed 管理页的可达范围（内网/VPN-only
-    还是需要公网访问）没有拍板，design.md 里给了推荐方向（内网/VPN-only，
-    结合用户已确认的常规办公模式）但不是已定结论，实施前需要用户明确。
-    网关实现方式（保留 Caddy 简化，还是去掉 Caddy 让 optimus-next 作为
-    唯一入口）也留给实现阶段验证后再定。
+  - `platform-gateway-topology`：**两个原本悬空的问题已由用户拍板关闭**——
+    ① B 端 embed 管理页的可达范围**统一跟随管理后台整体**，不做"内网/
+    VPN-only"这种差异化限定（此前 design.md 推荐的内网方向已被否掉，
+    理由是会造成"权限够但因为不在 VPN 里进不去某个具体页面"的可用性
+    陷阱）；② **C 端确定不经过 Caddy**，`optimus-next` 自托管为直接入口；
+    管理后台这条线保留精简版 Caddy，每个 embed 服务各自配一个公网子域名
+    站点配置。`design.md` 已按这两条决策重写，`op_sys_service_registry`
+    不再需要新增可达范围字段。
   - `extract-order-service`：支付回调地址迁移后不能断，是本次风险最高的点，
     这条已归入 `platform-gateway-topology` 统一处理，不再是独立悬空的
     问题——但正式切流前仍需要在该变更完成后单独验证一遍回调路径没有变化。
