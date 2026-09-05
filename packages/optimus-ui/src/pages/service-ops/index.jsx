@@ -75,6 +75,9 @@ const ServiceCard = ({ s }) => {
 };
 
 /** 目录登记表单(新建/编辑共用)。embedUrl 变更要二次确认——它决定 token 发给谁 */
+/** 「不归组」在表单里的取值。用空串而不是 undefined,Select 才能把它当成一个能选中的选项 */
+const ROOT_PARENT = '';
+
 const RegistryModal = ({ open, initial, registry, onClose, onSaved }) => {
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -83,18 +86,27 @@ const RegistryModal = ({ open, initial, registry, onClose, onSaved }) => {
   const all = registry || [];
   const childKeys = all.filter((r) => r.parentKey === initial?.key).map((r) => r.key);
   const hasChildren = isEdit && childKeys.length > 0;
-  const parentOptions = all
-    .filter((r) => r.key !== initial?.key && !r.parentKey)
-    .map((r) => ({ value: r.key, label: `${r.menuTitle || r.name} (${r.key})` }));
+  // "顶层"是一个可选项,不是"什么都不选"。靠 allowClear 的 ✕ 表达"不归组"太隐蔽——
+  // 下拉里看不到这个选择存在,编辑一条已归组的记录时更难发现怎么把它移回顶层
+  const parentOptions = [
+    { value: ROOT_PARENT, label: '顶层菜单(不归组)' },
+    ...all
+      .filter((r) => r.key !== initial?.key && !r.parentKey)
+      .map((r) => ({ value: r.key, label: `${r.menuTitle || r.name} (${r.key})` })),
+  ];
 
   useEffect(() => {
     // 新建默认一方:存量与内部服务都是这个级别。三方必须手动改,
     // 免得漏改导致外部供应商拿到一方的默认授权集
-    if (open) form.setFieldsValue(initial || { enabled: true, entryType: 'none', trustLevel: 'first-party' });
+    if (!open) return;
+    const base = initial || { enabled: true, entryType: 'none', trustLevel: 'first-party' };
+    form.setFieldsValue({ ...base, parentKey: base.parentKey || ROOT_PARENT });
   }, [open, initial, form]);
 
   const submit = async () => {
     const values = await form.validateFields();
+    // 后端把空串也归一成 null,这里再转一次是为了请求体本身就干净
+    if (values.parentKey === ROOT_PARENT) values.parentKey = undefined;
     const doSave = async () => {
       setSaving(true);
       const res = isEdit
@@ -208,9 +220,8 @@ const RegistryModal = ({ open, initial, registry, onClose, onSaved }) => {
             <Form.Item name="parentKey" label="归到哪个菜单下"
               extra={hasChildren
                 ? `${initial.key} 自己已有子菜单(${childKeys.join(', ')}),菜单只支持两层,不能再归到别人下面`
-                : '空=顶层菜单。选一个后本条会变成它的子菜单;父节点可以是没有嵌入地址的纯分组条目'}>
-              <Select allowClear disabled={hasChildren} placeholder="空 = 顶层菜单"
-                options={parentOptions} />
+                : '选「顶层菜单」即不归组。选某条后本条会变成它的子菜单;父节点可以是没有嵌入地址的纯分组条目'}>
+              <Select disabled={hasChildren} options={parentOptions} />
             </Form.Item>
           )}
         </Form.Item>

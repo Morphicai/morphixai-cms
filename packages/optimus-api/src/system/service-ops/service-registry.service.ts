@@ -230,7 +230,11 @@ export class ServiceRegistryService {
                 if (clash) throw new BadRequestException(`apiPathPrefixes ${prefix} 已被 ${clash.key} 占用`);
             }
         }
-        await this.assertGroupingValid(key, entry.parentKey);
+        // 空串/纯空白按"顶层"处理。后台表单用空串表达"不归组",而 `?? null` 只挡
+        // null/undefined——不归一的话会往 parent_key 里存一个空字符串:非 NULL,
+        // 却又指不到任何记录,查询和排障时都得多绕一圈
+        const parentKey = entry.parentKey?.trim() || null;
+        await this.assertGroupingValid(key, parentKey ?? undefined);
         const existing = await this.repo.findOne({ where: { key } });
         const trustLevel = entry.trustLevel ?? existing?.trustLevel ?? DEFAULT_TRUST_LEVEL;
         const fields = {
@@ -252,7 +256,7 @@ export class ServiceRegistryService {
             // 只有全新登记才落默认授权集。更新时不传 grants = 保持原样,
             // 否则改个 name 就会把管理员精心收窄过的授权悄悄重置回默认值
             grants: entry.grants ?? existing?.grants ?? defaultGrantsFor(trustLevel),
-            parentKey: entry.parentKey ?? null,
+            parentKey,
         };
         if (existing) {
             await this.repo.save(Object.assign(existing, fields));

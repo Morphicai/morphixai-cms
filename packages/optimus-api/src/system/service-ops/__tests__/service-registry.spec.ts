@@ -289,6 +289,19 @@ describe("ServiceRegistryService 父子关系校验", () => {
         expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ parentKey: null }));
     });
 
+    // 后台表单用空串表达"不归组",不归一就会存进一个非 NULL 又指不到任何记录的空字符串
+    it.each(["", "   "])("parentKey 为空串/空白(%p)也落库为 null", async (blank) => {
+        const repo = mkRepo([]);
+        await svc(repo).upsert("a", { ...base, parentKey: blank }, "u");
+        expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ parentKey: null }));
+    });
+
+    it("parentKey 两侧空白被去掉后仍能正确归组", async () => {
+        const repo = mkRepo([row("p")]);
+        await svc(repo).upsert("c", { ...base, entryType: "embed", embedUrl: "http://c/x", parentKey: " p " }, "u");
+        expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ parentKey: "p" }));
+    });
+
     // 级联删除会在删一条父记录时静默带走几条子记录,误伤不可撤销
     it("存在子节点时拒绝删除,并报出子节点 key", async () => {
         const repo = mkRepo([row("p"), row("c", { parentKey: "p" })]);
