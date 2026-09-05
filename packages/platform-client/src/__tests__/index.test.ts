@@ -177,6 +177,78 @@ test("environmentCacheTtlMs=0 关缓存", async () => {
     assert.equal(captures.length, 2);
 });
 
+// —— 用户资料查询 ——
+
+test("basic 查询打 /service/user-profile/basic/<uid>，带 service token", async () => {
+    const captures = mockFetch(async () => ok({ userId: "42", username: "u", nickname: "n", avatar: null }));
+    const r = await client().getUserProfileBasic({ serviceToken: "st", userId: "42" });
+    assert.equal(captures[0].url, "http://api.test/api/service/user-profile/basic/42");
+    assert.equal(captures[0].method, "GET");
+    assert.equal(captures[0].headers?.Authorization, "Bearer st");
+    assert.deepEqual(r, { userId: "42", username: "u", nickname: "n", avatar: null });
+});
+
+test("full 查询打 full 路由", async () => {
+    const captures = mockFetch(async () =>
+        ok({ userId: "42", username: "u", nickname: "n", avatar: null, email: "a@b.c", status: "active", createdAt: "2026-01-01T00:00:00.000Z" }),
+    );
+    const r = await client().getUserProfileFull({ serviceToken: "st", userId: "42" });
+    assert.equal(captures[0].url, "http://api.test/api/service/user-profile/full/42");
+    assert.equal(r.email, "a@b.c");
+    assert.equal(r.createdAt, "2026-01-01T00:00:00.000Z");
+});
+
+test("uid 做 URL 编码——否则带 / 的值会改变请求含义", async () => {
+    const captures = mockFetch(async () => ok({ userId: "x" }));
+    await client().getUserProfileBasic({ serviceToken: "st", userId: "../../admin/users" });
+    assert.equal(captures[0].url, "http://api.test/api/service/user-profile/basic/..%2F..%2Fadmin%2Fusers");
+});
+
+test("缺 serviceToken / userId 在发请求前就失败", async () => {
+    const captures = mockFetch(async () => ok({ userId: "x" }));
+    await assert.rejects(
+        () => client().getUserProfileBasic({ serviceToken: "", userId: "42" }),
+        /serviceToken is required/,
+    );
+    await assert.rejects(
+        () => client().getUserProfileBasic({ serviceToken: "st", userId: "" }),
+        /userId is required/,
+    );
+    assert.equal(captures.length, 0);
+});
+
+test("用户不存在 → PlatformApiError.code 404（与 403 授权失败区分开）", async () => {
+    mockFetch(async () => fail(404, "用户不存在: 999", 404));
+    await assert.rejects(
+        () => client().getUserProfileBasic({ serviceToken: "st", userId: "999" }),
+        (e: unknown) => {
+            assert.ok(e instanceof PlatformApiError);
+            assert.equal(e.code, 404);
+            return true;
+        },
+    );
+});
+
+test("未被授予 grant → code 403，调用方据此区别处理", async () => {
+    mockFetch(async () => fail(403, "服务未被授予能力：user-profile:read-full", 403));
+    await assert.rejects(
+        () => client().getUserProfileFull({ serviceToken: "st", userId: "42" }),
+        (e: unknown) => {
+            assert.ok(e instanceof PlatformApiError);
+            assert.equal(e.code, 403);
+            return true;
+        },
+    );
+});
+
+test("平台回 200 但 data 为空时报错，不返回 undefined", async () => {
+    mockFetch(async () => new Response(JSON.stringify({ code: 200 }), { status: 200 }));
+    await assert.rejects(
+        () => client().getUserProfileBasic({ serviceToken: "st", userId: "42" }),
+        /未返回用户资料/,
+    );
+});
+
 // —— 错误分界 ——
 
 test("平台业务失败抛 PlatformApiError，带 endpoint/status/code", async () => {

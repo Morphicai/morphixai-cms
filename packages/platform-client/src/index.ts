@@ -110,6 +110,39 @@ export interface ShortLink {
     url: string;
 }
 
+/**
+ * 跨服务查到的用户基础资料。
+ *
+ * `username` 在这里是有意给的：本能力的由来就是业务方各自冗余存一份会漂移的
+ * username 快照——查得到当前值，就不必再存快照。
+ */
+export interface UserProfileBasic {
+    userId: string;
+    username: string | null;
+    nickname: string | null;
+    avatar: string | null;
+}
+
+/** 完整资料。额外含邮箱、状态与注册时间；**不含手机号**（平台两档都不给） */
+export interface UserProfileFull extends UserProfileBasic {
+    email: string | null;
+    status: string;
+    /** ISO 字符串（JSON 传输后不是 Date） */
+    createdAt: string;
+}
+
+export interface UserProfileOptions {
+    /**
+     * **service token**，不是用户 token。由 `@optimus/server-sdk` 的
+     * `getServiceToken(serviceKey)` 本地签发。
+     *
+     * 本包不代签：签名要用主密钥派生的专属密钥，那属于"你是谁"，是 server-sdk
+     * 的职责；这里只负责"帮我做件事"。
+     */
+    serviceToken: string;
+    userId: string;
+}
+
 export type EnvironmentName = "dev" | "test" | "staging" | "prod";
 
 export interface EnvironmentInfo {
@@ -242,6 +275,44 @@ export class PlatformClient {
             this.environmentCache = { info, expiresAt: now + this.environmentCacheTtlMs };
         }
         return info;
+    }
+
+    /**
+     * 按 uid 查用户基础资料。需要 `user-profile:read-basic` grant。
+     *
+     * 错误按 `PlatformApiError.code` 区分，两种含义完全不同，别一起 catch 掉：
+     * - `404` 用户不存在
+     * - `403` 本服务没被授予这项 grant（或未登记/已下线）
+     * - `401` token 不是有效的 service token（比如误传了用户 token）
+     */
+    async getUserProfileBasic(options: UserProfileOptions): Promise<UserProfileBasic> {
+        return this.fetchProfile<UserProfileBasic>("basic", options);
+    }
+
+    /** 按 uid 查完整资料。需要 `user-profile:read-full` grant，错误语义同上。 */
+    async getUserProfileFull(options: UserProfileOptions): Promise<UserProfileFull> {
+        return this.fetchProfile<UserProfileFull>("full", options);
+    }
+
+    private async fetchProfile<T>(level: "basic" | "full", options: UserProfileOptions): Promise<T> {
+        if (typeof options?.serviceToken !== "string" || !options.serviceToken) {
+            throw new Error("serviceToken is required");
+        }
+        if (typeof options?.userId !== "string" || !options.userId) {
+            throw new Error("userId is required");
+        }
+
+        // uid 进的是路径段，必须编码——否则带 `/` 或 `?` 的值会改变请求的含义
+        const endpoint = `/service/user-profile/${level}/${encodeURIComponent(options.userId)}`;
+        const data = await this.request<T>(endpoint, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${options.serviceToken}` },
+            timeoutMs: this.timeoutMs,
+        });
+        if (!data) {
+            throw new PlatformApiError(endpoint, 200, 200, "平台未返回用户资料");
+        }
+        return data;
     }
 
     /** 测试/长驻进程用：清空环境信息缓存 */

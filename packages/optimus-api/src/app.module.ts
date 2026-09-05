@@ -35,6 +35,7 @@ import { I18nModule } from "./system/i18n/i18n.module";
 import { EnvironmentModule } from "./system/environment/environment.module";
 import { AgentToolsModule } from "./system/agent-tools/agent-tools.module";
 import { ServiceOpsModule } from "./system/service-ops/service-ops.module";
+import { UserProfileQueryModule } from "./system/user-profile-query/user-profile-query.module";
 import { WSModule } from "./system/ws/ws.module";
 import { ScheduleModule } from "./system/schedule/schedule.module";
 
@@ -213,6 +214,7 @@ import { join } from "path";
         EnvironmentModule,
         AgentToolsModule,
         ServiceOpsModule,
+        UserProfileQueryModule,
         // 业务功能模块
         ContactModule,
         OrderModule,

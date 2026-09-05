@@ -36,7 +36,11 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 ## 二、当前坐标（2026-09-05）
 
-分支 `main`，无进行中代码分支。**但本地领先 origin/main 28 个提交，从未推送**——这一整段工作（①⑤⑥②③）都只存在于本机。直接后果：`sdk-usage` 这条 CI **在 GitHub 上不存在，因此完全没生效**，约束目前只在本地 `pnpm check:sdk-usage` 有效。
+分支 `main`，与 origin 同步、无进行中代码分支。
+
+> 2026-09-05 补推了积压的 28 个提交。在那之前 ①⑤⑥②③ 都只存在于本机，
+> `sdk-usage` 这条 CI 因为不在远端而完全没生效——**写好不等于生效**，
+> 台账里当时还写着“与 origin 同步”。
 
 | 维度 | 状态 |
 |---|---|
@@ -44,10 +48,10 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | 规格基线 | 22 个能力（`openspec/specs/`） |
 | 活跃变更 | 7 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
-| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥ 已完成；下一步 ④ 或 ⑦** |
-| CI | 1 条流水线（`sdk-usage`）已写好，**尚未推送 → 未生效** |
-| SDK 消费方 | **0 个**——`platform-client` 无任何包声明依赖，partner-service 仍用私有 `optimus-api-client.ts` |
-| grants 生效点 | **0 个**——`@RequireGrant` 零调用点，信任模型可配置但暂未拦住任何接口 |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥⑦ 已完成；下一步 ④，之后进阶段五 ⑧** |
+| CI | 1 条流水线（`sdk-usage`），已推送并跑绿。**但“能拦下违规”还没在真实 PR 上触发过**——只在本地用临时分支验过两条规则 |
+| SDK 消费方 | **仍是 0 个**——`platform-client` 无任何包声明依赖，partner-service 仍用私有 `optimus-api-client.ts`。⑦ 提供了能力，但迁移存量调用方不在其范围内 |
+| grants 生效点 | **2 个**（⑦ 的两个路由）——信任模型从「可配置但未生效」变成「真的在拦」，⑧⑨ 已有可复制的样板 |
 
 活跃变更的性质要分清，混在一起看就会迷路：
 
@@ -55,7 +59,6 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 |---|---|---|
 | `platform-gateway-topology` | 18/19 | 主线 · 阶段四（代码已合 main，剩 5.3 全栈 embed 握手） |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
-| `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三；③ 的 SDK 已就绪，这个能力上线后回来补一个方法即可） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
 | `platform-closed-loop` | 21/22 | **收口欠账**，只差一项真实验收，见 §七 |
@@ -79,7 +82,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
         ⑥ trust-model ✅ ◄──── ① service-token ✅
                     │
                     ▼
-        ⑦ user-profile-query（依赖 ⑥ 的 grants）
+        ⑦ user-profile-query ✅（⑥ 的 grants 的第一个真实消费方）
                     │
                     ▼
         阶段五 ⑧ extract-marketing ──► ⑨ extract-order
