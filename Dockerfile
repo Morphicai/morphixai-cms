@@ -7,7 +7,11 @@ FROM node:20.19.5-alpine AS builder
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN apk add --no-cache python3 make g++
 
-RUN npm install -g pnpm@8.15.9 cross-env
+# pnpm 大版本必须能读懂 lockfile:本仓库 pnpm-lock.yaml 是 lockfileVersion 9.0
+# (pnpm 9 生成),pnpm 8 会直接报 ERR_PNPM_LOCKFILE_BREAKING_CHANGE 而构建失败。
+# package.json 的 packageManager 仍写着 8.15.1,与 lockfile 已经对不上——
+# 本地开发环境靠既有 node_modules 掩盖了这个矛盾,镜像里没有这层掩盖
+RUN npm install -g pnpm@9.15.4 cross-env
 
 WORKDIR /app
 
@@ -35,10 +39,12 @@ RUN pnpm prune --prod
 # ================================
 FROM node:20.19.5-alpine
 
-RUN npm install -g pnpm@8.15.9 cross-env
+RUN npm install -g pnpm@9.15.4 cross-env
 
-# 安装 Caddy 和 netcat (用于健康检查)
-RUN apk add --no-cache caddy netcat-openbsd
+# 只装 netcat(entrypoint 用它等端口就绪)。
+# 不再装 Caddy:网关已拆为 docker-compose.prod.yml 里的独立容器,
+# 装在这里既用不上又白白增大镜像
+RUN apk add --no-cache netcat-openbsd
 
 WORKDIR /app
 
@@ -48,17 +54,14 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
-COPY --from=builder /app/Caddyfile ./Caddyfile
 
-# 设置启动脚本权限和 Caddy 配置
 RUN chmod +x docker-entrypoint.sh && \
-  cp docker-entrypoint.sh /usr/local/bin/ && \
-  mkdir -p /etc/caddy && \
-  cp Caddyfile /etc/caddy/Caddyfile
+  cp docker-entrypoint.sh /usr/local/bin/
 
-# 创建日志目录
-RUN mkdir -p /var/log/caddy packages/optimus-api/logs
+RUN mkdir -p packages/optimus-api/logs
 
-EXPOSE 8080 8082 8084 8086
+# 8086 是 C 端公网入口(自托管);8082/8084 只在 compose 网络内被 caddy 访问。
+# 不再 EXPOSE 8080——网关是独立容器
+EXPOSE 8082 8084 8086
 
 CMD ["/usr/local/bin/docker-entrypoint.sh"]

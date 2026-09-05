@@ -1,0 +1,154 @@
+# 生产拓扑编排。
+#
+# 解决的问题:改造前唯一的生产配置(Dockerfile + docker-entrypoint.sh)只认识
+# optimus-api / optimus-ui / optimus-next 三个进程,partner-service 拆出去之后
+# 在生产环境里【既没被启动也没被暴露】。每多拆一个服务这个缺口就更深一次。
+#
+# 三条流量路径,各走各的,不共用网关:
+#
+#   ① C 端    浏览器 → optimus-next:8086(自托管公网入口,不经 Caddy)
+#                     → 按服务目录 apiPathPrefixes 分流 → optimus-api / partner-service
+#   ② 管理后台 浏览器 → caddy:8080 → optimus-ui 静态站 + /api/* 固定转发 optimus-api
+#   ③ embed   浏览器 → caddy:8090(生产为独立子域名)→ partner-service 自带的 admin-app
+#                     ★ 浏览器直连子服务,不经主站代理:postMessage 握手要校验 origin
+#
+# 启动:docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  # ──────────────────────────────────────────────
+  # 基础设施
+  # ──────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD:?DATABASE_PASSWORD 必须显式提供}
+      - MYSQL_DATABASE=${DATABASE_NAME:-optimus}
+      - TZ=Asia/Shanghai
+    networks:
+      - optimus-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DATABASE_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?必须显式提供}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?必须显式提供}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_prod_data:/data
+    networks:
+      - optimus-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ──────────────────────────────────────────────
+  # 平台核心(L1):三个进程仍打在同一镜像里,由 entrypoint 一起拉起。
+  # 有意不拆:它们同属中台团队、同节奏发版,拆开只增加编排复杂度不带来收益。
+  # ──────────────────────────────────────────────
+  optimus-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      # 容器名而非 localhost——各服务在不同容器里,localhost 只会指向自己
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-root}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?必须显式提供}
+      DATABASE_NAME: ${DATABASE_NAME:-optimus}
+      DB_SYNCHRONIZE: "false"
+      JWT_SECRET: ${JWT_SECRET:?必须显式提供}
+      CLIENT_USER_JWT_SECRET: ${CLIENT_USER_JWT_SECRET:?必须显式提供}
+      CRYPTO_SECRET: ${CRYPTO_SECRET:?必须显式提供}
+      # 服务身份【主密钥】。只有平台持有;子服务拿的是各自的派生密钥
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET:?必须显式提供}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    # 只暴露 C 端入口。管理后台经 caddy,不从这里直接对外
+    ports:
+      - "${NEXT_PUBLIC_PORT:-8086}:8086"
+    networks:
+      optimus-net:
+        aliases:
+          # Caddy 与 optimus-next 按这两个名字找它们,与单镜像内多进程的事实解耦
+          - optimus-api
+          - optimus-ui
+
+  # ──────────────────────────────────────────────
+  # 业务域服务(L2):独立镜像、独立发版
+  # ──────────────────────────────────────────────
+  partner-service:
+    build:
+      context: .
+      dockerfile: packages/partner-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_USERNAME: ${PARTNER_DB_USERNAME:-${DATABASE_USERNAME:-root}}
+      DATABASE_PASSWORD: ${PARTNER_DB_PASSWORD:-${DATABASE_PASSWORD}}
+      DATABASE_NAME: ${DATABASE_NAME:-optimus}
+      # 服务间调用走容器名
+      OPTIMUS_API_URL: http://optimus-api:8084/api
+      # 【本服务自己的派生密钥】,不是平台主密钥。
+      # 生成方式见 docs/THIRD_PARTY_ONBOARDING.md §三
+      SERVICE_TOKEN_SECRET: ${PARTNER_SERVICE_TOKEN_SECRET:?必须提供 partner-service 的派生密钥}
+    networks:
+      - optimus-net
+
+  # ──────────────────────────────────────────────
+  # 管理后台网关。只服务管理后台 + embed 子域名,C 端不经过它
+  # ──────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - optimus-core
+      - partner-service
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./static:/app/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "${ADMIN_PORT:-8080}:8080"
+      # 每个 embed 服务一个端口(生产环境换成子域名 + 443)
+      - "${PARTNER_EMBED_PORT:-8090}:8090"
+    networks:
+      - optimus-net
+
+volumes:
+  mysql_prod_data:
+  minio_prod_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  optimus-net:
+    driver: bridge
