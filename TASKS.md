@@ -19,6 +19,36 @@
 `platform-closed-loop` 21/22 差一项真实验收（需完整环境，见 ROADMAP §六）、
 `micro-frontend` 16/19 有意挂起等触发条件。
 
+## ② 环境信息读口完成 + 阻塞项清理（2026-09-05）
+
+**② platform-environment-info 5/5 已归档。** 新增 `GET /api/environment`,
+匿名 + 限频 120/分,返回 `{environment, rootDomain, cookieDomain}`。它是 ③
+platform-client-sdk 的前置,而 ③ 是 ⑧⑨ 的硬依赖。
+
+核实配置时发现两件与任务假设不同的事:① `SITE_DOMAIN` 有两条读取路径且取值不一致
+(yml 的 `app.file.domain` 带默认值 vs oss.controller.ts 读的裸环境变量),接口以配置
+系统的正式条目为准;② `COOKIE_DOMAIN` 留空是本地开发的**正确状态**而非漏配
+(host-only cookie 才能被 localhost 接收)。首次实现用 `config.get("SITE_DOMAIN")`
+拿到空值,**真实请求才暴露**——单测过了不代表对。
+
+**清掉三个遗留阻塞项**:
+1. 测试表名过期——实际 9 处(记录里写的 4 处),还涉及 `sys_role` 与两个 e2e spec。
+   会污染 ⑧⑨ 的「全量测试绿」判据
+2. `packageManager` 与 lockfile 矛盾(声明 8.15.1 但 lockfile 是 9.0)——
+   **按声明版本装依赖直接失败、生产镜像构建不出来**,⑤ 就是被这条卡住的。
+   已统一到 pnpm@9.15.4
+3. `batchTransformUrls` 尾斜杠——已验证无尾斜杠 env 从 `comimg1.jpg` 修正为
+   `com/img1.jpg`
+
+**并修正技术债清单里两处失实记录**(错的记录比没记录更危险):表名过期的处数;
+以及 `RolesGuard` 记的「已无调用点」是错的——`admin-order.controller.ts:17` 与
+`database-backup.controller.ts:24` 都还在用它,其权限比对整段被注释、无条件放行。
+当前无害(UnifiedAuthGuard 先执行且已 fail-closed),但谁以为它在起作用就会误判
+安全性。没有贸然删,删前需单独验证那两个 controller 的权限声明。
+
+**顺带修一处会持续埋坑的配置**:`jest.unit.config.js` 的 `testMatch` 是显式白名单,
+新模块不加进去测试写了也不会执行——这也是 test/ 目录过期表名长期没被发现的原因。
+
 ## ⑤ 生产拓扑改造（2026-09-05，16/19）
 
 三条流量路径拆开:C 端经 optimus-next 自托管(不经 Caddy)、管理后台走精简 Caddy、
