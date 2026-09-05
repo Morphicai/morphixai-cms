@@ -1,0 +1,31 @@
+name: SDK 使用检查
+
+# 只拦新增/修改的代码，不追溯存量违规——所以必须拿到完整历史才能算 diff。
+# 本仓库此前没有任何 CI，这是第一条流水线：刻意只放这一个零依赖的检查，
+# 不顺手把 lint/test 一起塞进来（那些要装依赖，是另一件事，另开工作流）。
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 0 = 完整历史。浅克隆下 base 提交不存在，diff 算不出来
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 脚本零依赖（只用 node 内置模块 + git），不需要 pnpm install
+      - name: 检查是否绕过官方 SDK 裸写平台接口
+        env:
+          # PR 用合并目标的 sha；push 到 main 时用上一个提交。
+          # 这里不用 github.event.before——新建分支/首次推送时它是全零 sha，
+          # 解析不出来会让脚本退回全量扫描，把存量债一次性报成 CI 失败
+          SDK_USAGE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: node scripts/check-sdk-usage.mjs

@@ -46,7 +46,7 @@
                        │        └─────────────────────┘              │
                        │                                             │
                        │   共享包(无进程): @optimus/{common, server-sdk,
-                       │   client-sdk, admin-embed, auth-ui, platform-client ⏳}
+                       │   client-sdk, admin-embed, auth-ui, platform-client}
    ────────────────────┼─────────────────────────────────────────────┼─────
                        │  按 apiPathPrefixes 分流                     │
    L2                  ▼                                             ▼
@@ -110,7 +110,8 @@ L0 的代码里不出现任何 L2 服务的地址。C 端经代理按目录分�
 | 服务身份 | 同上 `type:"service"`；HS256 短期 JWT，`SERVICE_TOKEN_SECRET` 环境变量注入 | ✅ |
 | embed 握手协议 | `@optimus/admin-embed`：`init({baseOrigin})` / `requestToken()` / `onTokenRefresh()` | ✅ |
 | 服务端 SDK | `@optimus/server-sdk`：`introspect()` / `getServiceToken()` / `verifyServiceToken()` | ✅ |
-| 平台能力 SDK | `@optimus/platform-client`：OSS 上传 / 短链 / 环境信息 / 用户资料查询 | ⏳ ③ |
+| 平台能力 SDK | `@optimus/platform-client`：OSS 上传 / 短链 / 环境信息 | ✅ |
+| ↑ 按 uid 查用户资料 | 平台侧尚无此接口（`client-user` 只有自查的 profile/me），需配 `user-profile:read-basic` grant | ⏳ |
 
 **通用能力（可选，按需消费）**
 
@@ -150,7 +151,8 @@ schema 驱动 CRUD · 文章 / 字典 / 操作日志
 2. **`/auth/introspect`** —— 业务服务**不复制用户体系**，拿请求里的 token 换身份和
    权限码。必须经 `@optimus/server-sdk` 调用，**禁止裸写 HTTP**
 3. **service token** —— 没有真人背景的调用（定时任务、队列消费、批量同步）用它
-4. **`@optimus/platform-client`** ⏳ —— OSS 上传、短链、环境信息、按 uid 查用户资料
+4. **`@optimus/platform-client`** —— OSS 上传、短链、环境信息。**禁止裸写 HTTP**，
+   同 2；按 uid 查用户资料尚未提供（平台侧还没有这个接口）
 5. **暴露 `/health` + `/metrics-lite`** —— 这是义务不是权利，探测面板靠它
 
 **L2 之间依赖什么**：只有 **HTTP 接口** 和（能力就绪后）**领域事件订阅**。
@@ -162,8 +164,23 @@ schema 驱动 CRUD · 文章 / 字典 / 操作日志
 - ❌ 原生 SQL 跨表 JOIN 别人的表 —— `reward-claim-record` 对 `activity` 就是这样
 - ❌ 裸写 HTTP 调 `/auth/introspect` —— 绕过 SDK 就绕过了统一的缓存/重试/契约演进
 
-**约束怎么落地**：不是靠自觉。③ `platform-client-sdk` 要把这三条做成 **CI 静态扫描**，
-不这样写就过不了检查。
+**约束怎么落地**：不是靠自觉。第 3 条（裸写 HTTP）已做成 **CI 静态扫描**
+（`pnpm check:sdk-usage` / `.github/workflows/sdk-usage.yml`）：命中即 CI 失败，
+**只对新增/修改的代码生效**，存量违规不追溯——堵新增和清存量是两件事，混在一起
+规则上线当天就会被整体关掉。确有必要绕过时在该行或上一行注释
+`sdk-usage-allow: <原因>`，要求写原因是有意的：没有豁免口，人只会整个关掉检查。
+
+> 前两条（跨业务注入 entity、跨表 JOIN）**没有**自动检查——它们要 AST/SQL 级分析，
+> 目前靠评审。别把"有一条 CI 规则"读成"三条都拦住了"。
+
+**新服务上线验收必过项**（缺一项不算验收完成）：
+
+| # | 检查项 | 怎么验 |
+|---|---|---|
+| 1 | 只通过官方 SDK 访问平台能力 | `pnpm check:sdk-usage` 对该服务全量跑绿（`--all` 时该服务目录零命中） |
+| 2 | 服务目录已登记 `trustLevel` 与 `grants`，且 grants 按最小必要授予 | 查 `op_sys_service_registry` 该行 |
+| 3 | `trustLevel=third-party` 的服务，数据库实例独立于平台 | 查该服务的 DB 连接串不指向平台实例；不满足则 **不得** 登记为 `enabled` |
+| 4 | 暴露 `/health` + `/metrics-lite` | 探测面板能看到它 |
 
 ---
 

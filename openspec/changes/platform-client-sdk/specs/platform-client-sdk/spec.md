@@ -16,7 +16,14 @@
 
 #### Scenario: 生成短链
 - **WHEN** 消费方调用 `platform-client` 的短链方法并传入目标参数与 remark
-- **THEN** 方法返回短链 token 与完整 URL，调用方无需自行拼接请求体格式
+- **THEN** 方法返回短链 token 与**站点根相对路径**（形如
+  `/public/short-link/resolve/<token>`），调用方无需自行拼接请求体格式
+
+#### Scenario: 短链不被拼成绝对 URL
+- **WHEN** 消费方需要一个可对外分发的绝对地址
+- **THEN** SDK SHALL NOT 自行拼接域名——平台返回的就是相对路径，而该用哪个域名
+  取决于分发渠道（站内/短信/二维码），只有消费方知道；消费方用环境信息里的
+  `rootDomain` 自行拼接
 
 ### Requirement: 环境信息查询封装
 `@optimus/platform-client` SHALL 提供一个查询当前环境信息的方法，封装
