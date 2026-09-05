@@ -3,6 +3,13 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ServiceRegistryEntity } from "./service-registry.entity";
 import { ServiceEventService } from "./service-event.service";
+import {
+    DEFAULT_TRUST_LEVEL,
+    GRANT_CODES,
+    ServiceTrustLevel,
+    defaultGrantsFor,
+    isServiceTrustLevel,
+} from "./service-trust.constants";
 
 /** 目录条目——服务的自我声明。存储为 op_sys_service_registry 专表一行 */
 export interface ServiceEntry {
@@ -27,6 +34,10 @@ export interface ServiceEntry {
      * 而不是清一色转给 optimus-api。与 pathPrefix 是独立概念,互不影响
      */
     apiPathPrefixes?: string[];
+    /** 代码提供方可信程度。缺省 first-party;三方服务必须显式声明 */
+    trustLevel?: ServiceTrustLevel;
+    /** 该服务被授予的平台能力。缺省按 trustLevel 取默认集,三方默认为空 */
+    grants?: string[];
 }
 
 const KEY_RE = /^[a-z][a-z0-9-]{0,49}$/;
@@ -59,6 +70,10 @@ function toEntry(row: ServiceRegistryEntity): { key: string; sortOrder: number }
         permCode: row.permCode ?? undefined,
         pathPrefix: row.pathPrefix ?? undefined,
         apiPathPrefixes: row.apiPathPrefixes ?? undefined,
+        trustLevel: row.trustLevel ?? DEFAULT_TRUST_LEVEL,
+        // 空数组和"没配"要区分开:三方服务的空 grants 是有意义的状态(什么都不许),
+        // 还原成 undefined 会让消费方误以为该取默认集
+        grants: Array.isArray(row.grants) ? row.grants : [],
     };
 }
 
@@ -150,6 +165,7 @@ export class ServiceRegistryService {
             }
         }
         const existing = await this.repo.findOne({ where: { key } });
+        const trustLevel = entry.trustLevel ?? existing?.trustLevel ?? DEFAULT_TRUST_LEVEL;
         const fields = {
             name: entry.name,
             baseUrl: entry.baseUrl,
@@ -165,6 +181,10 @@ export class ServiceRegistryService {
             // 非 zone 条目前缀强制置空,否则残留值会一直占着唯一索引
             pathPrefix: entry.entryType === "zone" ? entry.pathPrefix! : null,
             apiPathPrefixes: entry.apiPathPrefixes?.length ? entry.apiPathPrefixes : null,
+            trustLevel,
+            // 只有全新登记才落默认授权集。更新时不传 grants = 保持原样,
+            // 否则改个 name 就会把管理员精心收窄过的授权悄悄重置回默认值
+            grants: entry.grants ?? existing?.grants ?? defaultGrantsFor(trustLevel),
         };
         if (existing) {
             await this.repo.save(Object.assign(existing, fields));
@@ -185,6 +205,18 @@ export class ServiceRegistryService {
     private validate(entry: ServiceEntry): void {
         if (!entry.name?.trim()) throw new BadRequestException("name 不能为空");
         this.assertUrl(entry.baseUrl, "baseUrl");
+        if (entry.trustLevel !== undefined && !isServiceTrustLevel(entry.trustLevel)) {
+            throw new BadRequestException("trustLevel 仅支持 first-party/second-party/third-party");
+        }
+        if (entry.grants !== undefined) {
+            if (!Array.isArray(entry.grants)) throw new BadRequestException("grants 需为数组");
+            // 白名单校验:拼错的 grant code 会静默变成"永远不匹配",
+            // 表现为接口莫名 403,排查时很难想到是配置里少了个字母
+            const unknown = entry.grants.filter((g) => !GRANT_CODES.includes(g as never));
+            if (unknown.length) {
+                throw new BadRequestException(`未知的 grant: ${unknown.join(", ")}`);
+            }
+        }
         if (entry.entryType && !["none", "embed", "zone"].includes(entry.entryType)) {
             throw new BadRequestException("entryType 仅支持 none/embed/zone");
         }

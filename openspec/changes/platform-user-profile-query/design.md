@@ -53,7 +53,21 @@
 
 ## Open Questions
 
-- 是否需要限定"哪些服务可以调用这条接口"（而不是任何持有 service token 的
-  服务都能查全量用户资料）？如果需要，落地方式是服务目录新增一个权限标记字段，
-  还是在 `platform-service-token` 的范围内一并解决。本次实现前需要先确定，
-  影响接口鉴权逻辑的具体实现
+~~是否需要限定"哪些服务可以调用这条接口"~~ —— **已由 `platform-trust-model` 关闭
+（2026-09-05）**。
+
+答案是需要，但它不是这条接口的特例判断，而是**信任分级的一个应用**：任何持有
+service token 的服务都能查全量用户资料，等于把"登记过"直接等同于"可信"，这在
+外包/三方服务场景下不成立。
+
+落地方式已定，本变更**直接消费**即可，不必再自行设计：
+
+- 鉴权用 `@RequireGrant(...)` 装饰器（`shared/decorators/require-grant.decorator.ts`），
+  由 `ServiceGrantGuard` 校验，grants 每次从服务目录现读
+- 字段分级对应两个 grant：
+  - `user-profile:read-basic` —— 昵称、头像等公开字段
+  - `user-profile:read-full` —— 含邮箱等较敏感字段的完整资料
+- 三方服务默认 grants 为空，两项都要显式授予；一方服务默认两项都有
+
+因此本变更的「仅接受服务身份调用」Requirement 需要相应补充 grant 校验要求，
+不能只校验"是不是 service token"。

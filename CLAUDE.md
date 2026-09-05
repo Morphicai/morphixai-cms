@@ -194,6 +194,10 @@ pnpm dev           # Next.js dev on :8086
 ## Key Files
 
 - `TASKS.md` — 迭代级进展记录，比本文件更新更勤，优先看它
+- `ROADMAP.md` — 全局导航：阶段划分与依赖、每阶段完成判据、贯穿全程的不变量
+- `ARCHITECTURE.md` — 终局架构：三层职责、层间依赖的具体接口、信任模型、部署拓扑
+- `docs/THIRD_PARTY_ONBOARDING.md` — 三方（外包）服务接入：给什么/不给什么、
+  派生密钥带外分发、检查清单
 - `HANDOFF.md` — 交接文档：分层架构、已拍板的决策、待实施变更的依赖顺序
 - `openspec/changes/<name>/` — 每个变更的 proposal / design / specs / tasks
   四件套；`design.md` 里的 Open Questions 是**故意留给实施者确认的**，不是遗漏

@@ -17,6 +17,14 @@
 ### Requirement: 新服务接入检查清单
 新服务上线验收流程 SHALL 将"是否只通过官方 SDK 访问平台能力"列为必过项。
 
+清单 SHALL 同时包含信任模型相关的两项（见 `service-trust-grants`）：
+① 该服务的 `trustLevel` 与 `grants` 已在服务目录登记，且 grants 按最小必要授予；
+② `trustLevel=third-party` 的服务，其数据库实例独立于平台。
+
 #### Scenario: 新服务验收
 - **WHEN** 一个新服务准备上线并接受验收
 - **THEN** 验收清单包含对 SDK 使用情况的检查，未通过该项不得视为验收完成
+
+#### Scenario: 三方服务未通过数据隔离检查时不得启用
+- **WHEN** 一个 `third-party` 服务申请登记为 `enabled`，但其数据库与平台共用实例
+- **THEN** 该项检查不通过，SHALL NOT 允许其登记为 `enabled`
