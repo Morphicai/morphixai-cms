@@ -55,7 +55,7 @@
       - `/admin/` 静态页 200；`/biz/partner/profile` 返回 **401 而非 404**，
         证明业务路由已挂载且鉴权生效
       - 验证后已清理容器与镜像
-      过程中的三个既存缺陷见下方「4.3 的实际进展」
+      过程中挖出的三个既存缺陷见下方「4.3 复盘」
 - [x] 4.4 `docker-compose.prod.yml`：编排 optimus-core（api/ui/next 同镜像）+
       partner-service 独立镜像 + caddy + MySQL + MinIO，同一 Docker 网络。
       `docker compose config` 校验通过。所有密钥用 `${VAR:?}` 强制显式提供，
@@ -81,7 +81,11 @@
       全部 workspace 依赖（含 Next.js 与 React 全家桶），在当前网络下代价过高。
       **剩余风险低**：Caddy 那段是「TLS 终止 + 转发到单个容器」的极薄配置，
       已过 `caddy validate`；真正容易出错的 origin 校验已由 3.3 确认
-- [ ] 5.4 更新 `TASKS.md`/`HANDOFF.md`，解除 ⑧⑨ 对本变更的悬空依赖
+- [x] 5.4 台账已回写：`TASKS.md` 新增「⑤ 生产拓扑改造」一节；`ROADMAP.md` 坐标更新；
+      `HANDOFF.md` 中「`Caddyfile`/`docker-entrypoint.sh` 是化石文件」一条已失效，
+      改为指向新拓扑并保留改造前状态以说明问题由来。
+      **⑧⑨ 对本变更的悬空依赖已解除**：新拆一个服务的网关侧动作已明确为
+      「Caddyfile 加一个站点块 + 服务目录登记一条」，写在 Caddyfile 注释里
 - [ ] 5.5 提交、合 main
 
 ---
