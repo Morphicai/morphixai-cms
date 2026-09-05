@@ -160,7 +160,7 @@ describe("Auth (e2e)", () => {
                 const dbHelper = getDatabaseHelper();
                 if (dbHelper) {
                     const preTestUsers = await dbHelper.query(
-                        "SELECT COUNT(*) as count FROM sys_user WHERE is_deleted = 1",
+                        "SELECT COUNT(*) as count FROM op_sys_user WHERE is_deleted = 1",
                     );
                     console.log("🔍 [DEBUG] 测试开始前用户数量:", preTestUsers[0].count);
                 }
@@ -182,7 +182,7 @@ describe("Auth (e2e)", () => {
                 // 查询用户数据表中是否存在当前登录的用户名
                 const userQuery = `
           SELECT id, account, full_name as fullName, status, is_deleted as isDeleted 
-          FROM sys_user 
+          FROM op_sys_user 
           WHERE account = ? AND is_deleted = 1
         `;
 

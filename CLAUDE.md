@@ -66,13 +66,22 @@ pnpm --filter @optimus/partner-service dev   # 单起某个子服务
 1. **包管理器必须用 package.json 锁定的 pnpm 版本**（`npx pnpm@<锁定版> install`）。
    用不匹配的大版本装包会重写 lockfile 格式并搅乱整个 workspace 链接，api 会报几百个
    `@nestjs/*` 找不到——那不是代码坏了，是包布局被换了。
-2. **`packages/common` 要先构建**（`cd packages/common && pnpm build`），否则 api 启动报
+   > `packageManager` 与 `pnpm-lock.yaml` 曾长期矛盾（声明 8.15.1 但 lockfile 是
+   > `lockfileVersion 9.0`），后果是**按声明版本装依赖直接失败**、生产镜像根本构建不出来。
+   > 已于 2026-09-05 统一到 `pnpm@9.15.4`。**改这个字段时必须同步确认 lockfile 版本。**
+2. **改 lockfile 要在 Linux 容器里做，别在 macOS 上直接跑 `pnpm install`。**
+   宿主机解析会丢掉 `lightningcss-linux-*` 等可选依赖的 `libc` 平台字段（实测丢 45 处），
+   而镜像是 alpine(musl)，装错变体很难查。另外 pnpm 会读 `packageManager` 字段**自动降级
+   运行**——即使你显式 `npx pnpm@10`，实际跑的可能是 8.x；要用
+   `npm_config_manage_package_manager_versions=false` 关掉。
+   只加/改依赖时，优先手工在 lockfile 的 importers 段补引用再用 `--frozen-lockfile` 校验。
+3. **`packages/common` 要先构建**（`cd packages/common && pnpm build`），否则 api 启动报
    `Cannot find module '@optimus/common/dist/index.js'`。workspace 软链指向的是构建产物。
-3. **DATABASE_HOST 别用 localhost，直连容器地址**（OrbStack 下为
+4. **DATABASE_HOST 别用 localhost，直连容器地址**（OrbStack 下为
    `morphixai-cms-db-1.orb.local`）。走宿主机端口转发时闲置连接会被转发层静默掐断，
    十几分钟不动之后整池死连接，页面显示 "Database check timeout"。.env 不入库，
    所以这条只能记在这里。
-4. **开发环境验证码是直通的**（`NODE_ENV=development` 下 `checkImgCaptcha` 直接放行），
+5. **开发环境验证码是直通的**（`NODE_ENV=development` 下 `checkImgCaptcha` 直接放行），
    登录时验证码随便输 4 位即可。别为了"固定验证码"去开 TEST_MODE——那个开关会把
    `getCurrentEnvironment` 标成 e2e，初始化记录按环境名查不到，整个系统被守卫判成
    "未初始化"，所有接口 403。
@@ -185,11 +194,21 @@ pnpm dev           # Next.js dev on :8086
 
 ## Docker Production
 
-`Dockerfile` 多阶段构建，Caddy 反向代理:
-- `/api/*` → :8084 (backend)
-- `/next/*` → :8086 (Next.js, strip prefix)
-- `/*` → :8082 (React admin)
-- 入口端口: 8080
+`docker-compose.prod.yml` 编排，**三条流量路径各走各的，不共用网关**：
+
+- **C 端** → `optimus-next:8086` 自托管公网入口，**不经 Caddy**。路由决策由它按服务目录
+  （`apiPathPrefixes` / `pathPrefix`）动态完成
+- **管理后台** → `caddy:8080` → optimus-ui 静态站 + `/api/*` **固定**转发 optimus-api
+- **embed** → 各服务独立站点（本地 `:8090`，生产为子域名）→ 该服务自带的 admin-app。
+  浏览器直连子服务，不经主站代理——postMessage 握手要校验 origin
+
+镜像：根 `Dockerfile` 打平台核心（api/ui/next 同镜像，`docker-entrypoint.sh` 拉起，
+**不再启动 Caddy**）；业务子服务各有自己的 Dockerfile（如
+`packages/partner-service/Dockerfile`），可独立发版回滚。
+
+> **新拆一个 embed 服务 = Caddyfile 加一个站点块 + 服务目录登记一条。**
+> 改造前的 `/next/*` 转发与"入口 8080 统管一切"已废弃：那份配置自项目初始化后从未改过，
+> `/api/*` 硬编码转发 8084 会拦在动态分流之前，拆出去的服务在生产下直接失效。
 
 ## Key Files
 

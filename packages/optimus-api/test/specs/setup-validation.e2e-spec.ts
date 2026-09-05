@@ -41,7 +41,7 @@ describe("Test Setup Validation (E2E)", () => {
                 throw new Error("Database helper not available");
             }
             const adminUsers = await databaseHelperInstance.query(
-                "SELECT * FROM sys_user WHERE account = ? AND type = 0",
+                "SELECT * FROM op_sys_user WHERE account = ? AND type = 0",
                 ["admin"],
             );
 
