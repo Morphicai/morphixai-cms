@@ -31,3 +31,12 @@
 - [x] 3.3 `tsc` 零错误；36/36 绿；产物 9.5 KB；提交、合 main
 - [x] 3.4 台账回写：TASKS.md 记录本期结论与两处实现期发现，
       ROADMAP 加入权限模型四期规划
+
+## 4. 归档后的 review（2026-09-06）
+
+- [x] 4.1 修 **DSL 类型承诺失效**：`S extends PermissionSpec` 不保留数组字面量，
+      `P.campaign.write` 退化成 `` `partner:campaign:${string}` ``，拼错编译器不报。
+      加 `const` 类型参数 + `@ts-expect-error` 测试钉住（去掉修饰该测试立刻红，验过）
+- [x] 4.2 修 **规则链扩展点被短路堵死**：`evaluate` 在进规则链前就判掉"codes 为空"，
+      而那是 `holdsCode` 的判据。将来接与 codes 无关的规则时口子等于没留。已下沉
+- [x] 4.3 39 例单测绿（+3）；README 的类型承诺现在为真

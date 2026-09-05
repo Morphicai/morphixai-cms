@@ -196,12 +196,25 @@ test("可以追加规则，任一返回非 null 即采纳", () => {
     const always: EvaluateRule = function always() {
         return { allowed: true, scope: "own" as const, matched: "custom" };
     };
-    const d = evaluate(admin(), "partner:campaign:write", { rules: [holdsCode, always] });
-    assert.equal(d.allowed, false, "codes 为空时在进规则链之前就被挡掉");
+    const d = evaluate(admin("nope:nope:nope"), "partner:campaign:write", { rules: [holdsCode, always] });
+    assert.equal(d.allowed, true);
+    assert.equal(d.scope, "own");
+});
 
-    const d2 = evaluate(admin("nope:nope:nope"), "partner:campaign:write", { rules: [holdsCode, always] });
-    assert.equal(d2.allowed, true);
-    assert.equal(d2.scope, "own");
+// codes 为空的短路属于 holdsCode 而不是 evaluate：将来"资源归属于自己"这类规则
+// 与 codes 无关，一个 codes 为空但拥有资源的人应该由那条规则决定
+test("codes 为空时仍进规则链，自定义规则有机会放行", () => {
+    const owner: EvaluateRule = function owner() {
+        return { allowed: true, scope: "own" as const, matched: "owner" };
+    };
+    assert.equal(evaluate(admin(), "partner:campaign:write", { rules: [holdsCode, owner] }).allowed, true);
+    // 默认规则链下行为不变
+    assert.equal(evaluate(admin(), "partner:campaign:write").allowed, false);
+});
+
+test("codes 不是数组时 holdsCode 跳过而不抛", () => {
+    assert.equal(holdsCode({ type: "admin", codes: "nope" } as never, "a:b:c"), null);
+    assert.equal(evaluate({ type: "admin", codes: "nope" } as never, "a:b:c").allowed, false);
 });
 
 test("默认规则链只有 holdsCode", () => {
@@ -268,4 +281,17 @@ test("不依赖任何 node 内置模块（浏览器可用）", () => {
     const src = readFileSync(join(__dirname, "..", "index.js"), "utf8");
     const requires = [...src.matchAll(/require\(["']([^"']+)["']\)/g)].map((m) => m[1]);
     assert.deepEqual(requires, [], `不应有任何运行时 require，实际: ${requires.join(", ")}`);
+});
+
+// ───────────────── 类型承诺 ─────────────────
+
+// 没有 `const S` 修饰的话，["read","write"] 会退化成 string[]，
+// 产出类型变成 `partner:campaign:${string}`，拼错编译器不报——DSL 的类型承诺就是空的
+test("声明产出的是字面量类型，不是模板串", () => {
+    const P = definePermissions("partner", { campaign: ["read", "write"] });
+    const exact: "partner:campaign:write" = P.campaign.write;
+    assert.equal(exact, "partner:campaign:write");
+    // @ts-expect-error 拼错的 action 必须在编译期被抓到
+    const typo = P.campaign.writ;
+    assert.equal(typo, undefined);
 });

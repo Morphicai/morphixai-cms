@@ -169,6 +169,7 @@ export interface EvaluateRule {
  * 是 writable:false 的,赋值在严格模式下直接抛 TypeError(编译成 CJS 后就是严格模式)。
  */
 export const holdsCode: EvaluateRule = function holdsCode(subject: Subject, required: string): Decision | null {
+    if (!Array.isArray(subject.codes)) return null;
     for (const code of subject.codes) {
         if (matches(code, required)) {
             return { allowed: true, matched: code, scope: "all" };
@@ -204,9 +205,11 @@ export function evaluate(subject: Subject | null | undefined, required: unknown,
 
     const req = parse(required);
     if (!req.ok) return deny(`要求的权限码不合法: ${req.reason}`);
-    if (!subject || !Array.isArray(subject.codes)) return deny("缺少主体或主体没有 codes");
-    if (subject.codes.length === 0) return deny("主体未被授予任何权限");
+    if (!subject) return deny("缺少主体");
 
+    // 刻意**不**在这里短路"codes 为空"。那是 holdsCode 这一条规则的判据,不是
+    // evaluate 的：将来接入的规则(如"资源归属于自己")可能与 codes 无关,
+    // 一个 codes 为空但拥有资源的人应该由那条规则决定,而不是在进规则链之前就被判死。
     const requiredCode = format(req);
     for (const rule of options?.rules ?? DEFAULT_RULES) {
         const decision = rule(subject, requiredCode);
@@ -259,8 +262,12 @@ export type DefinedPermissions<N extends string, S extends PermissionSpec> = {
  *
  * 非法的 namespace / resource / action **在声明时就抛错**:声明是启动期行为,
  * 此时抛错远好过运行期静默失效(拼错的码表现为"莫名其妙 403",很难想到是配置问题)。
+ *
+ * `const S` 这个修饰不能删:没有它,`["read","write"]` 会被推断成 `string[]`,
+ * 产出的类型退化成 `` `partner:campaign:${string}` `` —— `P.campaign.writ` 这种拼错
+ * **编译器不报**,整个 DSL 的类型承诺就是空的。有测试钉住这一点。
  */
-export function definePermissions<N extends string, S extends PermissionSpec>(
+export function definePermissions<N extends string, const S extends PermissionSpec>(
     namespace: N,
     spec: S,
 ): DefinedPermissions<N, S> {

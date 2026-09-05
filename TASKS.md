@@ -60,6 +60,19 @@ where 条件**。平台不认识 L2 的字段，这条边界不能破。
 直接抛 `TypeError`——函数的 `name` 是 `writable:false`。改用具名函数表达式。
 单测当场抓到，没漏出去。
 
+**自查时发现两个真问题，已修**（这轮 review 的实际产出）：
+
+1. **DSL 的类型承诺是假的。** `definePermissions` 声明"拼错编译期就报"，
+   但 `P.campaign.write` 的实际类型是 `` `partner:campaign:${string}` ``——
+   `P.campaign.writ` 这种拼错**编译器不报**。根因是 `S extends PermissionSpec`
+   不保留数组字面量类型，`["read","write"]` 被推断成 `string[]`。
+   加 TS 5.0 的 `const` 类型参数修复，并补一条带 `@ts-expect-error` 的测试钉住它
+   （去掉 `const` 修饰，该测试立刻红——验过）
+2. **规则链扩展点被自己堵死了。** `evaluate` 在进规则链**之前**就短路了
+   "codes 为空"，而那是 `holdsCode` 这一条规则的判据，不是 `evaluate` 的。
+   将来接"资源归属于自己"这类与 codes 无关的规则时，一个 codes 为空但拥有资源的人
+   会在规则跑之前就被判死——留的口子等于没留。短路已下沉到 `holdsCode`
+
 **本期不接线**：不改 `@Perm`、不改 `filterMenus`、不建表、不迁码。
 交付物暂无消费方是有意的——接线要动守卫与菜单过滤，先把纯函数部分测透，
 接线时才能确信"出问题不是核心的锅"。
