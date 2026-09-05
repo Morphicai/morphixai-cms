@@ -74,5 +74,5 @@
       - **拼错的 grant 被拒**：`points:grantt` → 400「未知的 grant」
       - **改名不重置授权**：只传 name 不传 grants，授权保持 `["points:grant"]`
       - 验收后清理：测试条目已删除、admin 密码已还原、目录恢复 7 条原始记录
-- [ ] 6.6 更新 `TASKS.md`/`ROADMAP.md`，标记本变更完成
-- [ ] 6.7 提交、合 main
+- [x] 6.6 更新 `TASKS.md`/`ROADMAP.md`，标记本变更完成
+- [x] 6.7 提交、合 main

@@ -40,11 +40,11 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 | 维度 | 状态 |
 |---|---|
-| 已归档变更 | 11 个（`openspec/changes/archive/`） |
-| 规格基线 | 18 个能力（`openspec/specs/`） |
-| 活跃变更 | 10 个 |
+| 已归档变更 | 12 个（`openspec/changes/archive/`） |
+| 规格基线 | 19 个能力（`openspec/specs/`） |
+| 活跃变更 | 9 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
-| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段三 1/9 进行中** |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段四 ⑥ 已完成归档，⑤ 进行中** |
 
 活跃变更的性质要分清，混在一起看就会迷路：
 
@@ -54,7 +54,6 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | `platform-client-sdk` | 0/11 | 主线 · 阶段三 |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
 | `platform-gateway-topology` | 2/19 | 主线 · 阶段四（那 2 项只是范围决策，代码零改动） |
-| `platform-trust-model` | 26/28 | 主线 · 阶段四（**已真实环境验收通过**，剩台账与合并） |
 | `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
