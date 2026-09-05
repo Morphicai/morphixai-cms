@@ -206,7 +206,7 @@ export class DatabaseTestHelper {
                 if (statement && !statement.startsWith("--") && !statement.startsWith("/*")) {
                     try {
                         await this.connection.query(statement);
-                        if (statement.toLowerCase().includes("insert into sys_user")) {
+                        if (statement.toLowerCase().includes("insert into op_sys_user")) {
                             console.log(`✅ Executed user insert statement ${i + 1}`);
                         }
                     } catch (error) {
@@ -285,8 +285,8 @@ export class DatabaseTestHelper {
 
         try {
             // 检查关键表是否存在并有数据
-            const userCount = await this.connection.query("SELECT COUNT(*) as count FROM sys_user");
-            const roleCount = await this.connection.query("SELECT COUNT(*) as count FROM sys_role");
+            const userCount = await this.connection.query("SELECT COUNT(*) as count FROM op_sys_user");
+            const roleCount = await this.connection.query("SELECT COUNT(*) as count FROM op_sys_role");
 
             console.log(`📊 Seed data validation:`);
             console.log(`   - Users: ${userCount[0].count}`);
@@ -294,7 +294,7 @@ export class DatabaseTestHelper {
 
             // 调试：检查admin用户详情
             const adminUsers = await this.connection.query(
-                "SELECT id, account, status, is_deleted FROM sys_user WHERE account = ?",
+                "SELECT id, account, status, is_deleted FROM op_sys_user WHERE account = ?",
                 ["admin"],
             );
             console.log("🔍 [DEBUG] Admin用户详情:", adminUsers);
@@ -430,8 +430,8 @@ export class DatabaseTestHelper {
         WHERE table_schema = DATABASE()
       `);
 
-            const userCountResult = await this.connection.query("SELECT COUNT(*) as count FROM sys_user");
-            const roleCountResult = await this.connection.query("SELECT COUNT(*) as count FROM sys_role");
+            const userCountResult = await this.connection.query("SELECT COUNT(*) as count FROM op_sys_user");
+            const roleCountResult = await this.connection.query("SELECT COUNT(*) as count FROM op_sys_role");
 
             return {
                 tableCount: parseInt(tableCountResult[0].count, 10),
