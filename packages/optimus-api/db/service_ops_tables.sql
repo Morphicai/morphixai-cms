@@ -55,14 +55,30 @@ CREATE TABLE IF NOT EXISTS `op_sys_service_registry` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务目录(基础设施,勿手工删改)';
 
 -- 内置服务 seed:key 有唯一索引,INSERT IGNORE 天然幂等
+--
+-- **grants 必须显式写出**,不能靠列默认值。列默认是 NULL,而 toEntry() 把 NULL 归一成
+-- 空数组——"没配"和"什么都不许"在服务目录里是同一种表现(这是刻意的,见该函数注释)。
+-- 结果就是全新环境里所有内置服务的 grants 为空,@RequireGrant 的接口(如
+-- /api/service/user-profile/*)一律 403。已存在的库由 service_registry_trust_model.sql
+-- 的 UPDATE 兜底,新库只能靠这里。
+-- 这里写死字面量而不是引用应用层常量:SQL 跑在应用之外。两边不一致时,
+-- 以 service-trust.constants.ts 的 DEFAULT_GRANTS_BY_TRUST_LEVEL 为准。
+--
+-- api_path_prefixes 同理必须在 seed 里给全:C 端 /api/[...path] 代理按它分流,
+-- 缺了这一列,拆出去的服务在新环境里收不到任何 C 端请求(而且是静默的——
+-- 请求会照常转给 optimus-api,只是 404)。
+SET @first_party_grants = JSON_ARRAY(
+  'user-profile:read-basic', 'user-profile:read-full', 'points:grant', 'oss:upload', 'shortlink:create'
+);
 INSERT IGNORE INTO `op_sys_service_registry`
-  (`key`, `name`, `base_url`, `health_path`, `metrics_path`, `tools_path`, `enabled`, `entry_type`, `embed_url`, `menu_title`, `menu_icon`, `perm_code`, `path_prefix`, `sort_order`) VALUES
-  ('optimus-api',   '平台服务(optimus-api)',   'http://localhost:8084/api', '/health',   '/metrics-lite', '/system/agent/tools', 1, 'none',  NULL, NULL, NULL, NULL, NULL, 0),
-  ('agent-service', '智能体服务(agent-service)', 'http://localhost:8087',     '/health',   '/metrics-lite', NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 10),
-  ('optimus-ui',    '管理基座(optimus-ui)',    'http://localhost:8082',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 20),
-  ('optimus-next',  'C端官网(optimus-next)',   'http://localhost:8086',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, 30),
-  ('demo-activity', '演示活动(外部团队)',       'http://localhost:5190',     '/',         NULL, NULL, 1, 'embed', 'http://localhost:5190', '演示活动', 'AppstoreAddOutlined', 'DemoActivity', NULL, 40),
-  ('zone-activity', '活动中心(zone)',          'http://localhost:8088',     '/activity', NULL, NULL, 1, 'zone',  NULL, NULL, NULL, NULL, '/activity', 50);
+  (`key`, `name`, `base_url`, `health_path`, `metrics_path`, `tools_path`, `enabled`, `entry_type`, `embed_url`, `menu_title`, `menu_icon`, `perm_code`, `path_prefix`, `api_path_prefixes`, `trust_level`, `grants`, `sort_order`) VALUES
+  ('optimus-api',     '平台服务(optimus-api)',     'http://localhost:8084/api', '/health',   '/metrics-lite', '/system/agent/tools', 1, 'none',  NULL, NULL, NULL, NULL, NULL, NULL, 'first-party', @first_party_grants, 0),
+  ('partner-service', '合伙人服务(partner-service)', 'http://localhost:8089',     '/health',   '/metrics-lite', NULL, 1, 'embed', 'http://localhost:8089/admin/', '合伙人服务', 'TeamOutlined', 'PartnerManagement', NULL, JSON_ARRAY('/biz/partner', '/biz/points', '/external-task'), 'first-party', @first_party_grants, 0),
+  ('agent-service',   '智能体服务(agent-service)',   'http://localhost:8087',     '/health',   '/metrics-lite', NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, NULL, 'first-party', @first_party_grants, 10),
+  ('optimus-ui',      '管理基座(optimus-ui)',      'http://localhost:8082',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, NULL, 'first-party', @first_party_grants, 20),
+  ('optimus-next',    'C端官网(optimus-next)',     'http://localhost:8086',     '/',         NULL, NULL, 1, 'none',  NULL, NULL, NULL, NULL, NULL, NULL, 'first-party', @first_party_grants, 30),
+  ('demo-activity',   '演示活动(外部团队)',         'http://localhost:5190',     '/',         NULL, NULL, 1, 'embed', 'http://localhost:5190', '演示活动', 'AppstoreAddOutlined', 'DemoActivity', NULL, NULL, 'first-party', @first_party_grants, 40),
+  ('zone-activity',   '活动中心(zone)',            'http://localhost:8088',     '/activity', NULL, NULL, 1, 'zone',  NULL, NULL, NULL, NULL, '/activity', NULL, 'first-party', @first_party_grants, 50);
 COMMIT;
 
 -- DatabaseBackup 权限码:备份接口曾全员 @AllowNoPerm 裸奔(任何登录账号可下载整库备份),

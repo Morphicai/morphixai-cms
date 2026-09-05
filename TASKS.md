@@ -46,11 +46,33 @@
 **顺手修了测试桩的一处失真**:`mkRepo` 的 `find` 原先忽略 `where` 直接返回全表,
 「查子节点」这类调用在测试里永远拿到全部行——桩比实现宽松,测试就测不出真实行为。
 
-**没做完的一项**:侧边栏的浏览器目视确认。`services/entries` 要管理员登录,而 admin
-密码不在我手上(上一轮验收后已还原)。改动面已被 26 例单测覆盖到函数级(其中 9 例跑
-的是**真实的** `getDynamicServiceMenus` + `getMenuTree`,只桩掉 API 与 storage),
-但「看起来对不对」仍需人工点一下。示范分组行保留在 dev 库里方便确认,清理语句写在
-归档件的 4.1。
+**目视确认已由使用者完成(2026-09-05)**,四条都对:父节点点击只展开、两个子项各自
+进独立的 `/embed/:key` 且都能加载出页面(不是「服务不存在」——这正是从平铺改成树
+之后最容易静默坏掉的地方)、两条存量条目位置不变。
+
+确认时看到的一个现象**是预期内的**:两个子菜单点进去是同一个页面。示范行里的
+`?view=partner` / `?view=external-task` 目前是装饰性的——`admin-app/src/App.jsx:66`
+是 `<Tabs items={TABS} defaultActiveKey="partner" />`,全文没读 `location.search`。
+菜单分组、独立路由、独立 iframe 会话都是真的,只是落地后停在同一个默认 tab。
+design.md 把「拆成可用 URL 直达的视图」划给 partner-service 自己,不在 ④ 范围内。
+
+确认后示范分组行已按归档件 4.1 的语句删除(先子后父,dev 库回到 7 条)。
+
+**顺带补上种子数据的三个缺口**(是"新环境装出来能不能用"的问题,单测测不到):
+1. **`grants` 不在 seed 的列里** → 新库所有内置服务 grants 为 NULL,而 `toEntry()`
+   把 NULL 归一成空数组,于是 ⑦ 刚做完的 `@RequireGrant` 接口在新环境一律 403。
+   已存在的库由 `service_registry_trust_model.sql` 的 UPDATE 兜底,新库只能靠 seed
+2. **`partner-service` 根本不在任何种子文件里** —— 它是 2026-08-24 手工登记的,
+   只存在于这台机器的 dev 库。新环境装出来没有这条目录记录,等于第一个拆出去的业务
+   服务「没登记」:C 端 `/biz/partner` 等前缀不分流(而且是静默的,请求照常转给
+   optimus-api 然后 404),管理端也没有它的菜单
+3. `api_path_prefixes` 同样不在 seed 列里
+
+验证方式是**真装一遍**:新建空库按文档顺序导入 `optimus-minimal.sql` +
+`service_ops_tables.sql`,与 dev 库逐行比对影响行为的 8 个列,`diff` 无差异;
+重复导入一次条数仍为 7(`INSERT IGNORE` 幂等)。验证用的临时库已删。
+
+
 
 ## ⑦ 跨服务用户资料查询——信任模型的第一个生效点（2026-09-05，已归档）
 
