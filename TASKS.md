@@ -19,6 +19,44 @@
 `platform-closed-loop` 21/22 差一项真实验收（需完整环境，见 ROADMAP §六）、
 `micro-frontend` 16/19 有意挂起等触发条件。
 
+## ③ 平台能力 SDK + 架构约束的 CI 检查（2026-09-05，已归档）
+
+**`@optimus/platform-client` 发布到 workspace**：`uploadFile` / `createShortLink` /
+`getEnvironment`，零运行时依赖。27 例单测 + 真实 api 打通(注册的 client 用户 token、
+真实上传落到 MinIO、真实短链)。
+
+**三处契约细节封进包里**,消费方不必再读 controller 源码:
+
+1. **`needThumbnail` 只在 true 时发送**。平台 DTO 是 `@Type(() => Boolean)`,而
+   multipart 的值一律是字符串——`Boolean("false") === true`,**传 false 会被反向
+   解读成"要缩略图"**。省略是表达 false 的唯一安全方式
+2. 响应字段名不一致(`thumbnail_url` 蛇形、`type` 其实是 mimeType),SDK 归一
+3. **短链返回的是站点根相对路径,不是绝对 URL**——spec 原文写"完整 URL"与事实
+   不符,已按事实改 spec。SDK 不替消费方拼域名:拼错域名的短链比没有短链更糟,
+   而该用哪个域名取决于分发渠道,只有消费方知道
+
+**没有依赖 `@optimus/server-sdk`,与原设计相反**:封装的三个能力两个要
+`@ClientUserAuth()`(用户的 token)、一个匿名,**没有一个吃 service token**。
+为"看起来分层正确"加一个用不上的运行时依赖不值得。
+
+**CI 检查 `scripts/check-sdk-usage.mjs`**(本仓库第一条流水线,`.github/` 此前不存在):
+- 两条规则:裸写 HTTP 调平台接口;跨业务域 `@InjectRepository` 别人的 entity
+- **只查 diff 新增行**,存量违规不追溯——堵新增和清存量混在一起,规则上线当天
+  就会被整体关掉
+- 扫描范围用**反向名单**(排除"平台自己"的目录),新拆的服务自动被覆盖
+- 豁免要写原因:没有豁免口,人只会整个关掉检查
+
+**归档后发现 DoD 没满足,当天补齐**:③ 的 DoD 原文点名了"裸写 `/auth/introspect`、
+**跨业务 `@InjectRepository`**"两类,第一版只做了前者。补上后全量体检报出 **10 处
+存量债**(partner→points-engine 的 4 处跨域注入 + 5 处裸写 HTTP + zone-activity 1 处),
+都是 ⑧ 拆分前要还的账,不卡 CI。
+
+**踩坑记录:`pnpm install --filter <pkg>` 会按过滤后的项目集裁剪整个虚拟 store。**
+typeorm 等不属于该项目的包被直接删掉,正在跑的 api 立刻报
+`Cannot find module './InsertQueryBuilder'`。恢复要跑一次**不带 `--filter`** 的
+`pnpm install --frozen-lockfile`,并**重启进程**(peer 后缀变了,老进程还指着旧目录)。
+新包的依赖是手工往 lockfile 的 importers 段补的,前后 md5 一致、45 处 `libc` 未丢。
+
 ## ② 环境信息读口完成 + 阻塞项清理（2026-09-05）
 
 **② platform-environment-info 5/5 已归档。** 新增 `GET /api/environment`,
