@@ -44,9 +44,9 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 | 维度 | 状态 |
 |---|---|
-| 已归档变更 | 14 个（`openspec/changes/archive/`） |
-| 规格基线 | 22 个能力（`openspec/specs/`） |
-| 活跃变更 | 7 个 |
+| 已归档变更 | 15 个（`openspec/changes/archive/`） |
+| 规格基线 | 23 个能力（`openspec/specs/`） |
+| 活跃变更 | 6 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
 | 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥⑦ 已完成；下一步 ④，之后进阶段五 ⑧** |
 | CI | 1 条流水线（`sdk-usage`），已推送并跑绿。**但“能拦下违规”还没在真实 PR 上触发过**——只在本地用临时分支验过两条规则 |
