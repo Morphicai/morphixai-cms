@@ -325,10 +325,16 @@ export function getCdnPrefix(throwIfMissing: boolean = false): string {
 export function batchTransformUrls(paths: string[]): string[] {
   const cdnPrefix = getCdnPrefix();
   if (!cdnPrefix) return paths;
-  
+
+  // OSS_FILE_PROXY 常量自带尾斜杠（'/OSS_FILE_PROXY/'），所以替换进去的前缀也必须
+  // 以斜杠结尾。而 NEXT_PUBLIC_FILE_API_PREFIX 的推荐写法是不带尾斜杠的
+  // （如 https://cdn.example.com）——直接替换会拼出 https://cdn.example.comimg1.jpg。
+  // OssImage.tsx 一直有这段归一化，这里漏了，两处行为必须一致
+  const normalizedPrefix = cdnPrefix.endsWith('/') ? cdnPrefix : `${cdnPrefix}/`;
+
   return paths.map(path => {
     if (isOssPath(path)) {
-      return path.replace(OSS_FILE_PROXY, cdnPrefix);
+      return path.replace(OSS_FILE_PROXY, normalizedPrefix);
     }
     return path;
   });

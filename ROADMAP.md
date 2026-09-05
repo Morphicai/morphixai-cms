@@ -262,13 +262,22 @@ ai-writing-assist 的代码全部写完（AiService、`POST /api/ai/assist` + �
 
 分三类。只有第一类会咬人。
 
+**已清掉（2026-09-05）**
+- ~~测试里的表名过期~~ —— 实际是 **9 处**（比原记录的 4 处多，还涉及 `sys_role` 与两个
+  e2e spec 文件），已全部改为 `op_sys_*` 并逐条对真实库验证 SQL 可执行
+- ~~`packageManager` 与 lockfile 矛盾~~ —— 声明 `8.15.1` 但 lockfile 是 `9.0`，
+  **按声明版本装依赖直接失败、生产镜像构建不出来**（⑤ 就是被这条卡住的）。
+  已统一到 `pnpm@9.15.4`
+- ~~`batchTransformUrls` 尾斜杠~~ —— 已补归一化并验证：无尾斜杠 env 从
+  `comimg1.jpg` 修正为 `com/img1.jpg`，带尾斜杠不产生双斜杠，非 OSS 路径不受影响
+
 **会咬人的（建议尽早处理）**
-- `test/utils/database-test.helper.ts` 四处硬编码 `sys_user`（应为 `op_sys_user`）——
-  依赖它的测试**现在就是红的**，会污染 ⑧⑨ 的"全量单测绿"判据
-- `optimus-next/src/components/oss/utils.ts:325` `batchTransformUrls` 缺尾斜杠归一化，
-  env 按文档推荐写法配会拼出 `https://cdn.example.comimg1.jpg`；同文件 `OssImage.tsx:23-26`
-  有补，两处行为不一致
-- `RolesGuard` 权限判断整段被注释、等同永远放行，靠 UnifiedAuthGuard 先执行才无害
+- **`RolesGuard` 的清单描述曾是错的，注意**：它**不是"已无调用点"**——
+  `admin-order.controller.ts:17` 与 `database-backup.controller.ts:24` 都还在
+  `@UseGuards(JwtAuthGuard, RolesGuard)`。其权限比对整段被注释、末尾无条件
+  `return true`，对非超管一律放行。当前无害（全局 `UnifiedAuthGuard` 先执行且已
+  fail-closed），但**谁若以为它在起作用就会误判安全性**。删除前需单独验证这两个
+  controller 的权限声明是否完整
 
 **加固项（不阻塞主线，但越早越省）**
 - **一方服务的 DB 账号收窄**：`partner-service` 目前是 `DATABASE_USERNAME=root` +
