@@ -67,14 +67,14 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 阶段一 平台基座 ✅ ────► 阶段二 首次拆分+分层定案 ✅
                                     │
                                     ▼
-        阶段三 L1 能力补齐         （②④ 可并行起步）
-        ② environment-info ──────► ③ client-sdk
-        ④ embed-submenu（独立）
+        阶段三 L1 能力补齐
+        ② environment-info ✅ ────► ③ client-sdk ✅
+        ④ embed-submenu（独立，未开工）
                     │
                     ▼
         阶段四 拓扑与信任边界
-        ⑤ gateway-topology（松耦合于 ②，其余独立）
-        ⑥ trust-model ◄──── ① service-token ✅
+        ⑤ gateway-topology ✅（差 5.3 全栈 embed 握手）
+        ⑥ trust-model ✅ ◄──── ① service-token ✅
                     │
                     ▼
         ⑦ user-profile-query（依赖 ⑥ 的 grants）
@@ -115,8 +115,8 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 | 变更 | DoD |
 |---|---|
-| ② environment-info | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑤）真实取到值 |
-| ③ platform-client-sdk | `@optimus/platform-client` 发布到 workspace；**CI 静态扫描能拦住违规写法**（裸写 `/auth/introspect`、跨业务 `@InjectRepository`）——不是"建议使用"，是"不这样过不了检查" |
+| ② environment-info ✅ | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑤）真实取到值 —— ③ 的 `getEnvironment()` 已真实取到 |
+| ③ platform-client-sdk ✅ | `@optimus/platform-client` 发布到 workspace；**CI 静态扫描能拦住违规写法**（裸写 `/auth/introspect`、跨业务 `@InjectRepository`）——不是"建议使用"，是"不这样过不了检查"。两条规则均已实现并验证 |
 | ④ embed-submenu | 一个服务在管理端渲染出多个子菜单，权限码分别生效 |
 
 **阶段三整体 DoD**：partner-service 里所有"因为没有平台能力而临时凑合"的写法全部
