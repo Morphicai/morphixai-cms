@@ -19,6 +19,7 @@
     "test": "pnpm -r --no-bail run test",
     "test:e2e": "echo true",
     "lint": "pnpm -r run lint",
+    "check:sdk-usage": "node scripts/check-sdk-usage.mjs",
     "clean": "./scripts/clean.sh",
     "doctor": "./scripts/doctor.sh",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d",

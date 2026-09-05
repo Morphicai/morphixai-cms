@@ -1,0 +1,28 @@
+{
+  "name": "@optimus/platform-client",
+  "version": "1.0.0",
+  "description": "Optimus 平台能力客户端：OSS 上传 / 短链 / 环境信息的服务端封装，零运行时第三方依赖",
+  "author": "Optimus Team <team@example.com>",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "tsc && node --test \"dist/__tests__/*.test.js\""
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
