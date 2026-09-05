@@ -42,9 +42,9 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 |---|---|
 | 已归档变更 | 11 个（`openspec/changes/archive/`） |
 | 规格基线 | 18 个能力（`openspec/specs/`） |
-| 活跃变更 | 9 个 |
+| 活跃变更 | 10 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
-| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段三 1/6 进行中** |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段三 1/9 进行中** |
 
 活跃变更的性质要分清，混在一起看就会迷路：
 
@@ -53,8 +53,9 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | `platform-environment-info` | 0/5 | 主线 · 阶段三 |
 | `platform-client-sdk` | 0/11 | 主线 · 阶段三 |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
-| `platform-user-profile-query` | 0/9 | 主线 · 阶段三 |
 | `platform-gateway-topology` | 2/19 | 主线 · 阶段四（那 2 项只是范围决策，代码零改动） |
+| `platform-trust-model` | 0/26 | 主线 · 阶段四（**新增**，架构压测的产物，见 §三） |
+| `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
 | `platform-closed-loop` | 21/22 | **收口欠账**，只差一项真实验收，见 §六 |
@@ -67,30 +68,44 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 ```
 阶段一 平台基座 ✅ ────► 阶段二 首次拆分+分层定案 ✅
                                     │
-                    ┌───────────────┴───────────────┐
-                    ▼                               ▼
-        阶段三 L1 能力补齐                   （②③④⑤ 中 ②④ 可并行起步）
+                                    ▼
+        阶段三 L1 能力补齐         （②④ 可并行起步）
         ② environment-info ──────► ③ client-sdk
-        ① service-token ✅ ───────► ⑤ user-profile-query
         ④ embed-submenu（独立）
                     │
                     ▼
-        阶段四 ⑥ gateway-topology   ← 松耦合于 ②，其余独立
+        阶段四 拓扑与信任边界
+        ⑤ gateway-topology（松耦合于 ②，其余独立）
+        ⑥ trust-model ◄──── ① service-token ✅
                     │
                     ▼
-        阶段五 ⑦ extract-marketing ──► ⑧ extract-order
-               （均依赖 ③⑥；⑧ 建议晚于 ⑦）
+        ⑦ user-profile-query（依赖 ⑥ 的 grants）
+                    │
+                    ▼
+        阶段五 ⑧ extract-marketing ──► ⑨ extract-order
+               （均依赖 ③⑤⑥；⑨ 建议晚于 ⑧）
 ```
 
 **为什么是这个顺序**（每次想抄近路时回来读一遍）：
 
-1. **⑥ 必须在 ⑦⑧ 之前。** 生产网关（`Caddyfile` + `docker-entrypoint.sh`）自项目
-   初始化后从未改过，只认识三个进程。每多拆一个服务，"网关不认识新服务"这个缺口就
-   重演一次。现在只有 partner-service 一个真实案例，是修复成本最低的窗口。
-2. **⑦ 必须在 ⑧ 之前。** 营销域内部耦合简单；订单域涉及支付回调这条收入关键路径。
-   先用营销域把「迁移路径 + SDK 强约束 + 新网关拓扑」这三件事一起验证一遍。
-3. **③ 必须在 ⑦⑧ 之前。** 拆分过程中业务服务需要消费平台能力，没有 SDK 就会退化成
+1. **⑤⑥ 必须在 ⑧⑨ 之前，理由是同一条。** 生产网关自项目初始化后从未改过、只认识
+   三个进程；信任模型至今是空白。**每多拆一个服务，这两个缺口就各重演一次**——
+   网关多一处要配，信任边界多一处要补。现在只有 partner-service 一个真实案例，
+   且它尚未在业务接口上消费 service token，是修复成本最低的窗口。⑥ 是 BREAKING
+   变更，迁移面现在接近于零，晚做只会更贵。
+2. **⑦ 现在依赖 ⑥。** 原先它悬着一个"要不要限定哪些服务能查全量用户资料"的待拍板
+   项，那不是个特例判断，而是信任分级的一个应用——答案由 ⑥ 的 grants 给出
+   （`user-profile:read-basic` vs `read-full`）。所以它从阶段三挪到 ⑥ 之后。
+3. **⑧ 必须在 ⑨ 之前。** 营销域内部耦合简单；订单域涉及支付回调这条收入关键路径。
+   先用营销域把「迁移路径 + SDK 强约束 + 新网关拓扑 + 信任模型」一起验证一遍。
+4. **③ 必须在 ⑧⑨ 之前。** 拆分过程中业务服务需要消费平台能力，没有 SDK 就会退化成
    裸写 HTTP —— 那正是这轮架构要消灭的东西。
+
+> **⑥ 的由来**（2026-09-05）：用"外包团队交付业务服务"和"低代码/AI 生成页面"两个
+> 未来确定要支撑的场景压测现有分层，结论是骨架成立、**信任模型是空白**。现有分层的
+> 设计假设是"不同的内部团队"，而外包（不可信的代码提供方）和低代码（运营/AI 产出的
+> schema 是不受控输入）都突破了这个假设。三处实证见 `platform-trust-model/design.md`
+> 的 Context 一节——不是假想缺陷。
 
 ---
 
@@ -102,21 +117,19 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 | 变更 | DoD |
 |---|---|
-| ② environment-info | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑥）真实取到值 |
+| ② environment-info | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑤）真实取到值 |
 | ③ platform-client-sdk | `@optimus/platform-client` 发布到 workspace；**CI 静态扫描能拦住违规写法**（裸写 `/auth/introspect`、跨业务 `@InjectRepository`）——不是"建议使用"，是"不这样过不了检查" |
 | ④ embed-submenu | 一个服务在管理端渲染出多个子菜单，权限码分别生效 |
-| ⑤ user-profile-query | 跨服务按 uid 查到资料；**partner-service 的 username 快照漂移问题被消灭**（这是已验证的真实缺陷，不是假想） |
 
 **阶段三整体 DoD**：partner-service 里所有"因为没有平台能力而临时凑合"的写法全部
 被替换（HTTP 直调 optimus-api 的 `client-upload`/`client-shorten` 除外，那两处是有意
-的设计），且 ⑦ 的骨架搭建不再需要新增任何平台能力。
+的设计），且 ⑧ 的骨架搭建不再需要新增任何平台能力。
 
-> ⑤ 实施前必须先拍板一件事：**限不限定"哪些服务能查全量用户资料"**。这条直接决定接口
-> 鉴权怎么写，`design.md` 里是故意留白的，不是遗漏。
+### 阶段四 · ⑤⑥⑦ 拓扑与信任边界
 
-### 阶段四 · ⑥ 网关拓扑
+拆分之前必须先修对的两件基础设施，加上被它们解锁的一个能力。
 
-**DoD**：本地 Docker 完整走一遍新拓扑，四条路径同时成立——
+**⑤ gateway-topology DoD**：本地 Docker 完整走一遍新拓扑，四条路径同时成立——
 1. C 端请求经 `optimus-next` 自托管入口 → 服务目录动态分流 → 落到 partner-service
 2. Multi-Zones 的 zone 路径（如 `/activity`）正确落到 optimus-next 而非 optimus-ui
 3. B 端 embed 管理页经各自子域名加载，postMessage 握手与 token 下发正常
@@ -125,7 +138,23 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 已拍板、**不要再讨论**：embed 可达范围跟随管理后台整体（VPN-only 方案已否决，理由是
 会造成"权限够但不在 VPN 里进不去"的可用性陷阱）；C 端不经 Caddy。
 
-### 阶段五 · ⑦⑧ 业务域拆分
+**⑥ trust-model DoD**（BREAKING，三条缺一不可）：
+1. **冒充在密码学上不可行** —— 用 A 服务的派生密钥签发 `sub=B` 的 token，自省返回
+   `active: false`。不是"约定不给密钥"，是给了也冒充不了别人
+2. **能力是配置出来的** —— 模拟一个 `third-party` 服务：默认零 grant、调受保护接口被拒；
+   授予单项后仅该项可用；调整 grants 无需重签 token 或重启
+3. **授权不可经用户身份绕过** —— 转发高权限用户 token 不会提升服务级能力
+
+已拍板：service token 改每服务独立密钥；需要信任分级；**可访问什么必须是可配置的**
+（所以级别只给默认值，`grants` 才是运行时权威）；三方服务数据库独立。
+
+**⑦ user-profile-query DoD**：跨服务按 uid 查到资料；**partner-service 的 username
+快照漂移问题被消灭**（已验证的真实缺陷，不是假想）；`read-basic` / `read-full`
+两级由 ⑥ 的 grants 控制。
+
+> 原先悬着的"限不限定哪些服务能查全量用户资料"**已由 ⑥ 关闭**，不再是待拍板项。
+
+### 阶段五 · ⑧⑨ 业务域拆分
 
 两个变更共用同一套七组模板（partner 踩出来的路径）：
 落地前修复 → 骨架 → 搬迁 → 目录接入验证分流 → **确认分流生效后**才删原代码 → 单测迁移 → 验收。
@@ -134,9 +163,9 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 - 复用 `verify-closed-loop.mjs` 的结构写出该域的闭环脚本，打**真实多进程实例**
   （不是 mock，也不是单服务隔离的 e2e —— 那测不出跨服务分流是否真接通）
 - 全量单测绿；optimus-api 侧原代码已删且 optimus-ui 侧残留页面同步清理
-- ⑧ 额外：**支付回调路径切流前后逐字节比对**，这是全程风险最高的一点
+- ⑨ 额外：**支付回调路径切流前后逐字节比对**，这是全程风险最高的一点
 
-> ⑦ 实施前要读代码确认：`ActivityService` 现有方法是否覆盖 reward-claim-record 那处
+> ⑧ 实施前要读代码确认：`ActivityService` 现有方法是否覆盖 reward-claim-record 那处
 > 原生 JOIN 所需的全部字段。**不要在设计阶段猜**。
 
 ---
@@ -152,10 +181,13 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 3. **先验证分流，再删原代码。** 拆分变更的第 5 组永远排在第 4 组之后，双跑阶段不许压缩。
 4. **迁移不是搬运。** 迁移是给沉睡代码做第一次真实体检。partner 那次挖出表名前缀漏写、
    审计表从未建过、守卫挂错类型、`depth` 被硬编码忽略——全部集中在"业务代码从未被真实
-   调用路径触达过"这个模式。**⑦⑧ 要预留体检时间，别按纯搬运估工时。**
+   调用路径触达过"这个模式。**⑧⑨ 要预留体检时间，别按纯搬运估工时。**
 5. **`DB_SYNCHRONIZE` 永远是 false**，表名前缀 `op_sys_*` / `op_biz_*` 按归属选。
 6. **每个变更完成后立即 `openspec archive`。** 这次一口气积压了 11 个未归档变更，直接
    后果是扫一眼目录分不清"在做的"和"做完的"。
+7. **安全边界靠机制，不靠约定。**（⑥ 之后生效）能被"只要谁不把密钥给错人就没事"
+   这类话术描述的保证，都不是保证。判据：假设对方拿到了他能拿到的一切，攻击是否
+   仍然不可行。应用层的边界规则（如"禁止跨业务 JOIN"）对不可信的代码提供方一律无效。
 
 ---
 
@@ -185,13 +217,20 @@ ai-writing-assist 的代码全部写完（AiService、`POST /api/ai/assist` + �
 
 **会咬人的（建议尽早处理）**
 - `test/utils/database-test.helper.ts` 四处硬编码 `sys_user`（应为 `op_sys_user`）——
-  依赖它的测试**现在就是红的**，会污染 ⑦⑧ 的"全量单测绿"判据
+  依赖它的测试**现在就是红的**，会污染 ⑧⑨ 的"全量单测绿"判据
 - `optimus-next/src/components/oss/utils.ts:325` `batchTransformUrls` 缺尾斜杠归一化，
   env 按文档推荐写法配会拼出 `https://cdn.example.comimg1.jpg`；同文件 `OssImage.tsx:23-26`
   有补，两处行为不一致
 - `RolesGuard` 权限判断整段被注释、等同永远放行，靠 UnifiedAuthGuard 先执行才无害
 
-**partner 迁移的清理尾巴（应随 ⑦ 一起做掉，同类工作合批）**
+**加固项（不阻塞主线，但越早越省）**
+- **一方服务的 DB 账号收窄**：`partner-service` 目前是 `DATABASE_USERNAME=root` +
+  与主服务同库。改成每服务一个只授自己 `op_biz_*` 表权限的账号，就能把"禁止跨业务
+  JOIN"这条应用层约定变成数据层强制。改动量极小。
+  **注意这与 ⑥ 的"三方服务数据库独立"是两件事**——三方隔离是必须（不可信提供方），
+  一方收窄是加固（防误用）。不拆库，只拆账号
+
+**partner 迁移的清理尾巴（应随 ⑧ 一起做掉，同类工作合批）**
 - `optimus-ui`：`pages/{partner,partner-management}`、`pages/external-task-review`、
   `system/views/PartnerDataManagement.jsx`、三个 `*PartnerService.js` —— 全部无 import 引用
 - `optimus-api`：`ClientUserAuthGuard` + `require-client-user-auth.decorator.ts` 已无调用点
