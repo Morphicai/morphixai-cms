@@ -134,25 +134,27 @@ if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
     echo "----------------------------------------"
 fi
 
-# 启动 Caddy (后台)
-echo "🌐 启动 Caddy..."
-caddy run --config /etc/caddy/Caddyfile &
-CADDY_PID=$!
+# 本容器【不再启动 Caddy】。网关是 docker-compose.prod.yml 里的独立 caddy 容器,
+# 它的 Caddyfile 用容器名(optimus-api / optimus-ui / partner-service)寻址——
+# 在本容器内跑那份配置会解析不了,而且会和独立网关容器抢 8080。
+#
+# 更根本的原因:C 端流量本来就不该经过 Caddy。optimus-next 自己就是能监听公网端口、
+# 按服务目录动态分流的 Node server;再套一层静态路由表,只会像改造前那样把
+# `/api/*` 硬编码转发到 8084,拆出去的子服务在生产拓扑下直接失效。
 
 # 优雅关闭处理
 cleanup() {
     echo "🛑 关闭服务..."
-    kill $API_PID $UI_PID $NEXT_PID $CADDY_PID 2>/dev/null || true
+    kill $API_PID $UI_PID $NEXT_PID 2>/dev/null || true
     exit 0
 }
 
 trap cleanup SIGTERM SIGINT
 
-echo "✅ 所有服务启动完成!"
-echo "📍 访问地址: http://localhost:8080"
-echo "📍 API 文档: http://localhost:8080/api/docs"
-echo "📍 健康检查: http://localhost:8080/health"
-echo "📍 Next.js 应用: http://localhost:8080/next (或直接访问 http://localhost:8086)"
+echo "✅ 平台核心三个进程启动完成!"
+echo "📍 C 端入口(公网): http://localhost:8086   ← 自托管,不经网关"
+echo "📍 管理后台:      经 caddy 容器 http://localhost:8080"
+echo "📍 API(容器内):   optimus-api:8084 / API 文档 /api/docs"
 echo ""
 echo "📋 实时日志位置："
 echo "   - API:      /tmp/optimus-logs/api.log"

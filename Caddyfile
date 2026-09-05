@@ -1,79 +1,123 @@
-# Caddy 配置文件 - Docker 生产环境
-
-:8080 {
-    # 健康检查端点
-    handle /health {
-        respond `{"status":"ok","timestamp":"{time.now.unix}","services":{"frontend":"localhost:8082","api":"localhost:8084","next":"localhost:8086"}}`
-    }
-
-    # API 路由代理到后端服务
-    handle /api/* {
-        reverse_proxy localhost:8084 {
-            # 请求头处理
-            header_up Host {upstream_hostport}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-
-    # Next.js 应用路由 (优先于旧前端)
-    handle /next/* {
-        uri strip_prefix /next
-        reverse_proxy localhost:8086 {
-            # 请求头处理
-            header_up Host {upstream_hostport}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-
-    # Caddy 本地静态文件服务 (启动页面等)
-    handle /caddy-static/* {
-        uri strip_prefix /caddy-static
-        file_server {
-            root /app/static
-        }
-    }
-
-    # 根路径和其他所有路径代理到前端应用 (包括前端的静态资源)
-    handle /* {
-        reverse_proxy localhost:8082 {
-            # 请求头处理
-            header_up Host {upstream_hostport}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-
-    # 日志配置
-    log {
-        output stdout
-        format console
-    }
-
-    # 错误页面 - 服务启动中页面
-    handle_errors {
-        @5xx expression {http.error.status_code} >= 500
-        @502_503 expression {http.error.status_code} == 502 || {http.error.status_code} == 503
-        handle @502_503 {
-            rewrite * /loading.html
-            file_server {
-                root /app/static
-            }
-        }
-        handle @5xx {
-            respond "服务内部错误，请稍后重试" 500
-        }
-        
-        @4xx expression {http.error.status_code} >= 400 && {http.error.status_code} < 500
-        handle @4xx {
-            rewrite * /loading.html
-            file_server {
-                root /app/static
-            }
-        }
-    }
+# Caddy 配置 — 只服务【管理后台】这一条线。
+#
+# C 端流量不经过这里:optimus-next 本身就是能监听公网端口、跑动态逻辑的 Node server,
+# 路由决策已经由它基于服务目录(apiPathPrefixes / pathPrefix)动态完成。再套一层 Caddy
+# 只会让静态路由表拦在动态路由之前——那正是本文件改造前踩中的坑:`/api/*` 被硬编码
+# 转发到 8084,partner-service 拆出去之后这条路径在生产拓扑下直接失效。
+#
+# 所以这里只剩两类站点:
+#   1) 管理后台:optimus-ui 静态站 + /api/* 固定转发 optimus-api(固定,不做服务级判断)
+#   2) 每个 embed 子服务一个子域名:只做 TLS 终止 + 转发到那一个容器
+#
+# 上游地址用 compose 网络里的容器名,不用 localhost——各服务已经是独立容器,
+# localhost 只会指向 Caddy 自己。
+{
+	# 生产部署时按实际情况开启自动 TLS;本地/内网用 :80 与 :8080 直接跑
+	admin off
 }
+
+# ================================================================
+# 管理后台
+# ================================================================
+:8080 {
+	handle /health {
+		respond `{"status":"ok","timestamp":"{time.now.unix}","scope":"admin-console"}`
+	}
+
+	# 管理后台需要直接访问平台 API。这里是【固定】转发,不按服务动态判断——
+	# 子服务的管理接口走各自 embed 子域名,不从这里转
+	handle /api/* {
+		reverse_proxy optimus-api:8084 {
+			header_up Host {upstream_hostport}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	handle /caddy-static/* {
+		uri strip_prefix /caddy-static
+		file_server {
+			root /app/static
+		}
+	}
+
+	# 其余全部交给管理后台前端
+	handle /* {
+		reverse_proxy optimus-ui:8082 {
+			header_up Host {upstream_hostport}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+
+	handle_errors {
+		@502_503 expression {http.error.status_code} == 502 || {http.error.status_code} == 503
+		handle @502_503 {
+			rewrite * /loading.html
+			file_server {
+				root /app/static
+			}
+		}
+		@5xx expression {http.error.status_code} >= 500
+		handle @5xx {
+			respond "服务内部错误，请稍后重试" 500
+		}
+		@4xx expression {http.error.status_code} >= 400 && {http.error.status_code} <500
+		handle @4xx {
+			rewrite * /loading.html
+			file_server {
+				root /app/static
+			}
+		}
+	}
+}
+
+# ================================================================
+# embed 子服务:每个一个站点块
+# ================================================================
+# B 端 embed 管理页是【浏览器直接打子服务的 origin】的,不经管理后台代理——
+# postMessage 握手要求双方校验 origin,不给独立地址在生产环境根本打不开。
+#
+# 可达范围跟随管理后台整体,不做内网/VPN-only 的差异化限定(已拍板:那会造成
+# "权限够但因为不在 VPN 里进不去某个具体页面"的可用性陷阱)。访问控制由该条目的
+# permCode 承担,发生在权限层而不是网络层。
+#
+# 新拆一个 embed 服务 = 在这里加一个站点块 + 服务目录登记一条。
+# 这一步已写进 extract-marketing-service / extract-order-service 的落地清单。
+#
+# ⚠️ 【不要在管理后台站点上设 Referrer-Policy: no-referrer】。
+# 握手时两侧的 origin 都是动态推导的,不硬编码——正因如此换域名不需要改代码:
+#   宿主侧 targetOrigin = new URL(服务目录里的 embedUrl).origin
+#   子应用侧 baseOrigin = new URL(document.referrer).origin
+# 后者依赖浏览器发送 referrer。默认策略 strict-origin-when-cross-origin 跨域时
+# 仍会带上 origin,够用;但显式设成 no-referrer 会让 baseOrigin 变空,
+# 所有 embed 管理页的握手直接失败,且现象是"白页无报错",很难定位。
+
+:8090 {
+	handle /health {
+		respond `{"status":"ok","scope":"partner-service-embed"}`
+	}
+
+	handle /* {
+		reverse_proxy partner-service:8089 {
+			header_up Host {upstream_hostport}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# 生产环境把上面两块换成真实域名即可,例如:
+#
+#   admin.example.com          { ... 管理后台那块 ... }
+#   partner.admin.example.com  { ... partner-service 那块 ... }
+#
+# 通配符证书 *.admin.example.com 下,每新增一个 embed 服务只需要加一个站点块,
+# 不需要单独申请证书。
