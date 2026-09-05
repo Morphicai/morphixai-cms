@@ -32,6 +32,7 @@ import { ArticleVersionModule } from "./system/article-version/article-version.m
 import { AiModule } from "./system/ai/ai.module";
 import { FormModule } from "./system/form/form.module";
 import { I18nModule } from "./system/i18n/i18n.module";
+import { EnvironmentModule } from "./system/environment/environment.module";
 import { AgentToolsModule } from "./system/agent-tools/agent-tools.module";
 import { ServiceOpsModule } from "./system/service-ops/service-ops.module";
 import { WSModule } from "./system/ws/ws.module";
@@ -209,6 +210,7 @@ import { join } from "path";
         AiModule,
         FormModule,
         I18nModule,
+        EnvironmentModule,
         AgentToolsModule,
         ServiceOpsModule,
         // 业务功能模块
