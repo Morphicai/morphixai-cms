@@ -75,10 +75,17 @@ const ServiceCard = ({ s }) => {
 };
 
 /** 目录登记表单(新建/编辑共用)。embedUrl 变更要二次确认——它决定 token 发给谁 */
-const RegistryModal = ({ open, initial, onClose, onSaved }) => {
+const RegistryModal = ({ open, initial, registry, onClose, onSaved }) => {
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const isEdit = Boolean(initial?.key);
+  // 只有顶层记录能当父(菜单两层封顶),且不能选自己
+  const all = registry || [];
+  const childKeys = all.filter((r) => r.parentKey === initial?.key).map((r) => r.key);
+  const hasChildren = isEdit && childKeys.length > 0;
+  const parentOptions = all
+    .filter((r) => r.key !== initial?.key && !r.parentKey)
+    .map((r) => ({ value: r.key, label: `${r.menuTitle || r.name} (${r.key})` }));
 
   useEffect(() => {
     // 新建默认一方:存量与内部服务都是这个级别。三方必须手动改,
@@ -196,6 +203,17 @@ const RegistryModal = ({ open, initial, onClose, onSaved }) => {
               options={GRANT_OPTIONS} />
           </Form.Item>
         </Space.Compact>
+        <Form.Item noStyle shouldUpdate={(p, c) => p.entryType !== c.entryType}>
+          {({ getFieldValue }) => getFieldValue('entryType') === 'embed' && (
+            <Form.Item name="parentKey" label="归到哪个菜单下"
+              extra={hasChildren
+                ? `${initial.key} 自己已有子菜单(${childKeys.join(', ')}),菜单只支持两层,不能再归到别人下面`
+                : '空=顶层菜单。选一个后本条会变成它的子菜单;父节点可以是没有嵌入地址的纯分组条目'}>
+              <Select allowClear disabled={hasChildren} placeholder="空 = 顶层菜单"
+                options={parentOptions} />
+            </Form.Item>
+          )}
+        </Form.Item>
         <Form.Item name="enabled" label="启用(探测/入口/工具总开关)" valuePropName="checked">
           <Switch />
         </Form.Item>
@@ -263,9 +281,16 @@ const ServiceOps = () => {
             { title: '服务名', dataIndex: 'name', width: 180, ellipsis: true },
             { title: 'API 根', dataIndex: 'baseUrl', width: 220, ellipsis: true },
             {
-              title: '入口', dataIndex: 'entryType', width: 130,
+              title: '入口', dataIndex: 'entryType', width: 160,
               render: (v, row) => {
-                if (v === 'embed') return <Tooltip title={row.embedUrl}><Tag color="blue">embed</Tag></Tooltip>;
+                // 标出归组关系:不显示的话,一条 embed 条目为什么没出现在顶层菜单里
+                // 只能靠去数据库看 parent_key
+                if (v === 'embed') return (
+                  <Space size={4}>
+                    <Tooltip title={row.embedUrl}><Tag color="blue">embed</Tag></Tooltip>
+                    {row.parentKey && <Tooltip title={`归在 ${row.parentKey} 之下`}><Tag color="cyan">↳{row.parentKey}</Tag></Tooltip>}
+                  </Space>
+                );
                 if (v === 'zone') return <Tooltip title={row.baseUrl}><Tag color="orange">zone {row.pathPrefix}</Tag></Tooltip>;
                 return <Typography.Text type="secondary">-</Typography.Text>;
               },
@@ -311,6 +336,7 @@ const ServiceOps = () => {
       <RegistryModal
         open={!!editing}
         initial={editing}
+        registry={registry}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); load(); }}
       />

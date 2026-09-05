@@ -12,9 +12,12 @@ const rows = [
     { key: "off", sortOrder: 20, name: "OFF", baseUrl: "http://c", enabled: false, toolsPath: "/t", entryType: "embed", embedUrl: "http://c/x" },
 ];
 
-// findOne 按 where 等值条件在内存行里查,与真实 repo 行为对齐
+// find/findOne 都按 where 等值条件在内存行里查,与真实 repo 行为对齐——
+// find 忽略 where 会让"查子节点"这类调用拿到全表,测试就测不出真实行为
+const matches = (row: any, where: any) =>
+    !where || Object.entries(where).every(([k, v]) => row[k] === v);
 const mkRepo = (r: any[] = rows) => ({
-    find: jest.fn().mockResolvedValue(r),
+    find: jest.fn().mockImplementation(async (opts?: any) => r.filter((row) => matches(row, opts?.where))),
     findOne: jest.fn().mockImplementation(async ({ where }: any) =>
         r.find((row) => Object.entries(where).every(([k, v]) => (row as any)[k] === v)) ?? null),
     save: jest.fn().mockImplementation(async (x) => x),
@@ -169,5 +172,133 @@ describe("ServiceRegistryService 消费视图", () => {
         const out = await svc().listEmbedEntries();
         expect(out).toHaveLength(1);
         expect(out[0]).toMatchObject({ key: "app", menuTitle: "APP", permCode: "AppAdmin", embedUrl: "http://b/admin" });
+    });
+
+    it("无分组条目不带 children——向后兼容,形状与改动前一致", async () => {
+        const out = await svc().listEmbedEntries();
+        expect(out[0].children).toBeUndefined();
+    });
+});
+
+describe("ServiceRegistryService embed 菜单分组", () => {
+    const embed = (key: string, extra: any = {}) => ({
+        key,
+        sortOrder: 0,
+        name: key.toUpperCase(),
+        baseUrl: `http://${key}`,
+        entryType: "embed",
+        embedUrl: `http://${key}/admin`,
+        ...extra,
+    });
+
+    it("单层分组:子条目挂到父的 children 下,不再出现在顶层", async () => {
+        const out = await svc(
+            mkRepo([embed("partner"), embed("partner-admin", { parentKey: "partner" }), embed("partner-task", { parentKey: "partner" })]),
+        ).listEmbedEntries();
+        expect(out.map((n) => n.key)).toEqual(["partner"]);
+        expect(out[0].children?.map((c) => c.key)).toEqual(["partner-admin", "partner-task"]);
+    });
+
+    it("父节点可以是纯分组条目(没有 embedUrl,因此点击不跳转)", async () => {
+        const out = await svc(
+            mkRepo([
+                { key: "grp", sortOrder: 0, name: "合伙人", baseUrl: "http://g", entryType: "none", menuIcon: "TeamOutlined" },
+                embed("grp-a", { parentKey: "grp" }),
+            ]),
+        ).listEmbedEntries();
+        expect(out).toHaveLength(1);
+        expect(out[0]).toMatchObject({ key: "grp", menuTitle: "合伙人", menuIcon: "TeamOutlined" });
+        expect(out[0].embedUrl).toBeUndefined();
+        expect(out[0].children?.map((c) => c.key)).toEqual(["grp-a"]);
+    });
+
+    it("没有可见子节点的纯分组条目不出现——不留点不动的空壳", async () => {
+        const out = await svc(
+            mkRepo([{ key: "grp", sortOrder: 0, name: "空组", baseUrl: "http://g", entryType: "none" }]),
+        ).listEmbedEntries();
+        expect(out).toEqual([]);
+    });
+
+    // 让一条 enabled 的记录静默不可达是更糟的失败——会以为服务坏了
+    it("父被禁用时,子节点提升到顶层而不是一起消失", async () => {
+        const out = await svc(
+            mkRepo([embed("partner", { enabled: false }), embed("partner-admin", { parentKey: "partner" })]),
+        ).listEmbedEntries();
+        expect(out.map((n) => n.key)).toEqual(["partner-admin"]);
+        expect(out[0].children).toBeUndefined();
+    });
+
+    it("parentKey 指向不存在的记录时同样提升到顶层(直接改库能造出这种数据)", async () => {
+        const out = await svc(mkRepo([embed("orphan", { parentKey: "ghost" })])).listEmbedEntries();
+        expect(out.map((n) => n.key)).toEqual(["orphan"]);
+    });
+
+    it("子节点自身被禁用时只是它消失,父与兄弟不受影响", async () => {
+        const out = await svc(
+            mkRepo([embed("p"), embed("c1", { parentKey: "p" }), embed("c2", { parentKey: "p", enabled: false })]),
+        ).listEmbedEntries();
+        expect(out[0].children?.map((c) => c.key)).toEqual(["c1"]);
+    });
+
+    it("findEmbedNode 能在树里递归找到子节点", async () => {
+        const tree = await svc(mkRepo([embed("p"), embed("c", { parentKey: "p" })])).listEmbedEntries();
+        expect(ServiceRegistryService.findEmbedNode(tree, "c")?.embedUrl).toBe("http://c/admin");
+        expect(ServiceRegistryService.findEmbedNode(tree, "p")?.key).toBe("p");
+        expect(ServiceRegistryService.findEmbedNode(tree, "nope")).toBeUndefined();
+    });
+});
+
+describe("ServiceRegistryService 父子关系校验", () => {
+    const base = { name: "X", baseUrl: "http://x/api" };
+    const row = (key: string, extra: any = {}) => ({ key, sortOrder: 0, name: key, baseUrl: `http://${key}`, ...extra });
+
+    it("parentKey 指向不存在的记录 → 拒绝", async () => {
+        await expect(svc(mkRepo([])).upsert("a", { ...base, parentKey: "ghost" }, "u")).rejects.toThrow(
+            /parentKey 指向的服务不存在/,
+        );
+    });
+
+    it("parentKey 指向自己 → 拒绝", async () => {
+        await expect(svc(mkRepo([row("a")])).upsert("a", { ...base, parentKey: "a" }, "u")).rejects.toThrow(
+            /不能指向自己/,
+        );
+    });
+
+    // A→B 且 B→A 的环:因为 B 自己有 parentKey,它当不了父,这一条就把环挡住了
+    it("父自己已归组 → 拒绝(同时挡住循环引用与三层嵌套)", async () => {
+        const repo = mkRepo([row("a"), row("b", { parentKey: "a" })]);
+        await expect(svc(repo).upsert("a", { ...base, parentKey: "b" }, "u")).rejects.toThrow(/只支持两层/);
+    });
+
+    it("自己已有子节点 → 不能再认父", async () => {
+        const repo = mkRepo([row("p"), row("c", { parentKey: "p" }), row("top")]);
+        await expect(svc(repo).upsert("p", { ...base, parentKey: "top" }, "u")).rejects.toThrow(
+            /已有子菜单.*不能同时是别人的子节点/,
+        );
+    });
+
+    it("合法归组写入成功,parentKey 落库", async () => {
+        const repo = mkRepo([row("p")]);
+        await svc(repo).upsert("c", { ...base, entryType: "embed", embedUrl: "http://c/x", parentKey: "p" }, "u");
+        expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ key: "c", parentKey: "p" }));
+    });
+
+    it("不传 parentKey = 顶层,落库为 null", async () => {
+        const repo = mkRepo([]);
+        await svc(repo).upsert("a", base, "u");
+        expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ parentKey: null }));
+    });
+
+    // 级联删除会在删一条父记录时静默带走几条子记录,误伤不可撤销
+    it("存在子节点时拒绝删除,并报出子节点 key", async () => {
+        const repo = mkRepo([row("p"), row("c", { parentKey: "p" })]);
+        await expect(svc(repo).remove("p", "u")).rejects.toThrow(/还有子菜单\(c\)/);
+        expect(repo.remove).not.toHaveBeenCalled();
+    });
+
+    it("没有子节点时正常删除", async () => {
+        const repo = mkRepo([row("solo")]);
+        await svc(repo).remove("solo", "u");
+        expect(repo.remove).toHaveBeenCalled();
     });
 });
