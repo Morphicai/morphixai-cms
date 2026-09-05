@@ -54,7 +54,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | `platform-client-sdk` | 0/11 | 主线 · 阶段三 |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
 | `platform-gateway-topology` | 2/19 | 主线 · 阶段四（那 2 项只是范围决策，代码零改动） |
-| `platform-trust-model` | 25/28 | 主线 · 阶段四（**代码已完成**，剩真实环境验收，见 §四） |
+| `platform-trust-model` | 26/28 | 主线 · 阶段四（**已真实环境验收通过**，剩台账与合并） |
 | `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
@@ -148,9 +148,14 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 已拍板：service token 改每服务独立密钥；需要信任分级；**可访问什么必须是可配置的**
 （所以级别只给默认值，`grants` 才是运行时权威）；三方服务数据库独立。
 
-**实施状态（2026-09-05）：25/28，DoD 前三条已由自动化测试覆盖并通过。**
-剩余三项：6.5 真实环境验收（需 Docker + MySQL，执行 `db/service_registry_trust_model.sql`
-补列后在服务目录页走一遍三方条目的授权流程）、6.6 台账回写、6.7 合 main。
+**实施状态（2026-09-05）：26/28，DoD 三条全部通过，且已在真实环境验证。**
+
+真实环境验收（optimus-api:8084 + MySQL）覆盖了八点：补列脚本落地、正常签发自省、
+**冒充失败**（持 A 的密钥签 `sub=B` → `active:false`）、**旧共享密钥模型失效**、
+**三方默认空 grants**、**授权变更后同一 token 未重签即生效**、拼错的 grant 被拒、
+改名不重置授权。验收数据已清理，环境还原。
+
+剩 6.6 台账回写与 6.7 合 main。
 测试基线：optimus-api 155/155、server-sdk 13/13、partner-service 110/110。
 
 **⑦ user-profile-query DoD**：跨服务按 uid 查到资料；**partner-service 的 username
@@ -198,11 +203,13 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 ## 六、不在主线上的两笔账
 
-**`platform-closed-loop` 21/22 —— 收口欠账。**
-ai-writing-assist 的代码全部写完（AiService、`POST /api/ai/assist` + 限频、编辑器入口），
-只差 3.4 一项真实验收：生成一篇摘要入库 / 无 key 环境返回配置提示 / 限频 429 生效。
-**功能已在代码里但从没被真实跑过一次。** 需要起完整环境（Docker + MySQL + AI key）才能收，
-不阻塞主线，但也不该一直挂着——建议下次起环境时顺手做掉。
+**`platform-closed-loop` 21/22 —— 收口欠账，2026-09-05 已收 2/3。**
+ai-writing-assist 的代码全部写完（AiService、`POST /api/ai/assist` + 限频、编辑器入口）。
+3.4 的三条验收里，**无 key 配置提示**与**限频 429** 已在真实环境验过
+（返回明确的缺失变量清单、无堆栈；累计第 7 次调用 429 且不进入模型调用）。
+
+剩最后一条：**真实生成一篇摘要并保存为文章**，阻塞于本地没有 AI key。
+配置 `AI_BASE_URL` / `AI_MODEL` / 模型密钥后即可补验，这是本变更唯一剩余部分。
 
 **`micro-frontend` 16/19 —— 有意挂起，不是烂尾。**
 迭代四（标准 v0→v1 校准、基座 loader、`entryType` 加 `module`）的触发条件写死在 tasks.md 里：

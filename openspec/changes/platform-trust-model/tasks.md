@@ -64,7 +64,15 @@
 - [x] 6.3 授权不可经用户身份绕过（管理员 token 过不了 service token 验签这一关）
 - [x] 6.4 全量单测：optimus-api 155/155、server-sdk 13/13、partner-service 110/110 全绿；
       `tsc --noEmit -p tsconfig.build.json` 零错误
-- [ ] 6.5 **真实环境验收**（需 Docker + MySQL）：执行补列脚本，起 api + ui，
-      在服务目录页登记一个 `third-party` 条目验证默认空 grants、编辑授权后立即生效
+- [x] 6.5 **真实环境验收**（2026-09-05，Docker + MySQL + optimus-api:8084 真实运行）：
+      - 补列脚本执行成功，7 个存量条目全部补上一方默认授权集
+      - 派生密钥签发的 token 自省返回 `active:true` + `trustLevel` + `grants`
+      - **冒充失败**：持 partner-service 派生密钥签 `sub=optimus-api`，自省 `active:false`
+      - **旧模型失效**：主密钥直接签的 token 自省 `active:false`（确认 BREAKING 已生效）
+      - **三方默认空 grants**：经真实 upsert 路径登记 `third-party` 条目，落库 `grants=[]`
+      - **授权立即生效**：授予 `points:grant` 后，**同一个 token 未重签**，自省即返回新授权
+      - **拼错的 grant 被拒**：`points:grantt` → 400「未知的 grant」
+      - **改名不重置授权**：只传 name 不传 grants，授权保持 `["points:grant"]`
+      - 验收后清理：测试条目已删除、admin 密码已还原、目录恢复 7 条原始记录
 - [ ] 6.6 更新 `TASKS.md`/`ROADMAP.md`，标记本变更完成
 - [ ] 6.7 提交、合 main

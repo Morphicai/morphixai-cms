@@ -20,7 +20,13 @@
 - [x] 3.1 新增 system/ai 模块：AiService（原生 fetch 调 OpenAI 兼容 chat/completions，baseUrl/model/apiKey 全走环境变量，缺配置返回明确错误）
 - [x] 3.2 `POST /api/ai/assist`（动作 summary/polish/continue + 原文），挂 `@Perm('ContentManagement')`，按用户内存限频每分钟 6 次超限 429
 - [x] 3.3 文章编辑器加「智能辅助」入口：三个动作、结果预览、用户采纳才写入正文
-- [ ] 3.4 验收：真实生成一篇摘要并保存为文章；无 key 环境返回配置提示；限频生效
+- [ ] 3.4 验收：**3 条中 2 条已验（2026-09-05，真实环境 optimus-api:8084）**
+      - [x] 无 key 环境返回配置提示：返回「模型服务未配置（需要 AI_BASE_URL / AI_MODEL /
+            模型密钥环境变量）」，明确指出缺哪些变量，无堆栈外泄
+      - [x] 限频生效：同一用户累计第 7 次调用返回 429「操作太频繁」，且超限那次不进入
+            模型调用（checkRate 在 aiService.assist 之前）
+      - [ ] 真实生成一篇摘要并保存为文章 —— **阻塞：本地无 AI key**。
+            需配置 `AI_BASE_URL` / `AI_MODEL` / 模型密钥后补验，这是本项唯一剩余部分
 
 ## 4. 翻译工作台入口（translation-workbench-entry）
 

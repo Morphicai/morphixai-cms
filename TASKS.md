@@ -56,7 +56,15 @@ agent-service 先例（低代码作为"L1 通用能力 + 独立进程"有依据�
 `deriveServiceSecret()` / `hasGrant()`；`docs/THIRD_PARTY_ONBOARDING.md` 接入指引
 （派生命令已验证与测试向量一致）。两个包的派生实现由**共享 HKDF 测试向量**锚定，
 任一边改算法两边测试同时红。测试：api 155/155、sdk 13/13、partner 110/110。
-剩余三项需真实环境（补列脚本 + 服务目录页走一遍三方授权流程）与合并收尾。
+**真实环境验收已通过（2026-09-05，Docker + MySQL + api:8084）**：补列脚本落地、
+冒充失败（持 A 密钥签 `sub=B` → `active:false`）、旧共享密钥模型确认失效、三方默认空
+grants、**授权变更后同一 token 未重签即生效**、拼错 grant 被拒、改名不重置授权。
+验收数据已清理（测试条目删除、admin 密码还原、目录回到 7 条）。剩台账与合并收尾。
+
+顺带把 `platform-closed-loop` 3.4 收了 2/3：无 key 配置提示、限频 429 均在真实环境
+验过；**真实生成摘要那条阻塞于本地无 AI key**，配置后可补。
+本地 `.env` 原本缺 `SERVICE_TOKEN_SECRET`（`platform-service-token` 完成后没补，
+.env 不入库），已补一个随机主密钥。
 
 **实施中定下的三个前置问题**：① grant 校验两侧都要——api 内用装饰器、子服务用
 SDK 的 `hasGrant()`，不是二选一；② 信任级别三级全定义，`second-party` 虽无实例但
