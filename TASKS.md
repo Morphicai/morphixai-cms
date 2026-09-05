@@ -50,6 +50,19 @@ agent-service 先例（低代码作为"L1 通用能力 + 独立进程"有依据�
 给出（`read-basic` / `read-full`）。该变更依赖关系随之改变，从阶段三挪到阶段四、
 排在 trust-model 之后。主线编号整体重排为 9 个（见 ROADMAP §三）。
 
+**已实施（2026-09-05，25/28）**：密钥模型改为 HKDF 派生（平台侧不存任何派生密钥，
+服务目录表泄露不致身份沦陷）；`trust_level` + `grants` 两列落地并接进管理端
+（三方标红）；`@RequireGrant` + `ServiceGrantGuard`；server-sdk 补
+`deriveServiceSecret()` / `hasGrant()`；`docs/THIRD_PARTY_ONBOARDING.md` 接入指引
+（派生命令已验证与测试向量一致）。两个包的派生实现由**共享 HKDF 测试向量**锚定，
+任一边改算法两边测试同时红。测试：api 155/155、sdk 13/13、partner 110/110。
+剩余三项需真实环境（补列脚本 + 服务目录页走一遍三方授权流程）与合并收尾。
+
+**实施中定下的三个前置问题**：① grant 校验两侧都要——api 内用装饰器、子服务用
+SDK 的 `hasGrant()`，不是二选一；② 信任级别三级全定义，`second-party` 虽无实例但
+定义成本为零、事后加值要改 migration；③ 主密钥轮换本期不做（在线服务仅 1 个），
+**这是有意省略，服务变多后必须补**。
+
 **架构调整中有一项暂不做**：`design-system` 现在在 `optimus-next/src/` 属 L0，
 但低代码物料、外包 admin-app、未来 marketing admin-app 都要消费它——被多方依赖的
 东西不该待在 L0。但抽包要先解决双栈问题（optimus-ui 是 React 18 + antd 5，

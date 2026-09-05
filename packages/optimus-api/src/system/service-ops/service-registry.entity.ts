@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { ServiceTrustLevel } from "./service-trust.constants";
 
 /**
  * 服务目录专表。曾经复用字典集合行,但字典是通用业务数据的地盘——
@@ -62,6 +63,22 @@ export class ServiceRegistryEntity {
      */
     @Column({ name: "api_path_prefixes", type: "json", nullable: true })
     apiPathPrefixes: string[] | null;
+
+    /**
+     * 代码提供方的可信程度,**不是业务重要性**——一方服务可以处理核心支付,
+     * 三方服务可以只做活动页。它只决定新登记时的默认 grants,以及与级别绑定的
+     * 硬约束(third-party 不得与平台共用数据库实例)。运行时授权判据始终是 grants。
+     */
+    @Column({ name: "trust_level", length: 20, default: "first-party" })
+    trustLevel: ServiceTrustLevel;
+
+    /**
+     * 该服务被授予的平台能力,形如 `["user-profile:read-basic", "points:grant"]`。
+     * 这是**服务的**权限码,与用户权限码(perm_code + CASL)平行但体系独立:
+     * 服务的授权不能通过转发一个高权限用户的 token 获得。
+     */
+    @Column({ name: "grants", type: "json", nullable: true })
+    grants: string[] | null;
 
     @Column({ name: "sort_order", default: 0 })
     sortOrder: number;

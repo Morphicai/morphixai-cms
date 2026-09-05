@@ -77,16 +77,43 @@ describe("AuthIntrospectController", () => {
         expect((res.data as any).perms).toBeUndefined();
     });
 
-    it("service token 有效返回服务身份", async () => {
+    it("service token 有效返回服务身份，含信任级别与授权", async () => {
         const c = mkController({
             verifyService: jest.fn().mockReturnValue({ sub: "partner-service", type: "service" }),
-            getService: jest.fn().mockResolvedValue({ key: "partner-service", name: "合伙人服务", enabled: true }),
+            getService: jest.fn().mockResolvedValue({
+                key: "partner-service",
+                name: "合伙人服务",
+                enabled: true,
+                trustLevel: "first-party",
+                grants: ["points:grant"],
+            }),
         });
         const res = await c.introspect({ token: "st", type: "service" }, mkReq());
         expect(res.data).toEqual({
             active: true,
             type: "service",
-            service: { key: "partner-service", name: "合伙人服务" },
+            service: {
+                key: "partner-service",
+                name: "合伙人服务",
+                trustLevel: "first-party",
+                grants: ["points:grant"],
+            },
+        });
+    });
+
+    it("目录条目缺少信任字段时按最保守值兜底", async () => {
+        // 存量条目在 migration 落地前可能没有这两列,不能因此让自省整个失败;
+        // grants 兜底成空数组而不是"全都给",宁可拒绝也不误放
+        const c = mkController({
+            verifyService: jest.fn().mockReturnValue({ sub: "legacy-service", type: "service" }),
+            getService: jest.fn().mockResolvedValue({ key: "legacy-service", name: "存量服务", enabled: true }),
+        });
+        const res = await c.introspect({ token: "st", type: "service" }, mkReq());
+        expect((res.data as any).service).toEqual({
+            key: "legacy-service",
+            name: "存量服务",
+            trustLevel: "first-party",
+            grants: [],
         });
     });
 

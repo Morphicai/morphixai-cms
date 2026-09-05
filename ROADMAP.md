@@ -54,7 +54,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | `platform-client-sdk` | 0/11 | 主线 · 阶段三 |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
 | `platform-gateway-topology` | 2/19 | 主线 · 阶段四（那 2 项只是范围决策，代码零改动） |
-| `platform-trust-model` | 0/26 | 主线 · 阶段四（**新增**，架构压测的产物，见 §三） |
+| `platform-trust-model` | 25/28 | 主线 · 阶段四（**代码已完成**，剩真实环境验收，见 §四） |
 | `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
@@ -147,6 +147,11 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 已拍板：service token 改每服务独立密钥；需要信任分级；**可访问什么必须是可配置的**
 （所以级别只给默认值，`grants` 才是运行时权威）；三方服务数据库独立。
+
+**实施状态（2026-09-05）：25/28，DoD 前三条已由自动化测试覆盖并通过。**
+剩余三项：6.5 真实环境验收（需 Docker + MySQL，执行 `db/service_registry_trust_model.sql`
+补列后在服务目录页走一遍三方条目的授权流程）、6.6 台账回写、6.7 合 main。
+测试基线：optimus-api 155/155、server-sdk 13/13、partner-service 110/110。
 
 **⑦ user-profile-query DoD**：跨服务按 uid 查到资料；**partner-service 的 username
 快照漂移问题被消灭**（已验证的真实缺陷，不是假想）；`read-basic` / `read-full`

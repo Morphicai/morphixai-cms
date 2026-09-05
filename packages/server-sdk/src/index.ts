@@ -7,13 +7,43 @@
  * 刻意不做框架集成(Nest guard/express 中间件)——那是消费方三行代码的事,
  * 做了反而绑定框架版本。
  */
-import { createHmac } from "node:crypto";
+import { createHmac, hkdfSync } from "node:crypto";
+
+/**
+ * HKDF 参数。与 optimus-api 的 `ServiceTokenService` 里同名常量必须逐字节一致。
+ * 两边各实现一份是有意的：本包保持零运行时依赖，供外部团队独立安装，不能反过来
+ * 依赖平台包。一致性靠双方测试里的共享测试向量锚定（见 __tests__/index.test.ts）。
+ * 改动这些值会让所有已签发的 service token 失效，且必须两个包同步改。
+ */
+export const SERVICE_KEY_HKDF_SALT = "optimus-service-token-v1";
+export const SERVICE_KEY_HKDF_LENGTH = 32;
 
 export type TokenType = "admin" | "client" | "service";
+
+/** 代码提供方的可信程度，与业务重要性无关 */
+export type ServiceTrustLevel = "first-party" | "second-party" | "third-party";
 
 export interface ServiceIdentity {
     key: string;
     name: string;
+    trustLevel?: ServiceTrustLevel;
+    /** 已授予的能力，形如 "user-profile:read-basic" */
+    grants?: string[];
+}
+
+/**
+ * 由主密钥与 serviceKey 派生该服务的签名密钥。
+ * 单向：持有派生结果既反推不出主密钥，也导不出别的服务的密钥。
+ */
+export function deriveServiceSecret(masterSecret: string, serviceKey: string): string {
+    const derived = hkdfSync(
+        "sha256",
+        Buffer.from(masterSecret, "utf8"),
+        Buffer.from(SERVICE_KEY_HKDF_SALT, "utf8"),
+        Buffer.from(serviceKey, "utf8"),
+        SERVICE_KEY_HKDF_LENGTH,
+    );
+    return Buffer.from(derived).toString("hex");
 }
 
 export interface IntrospectResult {
@@ -33,7 +63,10 @@ export interface OptimusServerSdkOptions {
     cacheTtlMs?: number;
     /** 请求超时(ms),默认 5s */
     timeoutMs?: number;
-    /** 服务身份签发密钥。未传时读取 process.env.SERVICE_TOKEN_SECRET */
+    /**
+     * 服务身份**主密钥**。未传时读取 process.env.SERVICE_TOKEN_SECRET。
+     * 实际签名用的是由它按 serviceKey 派生出的专属密钥，主密钥本身不直接签任何 token。
+     */
     serviceTokenSecret?: string;
     /** 服务身份令牌有效期，默认读取 SERVICE_TOKEN_EXPIRES_IN 或使用 5m */
     serviceTokenExpiresIn?: string | number;
@@ -99,10 +132,14 @@ export class OptimusServerSdk {
     }
 
     /**
-     * 使用服务共享密钥本地签发短期 service token。
+     * 用本服务的**派生密钥**本地签发短期 service token。
      * token 本身不带 Bearer 前缀，调用 HTTP 时再按协议放入 Authorization header。
-     * 这是有意的本地签发：服务不需要为启动认证再依赖平台可用性；平台自省仍会
-     * 反查服务目录的 enabled 状态，因此下线服务后旧 token 立即失效。
+     *
+     * 本地签发是有意的：服务不需要为启动认证再依赖平台可用性；平台自省仍会反查服务
+     * 目录的 enabled 状态，因此下线服务后旧 token 立即失效。
+     *
+     * 只能签发自己：即便传入别人的 serviceKey，签名用的也是那个 key 的派生密钥，
+     * 而本进程持有的主密钥若只是自己那一份派生结果，根本算不出别人的密钥。
      */
     getServiceToken(serviceKey: string): string {
         if (!/^[a-z][a-z0-9-]{0,49}$/.test(serviceKey)) {
@@ -117,7 +154,8 @@ export class OptimusServerSdk {
         const header = encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
         const payload = encodeBase64Url(JSON.stringify({ sub: serviceKey, type: "service", iat: issuedAt, exp: expiresAt }));
         const unsigned = `${header}.${payload}`;
-        const signature = createHmac("sha256", this.serviceTokenSecret).update(unsigned).digest("base64url");
+        const secret = deriveServiceSecret(this.serviceTokenSecret, serviceKey);
+        const signature = createHmac("sha256", secret).update(unsigned).digest("base64url");
         return `${unsigned}.${signature}`;
     }
 
@@ -128,6 +166,18 @@ export class OptimusServerSdk {
             return { active: false, type: "service" };
         }
         return result;
+    }
+
+    /**
+     * 便捷判断：该 service token 是否被授予某项能力。
+     *
+     * grants 是**服务的**授权，与用户权限码是平行且独立的两套——服务的能力不能通过
+     * 转发一个高权限用户的 token 获得。要判断"这个人能不能做"，用 hasPerm。
+     */
+    async hasGrant(token: string, grant: string): Promise<boolean> {
+        const r = await this.verifyServiceToken(token);
+        const grants = r.service?.grants;
+        return Array.isArray(grants) && grants.includes(grant);
     }
 
     /** 测试/长驻进程用:清空缓存 */

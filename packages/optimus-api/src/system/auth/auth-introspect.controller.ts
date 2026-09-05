@@ -7,6 +7,7 @@ import { AuthService } from "./auth.service";
 import { UserService } from "../user/user.service";
 import { ClientUserService } from "../../business/client-user/client-user.service";
 import { ServiceRegistryService } from "../service-ops/service-registry.service";
+import { DEFAULT_TRUST_LEVEL } from "../service-ops/service-trust.constants";
 import { ServiceTokenService } from "./service-token.service";
 
 /**
@@ -67,10 +68,17 @@ export class AuthIntrospectController {
             if (!payload) return inactive;
             const service = await this.serviceRegistry.getByKey(payload.sub);
             if (!service || service.enabled === false) return inactive;
+            // grants 每次自省都从目录现读,不写进 token:调整授权后立即生效,
+            // 不必等旧 token 过期,也不需要服务重启
             return ResultData.ok({
                 active: true,
                 type: "service",
-                service: { key: service.key, name: service.name },
+                service: {
+                    key: service.key,
+                    name: service.name,
+                    trustLevel: service.trustLevel ?? DEFAULT_TRUST_LEVEL,
+                    grants: Array.isArray(service.grants) ? service.grants : [],
+                },
             });
         }
 

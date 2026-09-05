@@ -14,6 +14,24 @@ import { serviceOpsApi } from '../../apis/serviceOps';
  */
 const POLL_MS = 10_000;
 
+/**
+ * 信任级别与能力授权。与后端 service-trust.constants.ts 对应——
+ * 后端会按白名单校验 grants,这里的选项漏了某项只是界面上选不到,不会静默写坏数据。
+ */
+const TRUST_LEVEL_OPTIONS = [
+  { value: 'first-party', label: '一方(内部团队/同一部署)' },
+  { value: 'second-party', label: '二方(内部独立团队)' },
+  { value: 'third-party', label: '三方(外包/外部供应商)' },
+];
+
+const GRANT_OPTIONS = [
+  'user-profile:read-basic',
+  'user-profile:read-full',
+  'points:grant',
+  'oss:upload',
+  'shortlink:create',
+].map((v) => ({ value: v, label: v }));
+
 const fmtUptime = (sec) => {
   if (sec == null) return '-';
   if (sec < 3600) return `${Math.floor(sec / 60)}m`;
@@ -63,7 +81,9 @@ const RegistryModal = ({ open, initial, onClose, onSaved }) => {
   const isEdit = Boolean(initial?.key);
 
   useEffect(() => {
-    if (open) form.setFieldsValue(initial || { enabled: true, entryType: 'none' });
+    // 新建默认一方:存量与内部服务都是这个级别。三方必须手动改,
+    // 免得漏改导致外部供应商拿到一方的默认授权集
+    if (open) form.setFieldsValue(initial || { enabled: true, entryType: 'none', trustLevel: 'first-party' });
   }, [open, initial, form]);
 
   const submit = async () => {
@@ -165,6 +185,17 @@ const RegistryModal = ({ open, initial, onClose, onSaved }) => {
             <Input placeholder="如 DemoActivity" />
           </Form.Item>
         </Space.Compact>
+        <Space.Compact block>
+          <Form.Item name="trustLevel" label="信任级别" style={{ width: 200 }}
+            extra="代码提供方的可信程度,不是业务重要性">
+            <Select options={TRUST_LEVEL_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="grants" label="能力授权(grants)" style={{ flex: 1, marginLeft: 8 }}
+            extra="该服务能访问哪些平台能力。与用户权限码是两套体系,服务的能力不能靠转发高权限用户 token 获得">
+            <Select mode="multiple" allowClear placeholder="三方服务默认为空,每项能力都要显式授予"
+              options={GRANT_OPTIONS} />
+          </Form.Item>
+        </Space.Compact>
         <Form.Item name="enabled" label="启用(探测/入口/工具总开关)" valuePropName="checked">
           <Switch />
         </Form.Item>
@@ -240,6 +271,22 @@ const ServiceOps = () => {
               },
             },
             { title: '权限码', dataIndex: 'permCode', width: 130, render: (v) => (v ? <Typography.Text code>{v}</Typography.Text> : '-') },
+            {
+              // 三方标红:一眼能看出哪些服务是外部提供方,巡检时这是最该被注意的一列
+              title: '信任', dataIndex: 'trustLevel', width: 90,
+              render: (v) => {
+                const level = v || 'first-party';
+                const color = level === 'third-party' ? 'red' : level === 'second-party' ? 'orange' : 'blue';
+                return <Tag color={color}>{level.replace('-party', '方')}</Tag>;
+              },
+            },
+            {
+              title: '授权', dataIndex: 'grants', width: 80,
+              render: (v) => {
+                const n = Array.isArray(v) ? v.length : 0;
+                return n ? <Tooltip title={v.join('\n')}><Tag>{n} 项</Tag></Tooltip> : <Tag color="default">无</Tag>;
+              },
+            },
             { title: '工具', dataIndex: 'toolsPath', width: 70, render: (v) => (v ? <Tag color="purple">有</Tag> : '-') },
             { title: '启用', dataIndex: 'enabled', width: 60, render: (v) => <Badge status={v === false ? 'default' : 'success'} /> },
             {

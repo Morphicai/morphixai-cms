@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS `op_sys_service_registry` (
   `perm_code` varchar(50) DEFAULT NULL,
   `path_prefix` varchar(50) DEFAULT NULL COMMENT 'zone 专用 URL 前缀,全域唯一',
   `api_path_prefixes` json DEFAULT NULL COMMENT 'C 端 API 代理路由前缀(可多个),唯一性应用层校验',
+  `trust_level` varchar(20) NOT NULL DEFAULT 'first-party' COMMENT '代码提供方可信程度:first-party/second-party/third-party。非业务重要性分级',
+  `grants` json DEFAULT NULL COMMENT '该服务被授予的平台能力(服务的权限码,与用户权限码体系独立)',
   `sort_order` int NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
