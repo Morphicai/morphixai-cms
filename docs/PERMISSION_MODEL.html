@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimus CMS · 权限模型技术文档</title>
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --ink:#1c1c1a; --ink-2:#4a4a46; --ink-3:#78786f;
+  --line:#e4e3de; --line-2:#d0cfc8;
+  --accent:#2f6f4e; --accent-bg:#eaf3ee;
+  --warn:#8a5a1f; --warn-bg:#fbf3e6;
+  --danger:#9b3535; --danger-bg:#fbeeee;
+  --info:#2b5c85; --info-bg:#eaf1f7;
+  --code-bg:#f4f3ef;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --panel:#1c1e22; --ink:#e6e5e0; --ink-2:#b4b3ac; --ink-3:#85847d;
+    --line:#2c2f35; --line-2:#3a3e45;
+    --accent:#7fc4a0; --accent-bg:#1a2a22;
+    --warn:#dfae6c; --warn-bg:#2b2419;
+    --danger:#e08b8b; --danger-bg:#2b1c1c;
+    --info:#8ab8de; --info-bg:#182430;
+    --code-bg:#22242a;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px 120px}
+
+/* ── header ── */
+header{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+h1{font-size:30px;line-height:1.3;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--ink-3);font-size:14px}
+.meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-size:12px;padding:3px 10px;border-radius:20px;border:1px solid var(--line-2);color:var(--ink-2)}
+.pill.on{background:var(--accent-bg);border-color:transparent;color:var(--accent)}
+.pill.off{background:var(--warn-bg);border-color:transparent;color:var(--warn)}
+
+/* ── toc ── */
+nav.toc{margin:30px 0 0;padding:18px 22px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+nav.toc b{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+nav.toc ol{margin:10px 0 0;padding-left:20px;columns:2;column-gap:34px}
+@media(max-width:720px){nav.toc ol{columns:1}}
+nav.toc li{margin:3px 0;break-inside:avoid}
+nav.toc a{color:var(--ink-2);text-decoration:none}
+nav.toc a:hover{color:var(--accent);text-decoration:underline}
+
+/* ── sections ── */
+section{padding-top:52px}
+h2{font-size:21px;margin:0 0 6px;letter-spacing:-.01em;scroll-margin-top:20px}
+h2 .n{color:var(--ink-3);font-weight:400;margin-right:10px;font-variant-numeric:tabular-nums}
+h3{font-size:16px;margin:30px 0 8px}
+h4{font-size:14px;margin:22px 0 6px;color:var(--ink-2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:22px}
+li{margin:5px 0}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:15px 17px;overflow-x:auto;margin:14px 0}
+pre code{background:none;padding:0;font-size:12.5px;line-height:1.65}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+
+/* ── tables ── */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--line-2)}
+tbody tr:last-child td{border-bottom:none}
+td code{font-size:12px}
+
+/* ── callouts ── */
+.note{border-left:3px solid;padding:12px 16px;margin:16px 0;border-radius:0 7px 7px 0;font-size:14px}
+.note p:first-child{margin-top:0}.note p:last-child{margin-bottom:0}
+.note.i{border-color:var(--info);background:var(--info-bg)}
+.note.w{border-color:var(--warn);background:var(--warn-bg)}
+.note.d{border-color:var(--danger);background:var(--danger-bg)}
+.note.g{border-color:var(--accent);background:var(--accent-bg)}
+.note .lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px;opacity:.85}
+.note.i .lbl{color:var(--info)}.note.w .lbl{color:var(--warn)}
+.note.d .lbl{color:var(--danger)}.note.g .lbl{color:var(--accent)}
+
+/* ── status chips ── */
+.s{font-size:11px;padding:2px 8px;border-radius:5px;white-space:nowrap;font-weight:600;letter-spacing:.02em}
+.s-now{background:var(--accent-bg);color:var(--accent)}
+.s-plan{background:var(--info-bg);color:var(--info)}
+.s-bug{background:var(--danger-bg);color:var(--danger)}
+.s-no{background:var(--code-bg);color:var(--ink-3)}
+
+/* ── code anatomy ── */
+.anat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:26px 22px 20px;margin:18px 0;text-align:center}
+.anat .code{font-family:var(--mono);font-size:26px;letter-spacing:.01em;display:inline-flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.anat .seg{padding:4px 8px;border-radius:6px;position:relative}
+.anat .seg.a{background:var(--accent-bg);color:var(--accent)}
+.anat .seg.b{background:var(--info-bg);color:var(--info)}
+.anat .seg.c{background:var(--warn-bg);color:var(--warn)}
+.anat .sep{color:var(--ink-3);padding:4px 0}
+.anat .legend{display:flex;justify-content:center;gap:34px;margin-top:18px;flex-wrap:wrap;font-size:12.5px}
+.anat .legend div{max-width:210px;color:var(--ink-2)}
+.anat .legend b{display:block;font-family:var(--mono);font-size:12px;margin-bottom:3px}
+.anat .legend .a b{color:var(--accent)}.anat .legend .b b{color:var(--info)}.anat .legend .c b{color:var(--warn)}
+
+/* ── layer diagram ── */
+.layers{margin:20px 0}
+.layer{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px 18px;margin:9px 0;display:flex;gap:16px;align-items:flex-start}
+.layer .tag{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:5px;background:var(--code-bg);color:var(--ink-3);white-space:nowrap;margin-top:2px}
+.layer .body{flex:1;min-width:0}
+.layer .t{font-weight:650;font-size:14.5px;margin-bottom:2px}
+.layer .d{font-size:13px;color:var(--ink-2)}
+.arrow{text-align:center;color:var(--ink-3);font-size:15px;line-height:1;margin:-2px 0}
+
+/* ── perspective cards ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:17px 19px}
+.card h4{margin:0 0 9px;font-size:14.5px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.card h4 .ico{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none}
+.card ul{margin:0;padding-left:17px;font-size:13.2px;color:var(--ink-2)}
+.card li{margin:5px 0}
+
+/* ── decision boxes ── */
+.dec{border:1px solid var(--line);border-radius:9px;padding:15px 18px;margin:13px 0;background:var(--panel)}
+.dec .q{font-weight:650;margin-bottom:6px;font-size:14.5px}
+.dec .a{font-size:13.5px;color:var(--ink-2)}
+.dec .a b{color:var(--ink)}
+
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>权限模型技术文档</h1>
+  <div class="sub">Optimus CMS · 面向多方开发的中台权限设计</div>
+  <div class="meta">
+    <span class="pill">2026-09-06</span>
+    <span class="pill on">目标模型已定稿</span>
+    <span class="pill off">实现分四期，尚未开始</span>
+  </div>
+
+  <nav class="toc">
+    <b>目录</b>
+    <ol>
+      <li><a href="#s1">这份文档解决什么</a></li>
+      <li><a href="#s2">现状（写在设计之前）</a></li>
+      <li><a href="#s3">硬约束：从终局架构反推</a></li>
+      <li><a href="#s4">核心：三段式权限码</a></li>
+      <li><a href="#s5">命名空间：安全支点</a></li>
+      <li><a href="#s6">三类主体</a></li>
+      <li><a href="#s7">判定核心</a></li>
+      <li><a href="#s8">分界：平台判能力，子服务判范围</a></li>
+      <li><a href="#s9">菜单模型</a></li>
+      <li><a href="#s10">按钮与页面内元素</a></li>
+      <li><a href="#s11">@optimus/permission 包</a></li>
+      <li><a href="#s12">四个视角</a></li>
+      <li><a href="#s13">数据模型</a></li>
+      <li><a href="#s14">明确不做的</a></li>
+      <li><a href="#s15">迁移与分期</a></li>
+      <li><a href="#s16">待定项</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ══════════════ 1 ══════════════ -->
+<section id="s1">
+<h2><span class="n">01</span>这份文档解决什么</h2>
+<p>Optimus CMS 正从单体演进为单机规模的微服务：业务域按团队归属拆成独立服务，
+并且<strong>一方、二方、三方团队都会开发子应用</strong>（外包与低代码是既定场景）。</p>
+<p>在这个前提下，原有的权限模型有三处不够用：</p>
+<ul>
+  <li>权限码是<strong>不透明的扁平字符串</strong>，平台无法判断一个码属于谁、能做什么、有没有越界</li>
+  <li>判定逻辑<strong>在四个地方各存一份</strong>（平台守卫、子服务守卫、管理端菜单过滤、子应用前端）</li>
+  <li>没有操作粒度 —— 无法表达"能看订单但不能改"</li>
+</ul>
+
+<div class="note i">
+  <span class="lbl">文档状态</span>
+  <p>本文档定义<strong>目标模型</strong>。文中凡标注
+  <span class="s s-now">已实现</span> 的是当前代码的真实状态，
+  <span class="s s-plan">目标</span> 的尚未开始，
+  <span class="s s-bug">缺陷</span> 的是已验证存在的问题。不要把目标当现状读。</p>
+</div>
+</section>
+
+<!-- ══════════════ 2 ══════════════ -->
+<section id="s2">
+<h2><span class="n">02</span>现状（写在设计之前）</h2>
+<p>设计必须建立在事实上，所以先把当前代码的真实状态钉住。</p>
+
+<h3>唯一生效的机制：权限码</h3>
+<pre><code>op_sys_user_role (user → role)
+    JOIN op_sys_role_menu (role → permission_code)
+    → 去重 → user.perms: string[]</code></pre>
+<p>超管特判：<code>op_sys_user.type = 0</code> → <code>perms = ["*"]</code>，不比对直接放行。</p>
+
+<table>
+<thead><tr><th>消费方</th><th>判据</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td>接口</td><td><code>@Perm("X")</code> → <code>perms.includes("X")</code>，精确匹配</td><td><span class="s s-now">已实现</span></td></tr>
+<tr><td>菜单</td><td><code>menu.code</code> → <code>perms.includes(code)</code></td><td><span class="s s-now">已实现</span></td></tr>
+<tr><td>服务能力</td><td><code>@RequireGrant("user-profile:read-full")</code> → 服务目录的 grants</td><td><span class="s s-now">已实现</span></td></tr>
+</tbody>
+</table>
+
+<div class="note g">
+  <span class="lbl">值得保留的性质</span>
+  <p><strong>同一个码同时管接口和菜单。</strong>这避免了"菜单看得见、接口 403"这类不一致，
+  目标模型保留这条。</p>
+  <p><strong>接口 fail-closed。</strong>没挂 <code>@Perm</code> / <code>@AllowNoPerm</code> /
+  <code>@RequireSuperAdmin</code> 一律 403 —— 2026-08-24 审计时改的，此前默认放行，
+  当时发现"改积分余额、清空数据、读全量订单"等接口都在裸奔。</p>
+</div>
+
+<h3>空转与缺失</h3>
+<table>
+<thead><tr><th>项</th><th>真实状态</th></tr></thead>
+<tbody>
+<tr><td>CASL</td><td>后端 <code>@CheckPolicies</code> 与 <code>PoliciesGuard</code> <strong>零调用点</strong>；前端 <code>ability</code> 建了、<code>update()</code> 了，<code>ability.can</code> / <code>&lt;Can&gt;</code> <strong>零消费</strong>；<code>generateCASLRules</code> 把所有码降级成 <code>{action:'read'}</code></td></tr>
+<tr><td>按钮级权限</td><td>已被移除（<code>routes.js</code>: <code>// BUTTON: 3 - 已移除</code>），无操作粒度</td></tr>
+<tr><td>数据权限</td><td>无 dataScope / deptId / 行级概念；<code>leaderRoleIds</code> 查了没人用</td></tr>
+<tr><td>权限码字典</td><td><strong>不存在</strong> —— 码是自由字符串，隐式由代码定义</td></tr>
+<tr><td>菜单存储</td><td><strong>不在数据库里</strong> —— <code>SYSTEM_ROUTES</code> 是前端常量（40 节点）</td></tr>
+<tr><td><code>RolesGuard</code></td><td>权限比对整段被注释、无条件 <code>return true</code>；仍有 2 个调用点</td></tr>
+<tr><td><code>op_sys_document_perm</code></td><td>文档模块自己的资源级权限表，与主体系平行 —— 全系统唯一的"某人对某条记录有权限"</td></tr>
+</tbody>
+</table>
+
+<h3>已验证的四个缺陷</h3>
+<table>
+<thead><tr><th>缺陷</th><th>后果</th><th>验证方式</th></tr></thead>
+<tbody>
+<tr><td>菜单顶层泄漏 <span class="s s-bug">缺陷</span></td><td><code>filterMenus</code> 里 <code>children.some(c =&gt; c.isDynamicMenu)</code> 恒为真，父节点无条件通过过滤；末尾 <code>menu.path || children.length</code> 又因有 path 留下它 —— <strong>无任何权限的人也能看见应用入口</strong></td><td>实测确认</td></tr>
+<tr><td><code>PermissionModal</code> 只读 <code>SYSTEM_ROUTES</code> <span class="s s-bug">缺陷</span></td><td>① 动态注册的码授不出去；② 勾任意静态项保存会<strong>静默清掉</strong>角色已有的动态码</td><td>读代码确认</td></tr>
+<tr><td><code>orderNum</code> 是死字段 <span class="s s-bug">缺陷</span></td><td><code>filterMenus</code> 完全没有 sort，菜单顺序 = 数组字面顺序</td><td>grep 确认</td></tr>
+<tr><td><code>config_center</code> 替换而非合并 <span class="s s-bug">缺陷</span></td><td><code>children: dynamicDocMenus</code> 直接覆盖，谁给它加静态子菜单会被静默冲掉</td><td>读代码确认</td></tr>
+</tbody>
+</table>
+
+<div class="note w">
+  <span class="lbl">泄漏程度要说准</span>
+  <p>顶层泄漏是<strong>菜单显示</strong>层面的，不是越权。<code>pages/embed/index.jsx</code>
+  进页前会再校验一次，真正的门在子应用后端。后果是"看得见入口、点进去 403"，
+  外加能从侧边栏看出平台上装了哪些应用。</p>
+</div>
+</section>
+
+<!-- ══════════════ 3 ══════════════ -->
+<section id="s3">
+<h2><span class="n">03</span>硬约束：从终局架构反推</h2>
+<p>不从"改动最小"出发，从架构必须承接的场景反推。</p>
+
+<table>
+<thead><tr><th>约束</th><th>来自</th><th>推论</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>多方开发</strong><br>一/二/三方团队开发子应用，声明自己的权限需求，但不能自己授权</td>
+  <td>外包 + 低代码是既定场景</td>
+  <td>权限码必须<strong>可归属、可校验</strong></td>
+</tr>
+<tr>
+  <td><strong>同一份判定在多处跑</strong><br>平台守卫、子服务守卫、管理端菜单、子应用 iframe 内</td>
+  <td>L2 服务独立进程，不共享代码就会各写各的</td>
+  <td>判定核心必须<strong>零依赖、可跨进程</strong></td>
+</tr>
+<tr>
+  <td><strong>主体隔离不能破</strong><br>服务的能力不能靠转发高权限用户 token 获得</td>
+  <td>信任模型（已拍板）</td>
+  <td>统一<strong>形态</strong>，不统一<strong>授权来源</strong></td>
+</tr>
+<tr>
+  <td><strong>L1 不认识任何 L2</strong></td>
+  <td>分层架构的根基</td>
+  <td>平台<strong>不能</strong>理解业务域的数据模型</td>
+</tr>
+</tbody>
+</table>
+<p>第四条是后面许多结论的源头，尤其是<a href="#s8">第 8 节</a>的分界线。</p>
+</section>
+
+<!-- ══════════════ 4 ══════════════ -->
+<section id="s4">
+<h2><span class="n">04</span>核心：三段式权限码</h2>
+<p>扁平码 <code>OrderManagement</code> 的根本问题不是不好看，是<strong>对平台不透明</strong> ——
+平台无法回答"这个码属于谁、能干什么、越界没有"。</p>
+
+<div class="anat">
+  <div class="code">
+    <span class="seg a">partner</span><span class="sep">:</span><span class="seg b">campaign</span><span class="sep">:</span><span class="seg c">write</span>
+  </div>
+  <div class="legend">
+    <div class="a"><b>namespace</b>归属。一个服务只能声明自己命名空间下的码</div>
+    <div class="b"><b>resource</b>对什么。同一服务的不同资源可区分</div>
+    <div class="c"><b>action</b>做什么。当前完全缺失的维度</div>
+  </div>
+</div>
+
+<h3>通配</h3>
+<table>
+<thead><tr><th>模式</th><th>匹配</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>partner:campaign:*</code></td><td>该资源的全部动作</td><td>业务管理员</td></tr>
+<tr><td><code>partner:*</code> / <code>partner:*:*</code></td><td>该命名空间全部</td><td>服务负责人</td></tr>
+<tr><td><code>*</code></td><td>全部，等价 <code>*:*:*</code></td><td>超管</td></tr>
+</tbody>
+</table>
+<p>现在的超管 <code>*</code> 只是一处特判逻辑；升级后它变成通配规则的一个特例，
+判定路径少一条分支。</p>
+
+<div class="note g">
+  <span class="lbl">与服务能力授权对齐</span>
+  <p>服务层的 grants 本来就是 <code>user-profile:read-basic</code> 这个形态。
+  三段式让<strong>用户权限与服务权限终于是同一套语法</strong>，共用同一个匹配函数。</p>
+</div>
+</section>
+
+<!-- ══════════════ 5 ══════════════ -->
+<section id="s5">
+<h2><span class="n">05</span>命名空间：安全支点</h2>
+<p>多方开发最大的风险是<strong>子应用声明一个宽松码蹭可见性</strong> ——
+比如声明 <code>permCode: "Dashboard"</code>，于是它的入口对所有持有工作台权限的人可见。</p>
+
+<p>命名空间约束让这个风险<strong>在注册时就消失</strong>，不需要任何审批流程：</p>
+
+<pre><code>partner-service 注册 permission
+    → 平台只接受 partner:* 开头的码
+    → 它声明不出 platform:user:read
+    → 也声明不出 Dashboard</code></pre>
+
+<div class="note g">
+  <span class="lbl">设计取舍</span>
+  <p>此前考虑过"子应用声明建议码 + 平台批准"的机制。<strong>命名空间约束把这套机制整个省掉了</strong> ——
+  一次注册时校验，比一套批准流程更简单也更严密。</p>
+</div>
+
+<h4>命名空间的分配</h4>
+<ul>
+  <li><code>platform</code> —— 平台自有资源（用户、文章、文件、字典…）</li>
+  <li>业务服务 —— 与服务目录的 <code>key</code> 绑定，登记服务时确定，之后不可改</li>
+  <li>命名空间冲突在注册时拒绝，与 <code>pathPrefix</code> 全域唯一同理</li>
+</ul>
+</section>
+
+<!-- ══════════════ 6 ══════════════ -->
+<section id="s6">
+<h2><span class="n">06</span>三类主体：统一形态，不统一来源</h2>
+
+<pre><code>type Subject =
+  | { type: 'admin';   codes: string[] }   // 来自 op_sys_role_menu
+  | { type: 'client';  codes: string[] }   // C 端用户
+  | { type: 'service'; codes: string[] }   // 来自服务目录的 grants
+
+can(subject, 'partner:campaign:write')</code></pre>
+
+<div class="note d">
+  <span class="lbl">不可越过的红线</span>
+  <p>同一个 <code>evaluate</code>、同一套码格式，但<strong>授权来源互不相通</strong>。
+  service 的 grants 不会因为它转发了一个管理员 token 而变多。</p>
+  <p>这条是信任模型的核心：否则任何服务只要能拿到管理员 token 就自动拥有全部能力，
+  grants 配置形同虚设。</p>
+</div>
+
+<p>三个装饰器（<code>@Perm</code> / <code>@RequireGrant</code> / <code>@ClientUserAuth</code>）
+在语义上可以收敛成一个 <code>@RequirePermission</code>，靠 subject type 分流 ——
+但这属于<strong>第四期</strong>，不是地基。</p>
+</section>
+
+<!-- ══════════════ 7 ══════════════ -->
+<section id="s7">
+<h2><span class="n">07</span>判定核心</h2>
+
+<pre><code>evaluate(subject, required, options?) → Decision
+
+interface Decision {
+  allowed: boolean;
+  /** 数据范围。第一版恒为 'all'，为将来留位 */
+  scope?: 'own' | 'team' | 'all';
+  /** 命中的是哪条码，排障用 */
+  matched?: string;
+}</code></pre>
+
+<div class="note i">
+  <span class="lbl">为什么返回对象而不是 boolean</span>
+  <p>数据范围（scope）是迟早要加的一维。<strong>返回值从一开始就是对象</strong>，
+  后面加 scope 不用改所有调用点 —— 这是很便宜的前瞻。</p>
+</div>
+
+<h3>规则链：留口子，不实现</h3>
+<pre><code>evaluate(subject, required, { rules })   // 默认 [holdsCode]</code></pre>
+<p>第一版<strong>只实现"持有码"这一条</strong>。将来要加"且资源归属于自己"、
+"且在时间窗内"，追加一条 rule 即可，不动核心。</p>
+</section>
+
+<!-- ══════════════ 8 ══════════════ -->
+<section id="s8">
+<h2><span class="n">08</span>分界：平台判能力，子服务判范围</h2>
+<p>这是整个模型最关键的一条分界，也是拒绝把 ABAC 引擎作为地基的理由。</p>
+
+<div class="layers">
+  <div class="layer">
+    <span class="tag">平台 L1</span>
+    <div class="body">
+      <div class="t">判定「能不能做这类事」</div>
+      <div class="d"><code>partner:profile:read</code> —— 纯码匹配，跨进程只需传一个 <code>string[]</code></div>
+    </div>
+  </div>
+  <div class="arrow">↓ introspect / embed 握手下发 <code>perms</code></div>
+  <div class="layer">
+    <span class="tag">业务 L2</span>
+    <div class="body">
+      <div class="t">判定「能看哪些行」</div>
+      <div class="d">拼进 ORM 的 where 条件 —— <strong>领域逻辑，只有 L2 自己懂</strong></div>
+    </div>
+  </div>
+</div>
+
+<h3>为什么必须分开</h3>
+<p>可预见的条件判定需求（渠道经理只看自己名下的合伙人、客服只看自己区域的订单、
+文档权限）<strong>引用的字段属于 L2 的领域模型</strong>。
+<code>channelManagerId</code> 存在于 partner-service 的库里，optimus-api 从来没见过它。</p>
+
+<p>把两者统一，意味着平台要理解每个业务域的数据模型 —— 直接违反"L1 不认识任何 L2"。</p>
+
+<h3>跨进程的具体障碍</h3>
+<table>
+<thead><tr><th></th><th>字符串码</th><th>ABAC ability 对象</th></tr></thead>
+<tbody>
+<tr><td>传递</td><td><code>perms: string[]</code>，introspect 与 <code>EmbedContext.perms</code> 天然带过去</td><td>需 <code>packRules</code> 序列化 + 子服务重建</td></tr>
+<tr><td>三方成本</td><td>零依赖</td><td>需安装 ABAC 引擎才能判权限</td></tr>
+<tr><td>语言无关</td><td>是</td><td>否</td></tr>
+</tbody>
+</table>
+
+<h3>scope 怎么设计</h3>
+<div class="note w">
+  <span class="lbl">不要把 scope 编进码</span>
+  <p><code>partner:profile:read@own</code> 这种写法会让码组合爆炸，
+  且 scope 的语义因业务而异 —— "自己的"在合伙人业务是 <code>channelManagerId</code>，
+  在订单业务是 <code>regionId</code>。</p>
+</div>
+<p><strong>码只回答"能不能做这类事"，范围是独立的一维</strong>：平台负责<em>存</em>和<em>传</em>
+scope（挂在角色上，跟着 introspect 下发），子服务负责<em>翻译</em>成 where 条件。
+平台不需要知道 <code>own</code> 具体等于哪个字段。</p>
+</section>
+
+<!-- ══════════════ 9 ══════════════ -->
+<section id="s9">
+<h2><span class="n">09</span>菜单模型</h2>
+<p>菜单节点声明 <code>requires: string[]</code>，<strong>任一命中即显示</strong>。
+数组而非单值，因为一个页面常聚合多种资源。</p>
+
+<pre><code>{ title: '合伙人管理', requires: ['partner:campaign:read'] }
+{ title: '数据总览',   requires: ['partner:campaign:read', 'partner:settlement:read'] }</code></pre>
+
+<h3>五条判定规则</h3>
+<table>
+<thead><tr><th>情形</th><th>行为</th></tr></thead>
+<tbody>
+<tr><td><code>requires</code> 任一命中</td><td>显示</td></tr>
+<tr><td>自身不命中，但有子节点命中</td><td>显示为<strong>分组容器</strong>，<strong>去掉 <code>path</code></strong>（点它只展开，进不去页面）</td></tr>
+<tr><td>自身与全部子节点都不命中</td><td>整个节点消失</td></tr>
+<tr><td>超管 <code>*</code></td><td>全见</td></tr>
+<tr><td><code>requires</code> 为<strong>空数组</strong></td><td><strong>fail-closed</strong> —— 只有超管可见</td></tr>
+</tbody>
+</table>
+
+<div class="note w">
+  <span class="lbl">第二条与第五条必须显式实现</span>
+  <p>第二条是<a href="#s2">现存泄漏</a>的修复：不去掉 path，用户就能点进他没权限的应用默认页。</p>
+  <p>第五条钉死"空 = 最严"而非"空 = 不限制"。现在的等价物是 <code>permCode || 'ServiceOps'</code>（缺省从紧），
+  新模型里"空数组"是个容易被误读成"无限制"的形态。</p>
+</div>
+
+<h3>结构：两层封顶</h3>
+<pre><code>▸ 合伙人服务          ← 应用本身，一个应用一个顶层
+    └─ 合伙人管理      ← 子应用声明的页面
+    └─ 外部任务审核</code></pre>
+<p>子菜单不需要 parent 字段 —— 父永远是所属服务。层级由结构保证，不靠数据表达。</p>
+<p>节点也可配置<strong>挂载点</strong>，挂到某个已有菜单下（如把一个业务入口挂进"业务数据"）。
+挂载点由管理员配置，<strong>不在子应用的声明里</strong>。</p>
+</section>
+
+<!-- ══════════════ 10 ══════════════ -->
+<section id="s10">
+<h2><span class="n">10</span>按钮与页面内元素</h2>
+<p>三段码让按钮级权限自然回归。但实现方式要和常见中后台框架反着来。</p>
+
+<div class="note d">
+  <span class="lbl">关键决策：按钮不落库</span>
+  <p>常见做法（如 RuoYi）是把按钮作为菜单表里 <code>type=按钮</code> 的行。<strong>不要这样</strong>：
+  按钮数量是菜单的 10 倍以上；按钮不需要挂载点/图标/排序/显隐，菜单表的字段对它全是空的；
+  两个语义混在一张表里，菜单表会退化成权限表。</p>
+</div>
+
+<table>
+<thead><tr><th>对象</th><th>存哪</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>权限码（含 action 级）</td><td><code>op_sys_permission</code></td><td>按钮的码在这里，来自 <code>definePermissions</code> 声明</td></tr>
+<tr><td>菜单节点</td><td><code>op_sys_menu</code></td><td>只有菜单</td></tr>
+<tr><td>按钮本身</td><td><strong>不落库</strong></td><td>代码里直接判定，是码的消费者而非被管理对象</td></tr>
+</tbody>
+</table>
+
+<p>管理员在角色页勾选 <code>partner:campaign:publish</code>，按钮就出现了 ——
+不需要有人去"配置这个按钮"。</p>
+
+<pre><code>&lt;Can do={P.campaign.publish}&gt;&lt;Button&gt;发布&lt;/Button&gt;&lt;/Can&gt;
+
+// 或
+const can = useCan();
+&lt;Button disabled={!can(P.campaign.publish)}&gt;发布&lt;/Button&gt;</code></pre>
+
+<div class="note d">
+  <span class="lbl">必须写进文档第一行</span>
+  <p><code>&lt;Can&gt;</code> 是<strong>体验，不是安全边界</strong>。
+  真正的门是接口上的 <code>@RequirePermission</code>。
+  前端藏起来的按钮，直接打接口一样会 403。</p>
+</div>
+</section>
+
+<!-- ══════════════ 11 ══════════════ -->
+<section id="s11">
+<h2><span class="n">11</span>@optimus/permission 包</h2>
+
+<pre><code>@optimus/permission
+├── (主入口)  零依赖纯核心
+│   ├── parse / format / validate      码的解析与校验
+│   ├── matches(granted, required)     通配匹配，纯函数
+│   ├── evaluate(subject, required)    判定入口
+│   └── definePermissions()            子服务声明自己权限的 DSL
+├── /react    PermissionProvider / useCan / &lt;Can&gt;
+└── /nest     PermissionModule / @RequirePermission</code></pre>
+
+<div class="note i">
+  <span class="lbl">主入口零依赖是硬要求</span>
+  <p>同一份 <code>matches()</code> 要在<strong>四个地方</strong>跑：optimus-api 守卫、
+  partner-service 守卫、optimus-ui 菜单过滤、子应用 iframe 内部。
+  这行逻辑现在各存一份，正是要消灭的。</p>
+</div>
+
+<h3>与 server-sdk 的差异</h3>
+<p><code>@optimus/server-sdk</code> 刻意不做框架集成（"那是消费方三行代码的事，做了反而绑定框架版本"）。
+这里<strong>可以</strong>提供适配，理由不同：那里绑的是通信协议版本，这里绑的只是判定；
+且一二方服务全是 NestJS + React。适配放在子路径导出，不用的人零成本。</p>
+
+<h3>一处声明，四处消费</h3>
+<pre><code>// partner-service/src/permissions.ts —— 唯一的声明
+export const P = definePermissions('partner', {
+  campaign:   ['read', 'write', 'publish'],
+  settlement: ['read', 'approve'],
+});</code></pre>
+
+<table>
+<thead><tr><th>消费点</th><th>写法</th></tr></thead>
+<tbody>
+<tr><td>后端守卫</td><td><code>@RequirePermission(P.campaign.write)</code></td></tr>
+<tr><td>前端按钮</td><td><code>&lt;Can do={P.campaign.publish}&gt;</code></td></tr>
+<tr><td>菜单声明</td><td><code>{ key:'campaign', path:'/campaign', requires:[P.campaign.read] }</code></td></tr>
+<tr><td>码字典注册</td><td>发现时一并上报平台</td></tr>
+</tbody>
+</table>
+
+<div class="note g">
+  <span class="lbl">带类型的常量，不是魔法字符串</span>
+  <p><code>P.campaign.write</code> 拼错在<strong>编译期</strong>就报。
+  这是当前最容易踩的坑 —— 码是自由字符串，错一个字母的表现是"莫名其妙 403"，
+  排查时很难想到是配置里少了个字母。</p>
+</div>
+</section>
+
+<!-- ══════════════ 12 ══════════════ -->
+<section id="s12">
+<h2><span class="n">12</span>四个视角</h2>
+
+<div class="cards">
+  <div class="card">
+    <h4><span class="ico" style="background:var(--info-bg);color:var(--info)">A</span>管理员</h4>
+    <ul>
+      <li>登记服务<strong>一次</strong>（baseUrl / embedUrl / 信任级别 / grants），菜单不用管</li>
+      <li>子应用加了页面 → 出现在「候选入口」，带服务名、声明标题、内部路径</li>
+      <li>配置一条：标题 / 图标 / <strong>权限码</strong> / 挂载点 / 排序</li>
+      <li><strong>从不手填 URL 和 path</strong> —— 那是发现来的</li>
+      <li>角色页勾选权限码完成授权</li>
+      <li>子应用删了页面 → 标红 <code>missing</code>，<strong>配置保留</strong>，可一键清理</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4><span class="ico" style="background:var(--accent-bg);color:var(--accent)">B</span>有权限的用户</h4>
+    <ul>
+      <li>侧边栏与静态菜单<strong>无任何区别</strong>，不知道哪些是子应用</li>
+      <li>点进去 → 宿主拼 <code>embedUrl + path</code> → iframe 加载对应页面</li>
+      <li>页面内按钮按 action 码显隐</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4><span class="ico" style="background:var(--danger-bg);color:var(--danger)">C</span>无权限的人</h4>
+    <ul>
+      <li><strong>侧边栏</strong>：自身与全部子节点都不命中 → 整个应用消失</li>
+      <li><strong>部分权限</strong>：顶层降级为分组容器，去掉 path</li>
+      <li><strong>直敲 URL</strong>：宿主页再校验 → 403 页</li>
+      <li><strong>真正的门</strong>：子应用后端 introspect + 权限判定</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4><span class="ico" style="background:var(--warn-bg);color:var(--warn)">D</span>子应用开发者</h4>
+    <ul>
+      <li><strong>要做</strong>：<code>definePermissions</code> 声明 + 暴露菜单 manifest</li>
+      <li><strong>不需要</strong>：登记菜单、填 URL、想权限码、追着运营配</li>
+      <li><strong>不能</strong>：决定谁能看见自己的页面（权限码是平台的体系）</li>
+      <li><strong>不能</strong>：把入口塞进「系统管理」（挂载点由管理员配）</li>
+      <li><strong>不能</strong>：声明别的命名空间的码（注册时拒绝）</li>
+    </ul>
+  </div>
+</div>
+
+<h3>子应用接入是各三行</h3>
+<pre><code>// 前端：握手已经带 perms，直接注入
+const ctx = await init({ baseOrigin });            // @optimus/admin-embed（已有）
+&lt;PermissionProvider codes={ctx.perms}&gt;&lt;App /&gt;&lt;/PermissionProvider&gt;
+
+// 后端
+imports: [PermissionModule.forRoot({ optimusApiUrl })]
+// 方法上挂 @RequirePermission(P.campaign.write)</code></pre>
+
+<div class="note i">
+  <span class="lbl">数据链路已经通了</span>
+  <p><code>@optimus/admin-embed</code> 的 <code>EmbedContext</code> <strong>已经带
+  <code>perms: string[]</code></strong> —— 基座握手时就把权限码下发给子应用了。
+  缺的不是链路，是消费侧的便利。</p>
+</div>
+
+<h3>一条规矩：子应用不画自己的一级导航</h3>
+<p>平台侧边栏<strong>已经是</strong>子应用的导航。子应用再画一套，就出现两个事实源，
+两边不一致时没人说得清哪个对。</p>
+<table>
+<thead><tr><th>层级</th><th>谁负责</th></tr></thead>
+<tbody>
+<tr><td>应用顶层 + 页面级导航</td><td><strong>平台侧边栏</strong>（子应用声明，管理员配码）</td></tr>
+<tr><td>页面内部的区块 / 按钮 / tab</td><td><strong>子应用自己</strong>，用同一个 <code>can()</code></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ══════════════ 13 ══════════════ -->
+<section id="s13">
+<h2><span class="n">13</span>数据模型</h2>
+
+<pre><code>op_sys_permission                    码字典 · 新增
+  code            partner:campaign:write
+  namespace       partner              ← 注册时校验归属
+  resource / action
+  title / description
+  source          static | service
+  service_key     来源服务（source=service 时）
+  status          active | missing
+
+op_sys_menu                          菜单树 · 新增
+  id / parent_id / title / icon / sort / visible
+  source          static | service | document
+  service_key
+  path            静态路由 或 子应用内部路径
+  requires        ["partner:campaign:read"]   ← 权限码数组
+
+op_sys_role_menu                     角色↔码 · 已有，语义不变
+  role_id / permission_code</code></pre>
+
+<div class="note g">
+  <span class="lbl">这两张表解决的根子问题</span>
+  <p>菜单是<strong>前端常量</strong>，所以"可分配的权限码集合"也只能从前端常量推 ——
+  这就是 <code>PermissionModal</code> 读 <code>SYSTEM_ROUTES</code> 的原因，
+  不是写错了，是<strong>没有别的地方可读</strong>。</p>
+  <p>两张表落地后，前面聊的合并语义、授不出去、静默丢权限等问题<strong>在根上消失</strong>。</p>
+</div>
+
+<p><strong>静态菜单也要入库</strong>，理由不是"为了动态"，是让权限集合有权威来源，
+同时把排序、挂载点、显隐这些运营该管的东西从代码里拿出来。</p>
+</section>
+
+<!-- ══════════════ 14 ══════════════ -->
+<section id="s14">
+<h2><span class="n">14</span>明确不做的</h2>
+
+<table>
+<thead><tr><th>不做</th><th>理由</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>ABAC 引擎作为地基</strong><br>（CASL / Casbin）</td>
+  <td>条件规则引用的字段属于 L2 领域模型，平台不该也不能知道；跨进程需序列化 + 三方需装引擎。<strong>可以作为 <code>rules</code> 数组里的一条规则接入，但不能是地基</strong> —— 这个区别决定了失效范围</td>
+</tr>
+<tr>
+  <td><strong>关系图引擎</strong><br>（OpenFGA / Zanzibar）</td>
+  <td>解决资源级 + 层级继承。目前唯一场景是 <code>op_sys_document_perm</code>，为一个模块引入关系图引擎不成比例</td>
+</tr>
+<tr>
+  <td><strong>集中式 IdP</strong><br>（Keycloak / Auth0）</td>
+  <td>已有自己的认证中心与 introspect，替换伤筋动骨，收益是"标准化"，现在不痛</td>
+</tr>
+<tr>
+  <td><strong>把 scope 编进码</strong></td>
+  <td>组合爆炸；scope 语义因业务而异，平台无法统一定义</td>
+</tr>
+<tr>
+  <td><strong>按钮进菜单表</strong></td>
+  <td>数量级不匹配，字段大部分为空，两个语义混在一张表</td>
+</tr>
+<tr>
+  <td><strong>子应用内部 tab 上升为平台菜单</strong></td>
+  <td>侧边栏臃肿，且管理员要给每个 tab 配码。确有需求时可用码控制，但不出现在侧边栏</td>
+</tr>
+</tbody>
+</table>
+
+<div class="note w">
+  <span class="lbl">现存 CASL 代码的处理</span>
+  <p>清理与选型是<strong>两件事</strong>：即便将来子服务内部用 CASL，
+  平台侧这份空转的也该删 —— 它不是那个用法的起点，是个半成品。
+  <code>validateAbilityPermissions</code> 看起来像第三道防线、实际每次空转，
+  这类"看起来在起作用其实没有"的东西最危险（<code>RolesGuard</code> 同类）。</p>
+  <p>建议<strong>单独一次变更</strong>清理，不要混进权限重构 ——
+  混在一起就说不清"接口 403 了到底是删错了还是新模型的问题"。</p>
+</div>
+</section>
+
+<!-- ══════════════ 15 ══════════════ -->
+<section id="s15">
+<h2><span class="n">15</span>迁移与分期</h2>
+
+<h3>存量 40 个扁平码</h3>
+<p>判定核心<strong>同时认两种格式</strong>，扁平码视为 <code>legacy:&lt;code&gt;:*</code> 的等价物，
+可以分批迁，不必一次切换。</p>
+<div class="note w">
+  <span class="lbl">迁移风险</span>
+  <p><code>op_sys_role_menu</code> 里的数据要跟着迁，且接口已 fail-closed ——
+  <strong>迁错会立刻 403，不会静默</strong>。错误可见是好事，但意味着迁移必须有
+  完整的对照表和回滚脚本。</p>
+</div>
+
+<h3>四期</h3>
+<div class="layers">
+  <div class="layer">
+    <span class="tag">第一期</span>
+    <div class="body">
+      <div class="t"><code>@optimus/permission</code> 纯核心</div>
+      <div class="d">parse / matches / evaluate / definePermissions + 单测。<strong>零风险，不接线</strong>，不影响任何运行中的代码</div>
+    </div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="layer">
+    <span class="tag">第二期</span>
+    <div class="body">
+      <div class="t">两张表 + 静态菜单入库 + <code>PermissionModal</code> 改读字典</div>
+      <div class="d">这一期做完，<a href="#s2">四个已验证缺陷</a>全部被带掉；现有手工登记模式立刻变好用（能授权、能排序、不泄漏、能挂静态菜单）</div>
+    </div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="layer">
+    <span class="tag">第三期</span>
+    <div class="body">
+      <div class="t">子应用声明 + 自动发现 + 候选列表</div>
+      <div class="d">菜单注册制。管理员从"手填八个字段"变成"从候选勾一个、配图标与权限码"</div>
+    </div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="layer">
+    <span class="tag">第四期</span>
+    <div class="body">
+      <div class="t">三装饰器收敛 + 扁平码迁移（可选）</div>
+      <div class="d"><code>@Perm</code> / <code>@RequireGrant</code> / <code>@ClientUserAuth</code> 收敛成 <code>@RequirePermission</code></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════ 16 ══════════════ -->
+<section id="s16">
+<h2><span class="n">16</span>待定项</h2>
+<p>以下三点尚未拍板，实现前需要确认。</p>
+
+<div class="dec">
+  <div class="q">① 存量 40 个码：分批迁还是一次迁？</div>
+  <div class="a"><b>倾向</b>：兼容层 + 分批。代价是要维护一段时间双格式。
+  一次迁的好处是不留兼容包袱，代价是 <code>op_sys_role_menu</code> 的数据迁移必须一次到位，出错面大。</div>
+</div>
+
+<div class="dec">
+  <div class="q">② <code>@optimus/permission</code> 的归属与发布方式</div>
+  <div class="a">放在 monorepo 里与 <code>server-sdk</code> 并列？还是要能给三方独立安装
+  （需发布到私有 registry）？<b>影响第一期的打包方式</b>，需要先定。</div>
+</div>
+
+<div class="dec">
+  <div class="q">③ 子应用内部更深的层级</div>
+  <div class="a"><b>倾向</b>：子应用内部自己管（用 <code>can()</code> 过滤 tab），平台菜单只到二层。
+  页面内的 tab 属于子应用实现细节，塞进平台菜单会让侧边栏臃肿。
+  若运营确需"某角色只看某 tab"，用码控制即可，不必出现在侧边栏。</div>
+</div>
+
+<div class="note i">
+  <span class="lbl">第一期可以先动</span>
+  <p>纯函数包不依赖上述任何一条的答案（除了 ② 的打包方式），
+  且不接入任何运行中的代码，风险为零。</p>
+</div>
+</section>
+
+<footer>
+  Optimus CMS · 权限模型技术文档 · 2026-09-06<br>
+  相关：<code>ARCHITECTURE.md</code>（分层与信任模型）·
+  <code>docs/SECURITY_MODEL.md</code>（攻击树）·
+  <code>ROADMAP.md</code>（阶段与依赖）
+</footer>
+
+</div>
+</body>
+</html>
