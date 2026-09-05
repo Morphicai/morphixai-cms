@@ -111,7 +111,7 @@ L0 的代码里不出现任何 L2 服务的地址。C 端经代理按目录分�
 | embed 握手协议 | `@optimus/admin-embed`：`init({baseOrigin})` / `requestToken()` / `onTokenRefresh()` | ✅ |
 | 服务端 SDK | `@optimus/server-sdk`：`introspect()` / `getServiceToken()` / `verifyServiceToken()` | ✅ |
 | 平台能力 SDK | `@optimus/platform-client`：OSS 上传 / 短链 / 环境信息 | ✅ |
-| ↑ 按 uid 查用户资料 | 平台侧尚无此接口（`client-user` 只有自查的 profile/me），需配 `user-profile:read-basic` grant | ⏳ |
+| ↑ 按 uid 查用户资料 | `GET /api/service/user-profile/{basic,full}/:userId`，只认 service token + 对应 grant | ✅ |
 
 **通用能力（可选，按需消费）**
 
@@ -151,8 +151,8 @@ schema 驱动 CRUD · 文章 / 字典 / 操作日志
 2. **`/auth/introspect`** —— 业务服务**不复制用户体系**，拿请求里的 token 换身份和
    权限码。必须经 `@optimus/server-sdk` 调用，**禁止裸写 HTTP**
 3. **service token** —— 没有真人背景的调用（定时任务、队列消费、批量同步）用它
-4. **`@optimus/platform-client`** —— OSS 上传、短链、环境信息。**禁止裸写 HTTP**，
-   同 2；按 uid 查用户资料尚未提供（平台侧还没有这个接口）
+4. **`@optimus/platform-client`** —— OSS 上传、短链、环境信息、按 uid 查用户资料。
+   **禁止裸写 HTTP**，同 2。查资料要 service token + `user-profile:read-basic/full` grant
 5. **暴露 `/health` + `/metrics-lite`** —— 这是义务不是权利，探测面板靠它
 
 **L2 之间依赖什么**：只有 **HTTP 接口** 和（能力就绪后）**领域事件订阅**。
@@ -173,10 +173,11 @@ schema 驱动 CRUD · 文章 / 字典 / 操作日志
 > **第 2 条（原生 SQL 跨表 JOIN）没有自动检查**，要 SQL 级分析，仍靠评审。
 > 别把"有 CI 规则"读成"三条都拦住了"。
 >
-> 全量体检（`node scripts/check-sdk-usage.mjs --all`）当前报出 **10 处存量债**：
-> partner→points-engine 的 4 处跨域注入、partner-service 的 4 处裸写 HTTP
-> （含 2 处只是注释里提到路径）、zone-activity 的 1 处 introspect 裸调。
-> 这些**不会**卡 CI，是 ⑧ 拆分前要还的账。
+> 全量体检（`node scripts/check-sdk-usage.mjs --all`）当前报出 **9 处存量债**：
+> partner→points-engine 的 3 处跨域注入（都是 `TaskCompletionLogEntity`）、
+> partner-service 的 5 处裸写 HTTP（其中 2 处只是注释里提到路径）、
+> zone-activity 的 1 处 introspect 裸调。这些**不会**卡 CI，是 ⑧ 拆分前要还的账。
+> 数字以 `--all` 的实际输出为准，别照抄这里——文档会过期，命令不会。
 
 **新服务上线验收必过项**（缺一项不算验收完成）：
 

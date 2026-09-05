@@ -24,13 +24,16 @@ import { UserService } from '../../system/user/user.service';
 import { AuthService } from '../../system/auth/auth.service';
 import { CaslAbilityFactory } from '../casl/casl-ability.factory';
 import { ClientUserService } from '../../business/client-user/client-user.service';
+import { ServiceTokenService } from '../../system/auth/service-token.service';
+import { REQUIRED_GRANT_KEY } from '../decorators/require-grant.decorator';
 
 /**
  * 统一认证守卫
- * 支持三种认证模式：
+ * 支持四种认证模式：
  * 1. ADMIN - 管理员模式（JWT + 角色 + 细粒度权限）
  * 2. CLIENT_USER - 客户端用户模式（签名认证）
  * 3. ANONYMOUS - 匿名模式（无需认证）
+ * 4. SERVICE - 服务身份模式（只认 service token；能做什么由 @RequireGrant 决定）
  */
 @Injectable()
 export class UnifiedAuthGuard implements CanActivate {
@@ -44,6 +47,7 @@ export class UnifiedAuthGuard implements CanActivate {
     private authService: AuthService,
     private caslAbilityFactory: CaslAbilityFactory,
     private clientUserService: ClientUserService,
+    private serviceTokenService: ServiceTokenService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -72,6 +76,9 @@ export class UnifiedAuthGuard implements CanActivate {
       
       case AuthMode.CLIENT_USER:
         return this.handleClientUserMode(request, context);
+
+      case AuthMode.SERVICE:
+        return this.handleServiceMode(request, context);
       
       case AuthMode.ADMIN:
       default:
@@ -126,6 +133,54 @@ export class UnifiedAuthGuard implements CanActivate {
       user: user, // 完整用户信息
     };
     
+    return true;
+  }
+
+  /**
+   * 处理服务身份模式：只认 service token。
+   *
+   * 这里只做"认得出是哪个服务"，**不查授权**——授权是
+   * `@RequireGrant` + `ServiceGrantGuard` 的事，且那一步会重新从服务目录
+   * 现读 grants。两个守卫各自独立验一遍 token 是有意的：ServiceGrantGuard
+   * 也被直连场景使用（绕过网关的服务间内调），它不能假设有谁先认过。
+   * HS256 校验是微秒级的，重复的代价远小于任一侧假设对方做过而留下的授权真空。
+   *
+   * 认不出来一律 401 而不是 403：这里的问题是"你是谁"没答上来，
+   * 而不是"你不能做"。缺 grant 才是 403，由 ServiceGrantGuard 抛。
+   */
+  private async handleServiceMode(
+    request: Request,
+    context: ExecutionContext,
+  ): Promise<boolean> {
+    this.logger.debug('Using service identity mode');
+
+    // 没声明 grant 的服务接口一律拒绝，与"未标注权限的 admin 接口"同一个立场：
+    // 只挂 @ServiceAuth() 就等于"任何登记过的服务都能调"，而漏挂 @RequireGrant
+    // 从外部看不出来。宁可上线即报错，也不要留一个静默敞开的口子
+    const requiredGrant = this.reflector.getAllAndOverride<string>(
+      REQUIRED_GRANT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (!requiredGrant) {
+      this.logger.error(
+        `服务接口缺 @RequireGrant 声明，已拒绝: ${request.method} ${request.originalUrl}`,
+      );
+      throw new ForbiddenException('此接口未声明所需的服务能力，拒绝访问');
+    }
+
+    const token = this.extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException('Service token not found');
+    }
+
+    const payload = this.serviceTokenService.verify(token);
+    if (!payload) {
+      // 不区分"签名不对"/"过期"/"这是个用户 token"——对调用方是同一件事，
+      // 区分开只是给探测者提供信息
+      throw new UnauthorizedException('Invalid service token');
+    }
+
+    (request as any).serviceIdentity = { key: payload.sub };
     return true;
   }
 

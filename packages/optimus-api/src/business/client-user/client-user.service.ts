@@ -16,6 +16,29 @@ export interface ClientUserTokens {
     expiresIn: number;
 }
 
+/** 跨服务查询的资料档位。basic 是"显示这个人是谁"，full 额外含联系方式与注册时间 */
+export type PublicProfileLevel = "basic" | "full";
+
+/**
+ * 跨服务可见的用户资料字段**白名单**。
+ *
+ * 用白名单而不是"排除 passwordHash 后其余全给"（自查接口 `/client-user/profile`
+ * 就是后者）：entity 未来新增字段时，白名单方式下默认不外泄，要不要给必须有人
+ * 显式决定；黑名单方式下新字段会在没人注意的情况下直接暴露出去。
+ *
+ * **phone 两档都不给。** 它既是登录标识也是短信/二次验证的落点，敏感度高于邮箱，
+ * 而 spec 列的字段集里也没有它。真出现需求时应该单独开一个 grant，
+ * 而不是塞进 full 里搭车。
+ */
+export const PUBLIC_PROFILE_FIELDS: Record<PublicProfileLevel, readonly (keyof ClientUserEntity)[]> = {
+    // username 必须在 basic 里：本能力的由来就是业务方各自冗余存一份会漂移的
+    // username 快照（partner_profile.username），不给它等于没解决那个问题
+    basic: ["userId", "username", "nickname", "avatar"],
+    full: ["userId", "username", "nickname", "avatar", "email", "status", "createdAt"],
+};
+
+export type PublicProfile = Partial<Pick<ClientUserEntity, (typeof PUBLIC_PROFILE_FIELDS)["full"][number]>>;
+
 @Injectable()
 export class ClientUserService {
     private readonly logger = new Logger(ClientUserService.name);
@@ -37,6 +60,24 @@ export class ClientUserService {
         return this.userRepository.findOne({
             where: { userId },
         });
+    }
+
+    /**
+     * 按 uid 查询跨服务可见的公开资料。用户不存在返回 null（调用方负责转成 404）。
+     *
+     * 字段由 `PUBLIC_PROFILE_FIELDS` 白名单决定，且**在 SQL 层就只 select 白名单里
+     * 的列**——不是查回整行再删字段。这样即使返回值被谁不小心整个透出去，
+     * 也没有多余的东西可泄；passwordHash 根本没离开数据库。
+     */
+    async findPublicProfileById(userId: string, level: PublicProfileLevel): Promise<PublicProfile | null> {
+        const fields = PUBLIC_PROFILE_FIELDS[level];
+        if (!fields) throw new BadRequestException(`未知的资料档位: ${level}`);
+
+        const row = await this.userRepository.findOne({
+            where: { userId },
+            select: [...fields],
+        });
+        return row ?? null;
     }
 
     /**

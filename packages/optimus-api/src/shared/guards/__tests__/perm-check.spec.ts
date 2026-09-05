@@ -27,7 +27,7 @@ describe("UnifiedAuthGuard 路由级权限码校验", () => {
         // 其余依赖在本方法路径上用不到，给空桩即可
         guard = new UnifiedAuthGuard(
             reflector,
-            {} as any, {} as any, {} as any, {} as any, {} as any, {} as any,
+            {} as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any,
         );
         // 白名单检查走配置，这里直接短路掉
         jest.spyOn(guard as any, "checkWhitelist").mockResolvedValue(false);

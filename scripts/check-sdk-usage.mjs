@@ -47,6 +47,11 @@ const RULES = [
         endpoint: "POST /system/short-link/client-shorten",
         use: "@optimus/platform-client 的 createShortLink()",
     },
+    {
+        pattern: /\/service\/user-profile\//,
+        endpoint: "GET /service/user-profile/{basic,full}/:userId",
+        use: "@optimus/platform-client 的 getUserProfileBasic() / getUserProfileFull()",
+    },
 ];
 
 /**

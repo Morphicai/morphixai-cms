@@ -33,5 +33,6 @@ module.exports = {
         "**/i18n/**/*.spec.ts",
         "**/service-ops/**/*.spec.ts",
         "**/environment/**/*.spec.ts",
+        "**/user-profile-query/**/*.spec.ts",
     ],
 };
