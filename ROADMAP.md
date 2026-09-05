@@ -36,7 +36,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 ## 二、当前坐标（2026-09-05）
 
-分支 `main`，与 origin 同步，无进行中代码分支。
+分支 `main`，无进行中代码分支。**但本地领先 origin/main 28 个提交，从未推送**——这一整段工作（①⑤⑥②③）都只存在于本机。直接后果：`sdk-usage` 这条 CI **在 GitHub 上不存在，因此完全没生效**，约束目前只在本地 `pnpm check:sdk-usage` 有效。
 
 | 维度 | 状态 |
 |---|---|
@@ -45,7 +45,9 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | 活跃变更 | 7 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
 | 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥ 已完成；下一步 ④ 或 ⑦** |
-| CI | 1 条流水线（`sdk-usage`），**推上去启用后才生效** |
+| CI | 1 条流水线（`sdk-usage`）已写好，**尚未推送 → 未生效** |
+| SDK 消费方 | **0 个**——`platform-client` 无任何包声明依赖，partner-service 仍用私有 `optimus-api-client.ts` |
+| grants 生效点 | **0 个**——`@RequireGrant` 零调用点，信任模型可配置但暂未拦住任何接口 |
 
 活跃变更的性质要分清，混在一起看就会迷路：
 
