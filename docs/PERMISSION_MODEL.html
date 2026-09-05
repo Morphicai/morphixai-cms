@@ -140,7 +140,7 @@ footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:v
   <div class="meta">
     <span class="pill">2026-09-06</span>
     <span class="pill on">目标模型已定稿</span>
-    <span class="pill off">实现分四期，尚未开始</span>
+    <span class="pill off">实现分四期 · 第一期进行中</span>
   </div>
 
   <nav class="toc">
@@ -161,7 +161,7 @@ footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:v
       <li><a href="#s13">数据模型</a></li>
       <li><a href="#s14">明确不做的</a></li>
       <li><a href="#s15">迁移与分期</a></li>
-      <li><a href="#s16">待定项</a></li>
+      <li><a href="#s16">已拍板的决策</a></li>
     </ol>
   </nav>
 </header>
@@ -732,15 +732,26 @@ op_sys_role_menu                     角色↔码 · 已有，语义不变
 <section id="s15">
 <h2><span class="n">15</span>迁移与分期</h2>
 
-<h3>存量 40 个扁平码</h3>
-<p>判定核心<strong>同时认两种格式</strong>，扁平码视为 <code>legacy:&lt;code&gt;:*</code> 的等价物，
-可以分批迁，不必一次切换。</p>
-<div class="note w">
-  <span class="lbl">迁移风险</span>
-  <p><code>op_sys_role_menu</code> 里的数据要跟着迁，且接口已 fail-closed ——
-  <strong>迁错会立刻 403，不会静默</strong>。错误可见是好事，但意味着迁移必须有
-  完整的对照表和回滚脚本。</p>
+<h3>存量 40 个扁平码：一次迁完，不做兼容</h3>
+<div class="note g">
+  <span class="lbl">已拍板（2026-09-06）</span>
+  <p><strong>不建兼容层。</strong>项目尚未上线，没有存量用户的账号在依赖这批码。
+  兼容层的代价是双格式解析要维护到"某天有人来清理"——而那天通常不会到来。</p>
 </div>
+<p>直接后果是<strong>判定核心只认三段式</strong>，实现更简单（少一条解析分支、少一类边界用例）。
+代价是重命名必须<strong>原子完成</strong>：<code>@Perm</code> 声明、
+<code>SYSTEM_ROUTES</code> 的 <code>code</code>、<code>op_sys_role_menu</code> 的数据，
+三处同时切换。</p>
+<div class="note w">
+  <span class="lbl">迁移的可验证性</span>
+  <p>接口已 fail-closed，<strong>迁错会立刻 403，不会静默</strong>——错误可见是好事。
+  但仍需完整对照表 + 回滚脚本，且迁移后要逐个角色实际登录验证菜单与接口。</p>
+</div>
+<h4>重命名只改名，不改语义</h4>
+<p>一个码原先能做什么，迁完还是能做什么（<code>PermUsers</code> →
+<code>platform:user:manage</code>，而不是趁机拆成 read/write）。
+<strong>拆分动作粒度是独立决策</strong>，等出现真实的"只读角色"需求时按资源逐个拆——
+把重命名和语义变更混在一次做，出问题时分不清是哪一类原因。</p>
 
 <h3>四期</h3>
 <div class="layers">
@@ -755,24 +766,24 @@ op_sys_role_menu                     角色↔码 · 已有，语义不变
   <div class="layer">
     <span class="tag">第二期</span>
     <div class="body">
-      <div class="t">两张表 + 静态菜单入库 + <code>PermissionModal</code> 改读字典</div>
-      <div class="d">这一期做完，<a href="#s2">四个已验证缺陷</a>全部被带掉；现有手工登记模式立刻变好用（能授权、能排序、不泄漏、能挂静态菜单）</div>
+      <div class="t">40 个码一次性迁到三段式</div>
+      <div class="d">纯重命名，不改语义。三处原子切换：<code>@Perm</code> 声明 / <code>SYSTEM_ROUTES</code> 的 <code>code</code> / <code>op_sys_role_menu</code> 数据。<strong>排在建字典之前</strong>——否则字典一出生就装着一批要改的码</div>
     </div>
   </div>
   <div class="arrow">↓</div>
   <div class="layer">
     <span class="tag">第三期</span>
     <div class="body">
-      <div class="t">子应用声明 + 自动发现 + 候选列表</div>
-      <div class="d">菜单注册制。管理员从"手填八个字段"变成"从候选勾一个、配图标与权限码"</div>
+      <div class="t">两张表 + 静态菜单入库 + <code>PermissionModal</code> 改读字典</div>
+      <div class="d">这一期做完，<a href="#s2">四个已验证缺陷</a>全部被带掉；现有手工登记模式立刻变好用（能授权、能排序、不泄漏、能挂静态菜单）</div>
     </div>
   </div>
   <div class="arrow">↓</div>
   <div class="layer">
     <span class="tag">第四期</span>
     <div class="body">
-      <div class="t">三装饰器收敛 + 扁平码迁移（可选）</div>
-      <div class="d"><code>@Perm</code> / <code>@RequireGrant</code> / <code>@ClientUserAuth</code> 收敛成 <code>@RequirePermission</code></div>
+      <div class="t">子应用声明 + 自动发现 + 候选列表</div>
+      <div class="d">菜单注册制。管理员从"手填八个字段"变成"从候选勾一个、配图标与权限码"</div>
     </div>
   </div>
 </div>
@@ -780,32 +791,36 @@ op_sys_role_menu                     角色↔码 · 已有，语义不变
 
 <!-- ══════════════ 16 ══════════════ -->
 <section id="s16">
-<h2><span class="n">16</span>待定项</h2>
-<p>以下三点尚未拍板，实现前需要确认。</p>
+<h2><span class="n">16</span>已拍板的决策</h2>
+<p>下列三点于 2026-09-06 确认，实现按此执行。</p>
 
 <div class="dec">
-  <div class="q">① 存量 40 个码：分批迁还是一次迁？</div>
-  <div class="a"><b>倾向</b>：兼容层 + 分批。代价是要维护一段时间双格式。
-  一次迁的好处是不留兼容包袱，代价是 <code>op_sys_role_menu</code> 的数据迁移必须一次到位，出错面大。</div>
+  <div class="q">① 存量 40 个码：<b>一次迁完，不做兼容</b></div>
+  <div class="a">项目尚未上线，没有存量用户在依赖这批码。<b>不要被兼容拖住</b>——
+  双格式解析的维护成本会一直挂着，而"某天来清理"通常不会到来。
+  判定核心因此<b>只认三段式</b>，实现更简单。代价是重命名要原子完成（见第 15 章）。</div>
 </div>
 
 <div class="dec">
-  <div class="q">② <code>@optimus/permission</code> 的归属与发布方式</div>
-  <div class="a">放在 monorepo 里与 <code>server-sdk</code> 并列？还是要能给三方独立安装
-  （需发布到私有 registry）？<b>影响第一期的打包方式</b>，需要先定。</div>
+  <div class="q">② <code>@optimus/permission</code>：<b>放在 monorepo</b></div>
+  <div class="a">与 <code>@optimus/server-sdk</code> / <code>@optimus/client-sdk</code> 并列，
+  <code>packages/permission</code>。打包方式沿用 server-sdk 那套（零运行时依赖、
+  <code>tsc</code> 出 dist、<code>node --test</code> 跑编译产物）。
+  三方需要独立安装时再评估发私有 registry，<b>不预先为此设计</b>。</div>
 </div>
 
 <div class="dec">
-  <div class="q">③ 子应用内部更深的层级</div>
-  <div class="a"><b>倾向</b>：子应用内部自己管（用 <code>can()</code> 过滤 tab），平台菜单只到二层。
-  页面内的 tab 属于子应用实现细节，塞进平台菜单会让侧边栏臃肿。
-  若运营确需"某角色只看某 tab"，用码控制即可，不必出现在侧边栏。</div>
+  <div class="q">③ 子应用更深的层级：<b>子应用有自制的权利</b></div>
+  <div class="a">平台菜单<b>只到二层</b>（应用顶层 + 声明的页面）。页面内部更深的结构
+  （tab、区块、分步）由子应用自己用 <code>can()</code> 管，<b>不上升为平台菜单</b>。
+  若运营确需"某角色只看某 tab"，用 action 码控制即可，不必出现在侧边栏。</div>
 </div>
 
-<div class="note i">
-  <span class="lbl">第一期可以先动</span>
-  <p>纯函数包不依赖上述任何一条的答案（除了 ② 的打包方式），
-  且不接入任何运行中的代码，风险为零。</p>
+<div class="note g">
+  <span class="lbl">这三条对实现的影响</span>
+  <p>① 让第一期的核心<b>更简单</b>（少一条解析分支）；
+  ② 让第一期<b>可以立刻开工</b>（打包方式已定）；
+  ③ 划清了菜单模型的边界，<b>第四期的 manifest 只需描述页面级</b>，不必支持任意深度嵌套。</p>
 </div>
 </section>
 
