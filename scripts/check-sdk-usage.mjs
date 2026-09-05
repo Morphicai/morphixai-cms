@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 /**
- * 检查：业务服务是否绕过官方 SDK，裸写 HTTP 直接调平台接口。
+ * 架构约束检查。两条规则，都来自 partner-service 拆分时真实踩过的坑：
  *
- * 为什么需要它：`@optimus/server-sdk` 早就写好了 introspect 封装，partner-service
- * 接入时还是自己重写了一份裸 fetch；`optimus-api-client.ts` 也是同一个故事。
- * 文档里写"要复用"不够——下一个新服务大概率还会再发明一次轮子。
+ * 1. **裸写 HTTP 调平台接口** —— `@optimus/server-sdk` 早就写好了 introspect 封装，
+ *    partner-service 接入时还是自己重写了一份裸 fetch；`optimus-api-client.ts`
+ *    是同一个故事。文档里写"要复用"不够，下一个新服务大概率还会再发明一次轮子
+ * 2. **跨业务域 `@InjectRepository` 别人的 entity** —— 同一个服务里能跑，一旦分属
+ *    不同仓库/进程，**编译期直接断**。partner 至今还在注入 points-engine 的
+ *    `TaskCompletionLogEntity`，它就是这条规则的样本
  *
- * 刻意只做正则匹配，不做 AST 分析（见 platform-client-sdk/design.md）：目标是让
- * "顺手裸写"付出代价，不是构筑一道防线。真想绕过 lint 的人总能绕过；这条规则的
+ * 刻意只做正则 + 路径解析，不做 AST 分析（见 platform-client-sdk/design.md）：目标是让
+ * "顺手写错"付出代价，不是构筑一道防线。真想绕过 lint 的人总能绕过；规则的
  * 价值在于让正确的做法成为默认路径。
+ *
+ * **没覆盖的第三条**：原生 SQL 跨表 JOIN 别人的表（`reward-claim-record` 对
+ * `activity`）要 SQL 级分析，仍然靠评审。别把"有检查"读成"三条都拦住了"。
  *
  * 用法：
  *   node scripts/check-sdk-usage.mjs                # 只查相对 base 的新增行
@@ -20,7 +26,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
-import { join, relative, extname } from "node:path";
+import { join, relative, extname, dirname, posix } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 
@@ -107,6 +113,59 @@ function findings(path, lines, lineNumbers) {
             if (isAllowed(lines, lineNo - 1)) continue;
             hits.push({ path, lineNo, text: text.trim(), rule });
         }
+    }
+    hits.push(...crossDomainInjections(path, lines, lineNumbers));
+    return hits;
+}
+
+/** `packages/<pkg>/src/business/<domain>/…` → `<domain>`；不在业务域下则无从归属 */
+function ownDomain(path) {
+    return /(?:^|\/)src\/business\/([^/]+)\//.exec(path)?.[1];
+}
+
+/**
+ * 规则 2：跨业务域注入别人的 entity。
+ *
+ * 判据是 import 的来源路径落在**另一个** `business/<domain>/` 下——
+ * 同域的 `./entities/x` 不算，跨域的 `../points-engine/entities/x` 算。
+ * import 映射从整份源码建（要兼容多行 import），但只检查被要求检查的那些行。
+ */
+function crossDomainInjections(path, lines, lineNumbers) {
+    const own = ownDomain(path);
+    if (!own) return [];
+
+    const source = lines.join("\n");
+    const importedFrom = new Map();
+    const importRe = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s*from\s*["']([^"']+)["']/g;
+    for (let m = importRe.exec(source); m; m = importRe.exec(source)) {
+        for (const raw of m[1].split(",")) {
+            const symbol = raw.trim().split(/\s+as\s+/)[0].replace(/^type\s+/, "").trim();
+            if (symbol) importedFrom.set(symbol, m[2]);
+        }
+    }
+
+    const wanted = new Set(lineNumbers);
+    const hits = [];
+    for (let i = 0; i < lines.length; i += 1) {
+        if (!wanted.has(i + 1)) continue;
+        const name = /@InjectRepository\(\s*([A-Za-z0-9_$]+)/.exec(lines[i])?.[1];
+        if (!name) continue;
+        const spec = importedFrom.get(name);
+        // 相对路径之外（包名、路径别名）无法在这里可靠归属，交给评审
+        if (!spec || !spec.startsWith(".")) continue;
+        const resolved = posix.normalize(posix.join(dirname(path), spec));
+        const other = /(?:^|\/)business\/([^/]+)\//.exec(resolved)?.[1];
+        if (!other || other === own) continue;
+        if (isAllowed(lines, i)) continue;
+        hits.push({
+            path,
+            lineNo: i + 1,
+            text: lines[i].trim(),
+            rule: {
+                endpoint: `跨业务域注入 ${name}（${own} → ${other}）`,
+                use: `${other} 暴露的 HTTP 接口；同进程时能跑，拆开就是编译期断裂`,
+            },
+        });
     }
     return hits;
 }
@@ -196,15 +255,19 @@ if (scanAll) {
 }
 
 if (hits.length === 0) {
-    console.log(`✅ SDK 使用检查通过（${mode}）`);
+    console.log(`✅ 架构约束检查通过（${mode}）`);
     process.exit(0);
 }
 
-console.error(`❌ 发现 ${hits.length} 处裸写平台接口调用（${mode}）\n`);
+console.error(`❌ 发现 ${hits.length} 处架构约束违规（${mode}）\n`);
 for (const { path, lineNo, text, rule } of hits) {
     console.error(`  ${path}:${lineNo}`);
     console.error(`    ${text}`);
-    console.error(`    → ${rule.endpoint} 已被 SDK 覆盖，请改用 ${rule.use}`);
+    console.error(
+        rule.pattern
+            ? `    → ${rule.endpoint} 已被 SDK 覆盖，请改用 ${rule.use}`
+            : `    → ${rule.endpoint}，请改走 ${rule.use}`,
+    );
     console.error("");
 }
 console.error("确有必要绕过时，在该行或上一行注释 `sdk-usage-allow: <原因>`。");

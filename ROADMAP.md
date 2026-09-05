@@ -41,19 +41,19 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | 维度 | 状态 |
 |---|---|
 | 已归档变更 | 14 个（`openspec/changes/archive/`） |
-| 规格基线 | 20 个能力（`openspec/specs/`） |
-| 活跃变更 | 8 个 |
+| 规格基线 | 22 个能力（`openspec/specs/`） |
+| 活跃变更 | 7 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
-| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **② ⑤ ⑥ 已完成；下一步 ③** |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥ 已完成；下一步 ④ 或 ⑦** |
+| CI | 1 条流水线（`sdk-usage`），**推上去启用后才生效** |
 
 活跃变更的性质要分清，混在一起看就会迷路：
 
 | 变更 | 进度 | 性质 |
 |---|---|---|
-| `platform-client-sdk` | 0/11 | 主线 · 阶段三（**下一步**，⑧⑨ 的硬依赖） |
 | `platform-gateway-topology` | 18/19 | 主线 · 阶段四（代码已合 main，剩 5.3 全栈 embed 握手） |
 | `embed-submenu` | 0/9 | 主线 · 阶段三 |
-| `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三） |
+| `platform-user-profile-query` | 0/9 | 主线 · 阶段四（**依赖关系已变**，见 §三；③ 的 SDK 已就绪，这个能力上线后回来补一个方法即可） |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
 | `platform-closed-loop` | 21/22 | **收口欠账**，只差一项真实验收，见 §七 |

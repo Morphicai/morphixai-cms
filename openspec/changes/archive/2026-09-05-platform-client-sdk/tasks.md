@@ -35,7 +35,13 @@
 ## 3. CI 强约束
 
 - [x] 3.1 `scripts/check-sdk-usage.mjs` + 根 `pnpm check:sdk-usage` +
-      `.github/workflows/sdk-usage.yml`
+      `.github/workflows/sdk-usage.yml`。**两条规则**：裸写 HTTP 调平台接口；
+      跨业务域 `@InjectRepository` 别人的 entity
+      > 第二条是归档后补的（同日）：③ 的 DoD 原文点名了"裸写 `/auth/introspect`、
+      > **跨业务 `@InjectRepository`**"两类，我第一版只做了前者就归档，**DoD 并未
+      > 满足**。判据是 import 来源路径落在另一个 `business/<domain>/` 下；包名/
+      > 路径别名导入无法可靠归属，宁可漏报也不制造假阳性。
+      > 第三条禁令（原生 SQL 跨表 JOIN）要 SQL 级分析，仍靠评审
       > **本仓库此前没有任何 CI**（`.github/` 不存在），这是第一条流水线。刻意只放
       > 这一个零依赖检查，不顺手把 lint/test 塞进来——那些要装依赖，是另一件事。
       > 也就是说：在这个 workflow 被推上去并启用之前，约束只在本地有效

@@ -164,20 +164,25 @@ schema 驱动 CRUD · 文章 / 字典 / 操作日志
 - ❌ 原生 SQL 跨表 JOIN 别人的表 —— `reward-claim-record` 对 `activity` 就是这样
 - ❌ 裸写 HTTP 调 `/auth/introspect` —— 绕过 SDK 就绕过了统一的缓存/重试/契约演进
 
-**约束怎么落地**：不是靠自觉。第 3 条（裸写 HTTP）已做成 **CI 静态扫描**
+**约束怎么落地**：不是靠自觉。第 1、3 条已做成 **CI 静态扫描**
 （`pnpm check:sdk-usage` / `.github/workflows/sdk-usage.yml`）：命中即 CI 失败，
 **只对新增/修改的代码生效**，存量违规不追溯——堵新增和清存量是两件事，混在一起
 规则上线当天就会被整体关掉。确有必要绕过时在该行或上一行注释
 `sdk-usage-allow: <原因>`，要求写原因是有意的：没有豁免口，人只会整个关掉检查。
 
-> 前两条（跨业务注入 entity、跨表 JOIN）**没有**自动检查——它们要 AST/SQL 级分析，
-> 目前靠评审。别把"有一条 CI 规则"读成"三条都拦住了"。
+> **第 2 条（原生 SQL 跨表 JOIN）没有自动检查**，要 SQL 级分析，仍靠评审。
+> 别把"有 CI 规则"读成"三条都拦住了"。
+>
+> 全量体检（`node scripts/check-sdk-usage.mjs --all`）当前报出 **10 处存量债**：
+> partner→points-engine 的 4 处跨域注入、partner-service 的 4 处裸写 HTTP
+> （含 2 处只是注释里提到路径）、zone-activity 的 1 处 introspect 裸调。
+> 这些**不会**卡 CI，是 ⑧ 拆分前要还的账。
 
 **新服务上线验收必过项**（缺一项不算验收完成）：
 
 | # | 检查项 | 怎么验 |
 |---|---|---|
-| 1 | 只通过官方 SDK 访问平台能力 | `pnpm check:sdk-usage` 对该服务全量跑绿（`--all` 时该服务目录零命中） |
+| 1 | 只通过官方 SDK 访问平台能力，且不跨业务域直连别人的 entity | `pnpm check:sdk-usage` 对该服务全量跑绿（`--all` 时该服务目录零命中） |
 | 2 | 服务目录已登记 `trustLevel` 与 `grants`，且 grants 按最小必要授予 | 查 `op_sys_service_registry` 该行 |
 | 3 | `trustLevel=third-party` 的服务，数据库实例独立于平台 | 查该服务的 DB 连接串不指向平台实例；不满足则 **不得** 登记为 `enabled` |
 | 4 | 暴露 `/health` + `/metrics-lite` | 探测面板能看到它 |
