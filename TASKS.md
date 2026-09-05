@@ -19,6 +19,42 @@
 `platform-closed-loop` 21/22 差一项真实验收（需完整环境，见 ROADMAP §六）、
 `micro-frontend` 16/19 有意挂起等触发条件。
 
+## ⑦ 跨服务用户资料查询——信任模型的第一个生效点（2026-09-05，已归档）
+
+**新增 `GET /api/service/user-profile/{basic,full}/:userId`。** 由来是业务方各自
+冗余存一份会漂移的用户名快照(`partner_profile.username` 是已验证的案例)。
+
+**在这之前 `@RequireGrant` 是零调用点**——grants 存得下、守卫写好也测过,但没有任何
+接口真的被它拦住,信任模型是「可配置但未生效」。⑦ 把它变成「真的在拦」。
+
+**新增了一种认证模式。** 原先只有 admin/client/anonymous 三种,而全局的
+`UnifiedAuthGuard` 先于模块级的 `ServiceGrantGuard` 执行——不加 `AuthMode.SERVICE`,
+service token 会先被当成无效的管理员 JWT 拒掉,`@RequireGrant` 根本轮不到执行。
+
+**`@ServiceAuth()` 漏挂 `@RequireGrant` 时 fail-closed**(403,且在验 token 之前
+就拒):只挂前者等于「任何登记过的服务都能调」,而漏挂从外部看不出来。与「未标注
+权限的 admin 接口一律拒绝」是同一个立场。
+
+**字段白名单,且在 SQL 层就只 select 白名单列**——不是查回整行再删字段,
+`passwordHash` 根本不离开数据库。**phone 两档都不给**:它既是登录标识也是短信/
+二次验证的落点,敏感度高于邮箱;真有需求应单独开 grant,不塞进 full 搭车。
+
+**真实验证 10 个场景,两条是关键证据**:已下线的服务、以及没人登记过的 serviceKey,
+即使 token 在密码学上完全有效也一律 403 —— **token 只证明「我是谁」,能做什么每次
+都从服务目录现读**。所以下线服务后旧 token 立刻失效,不必等它过期。
+
+**启动才暴露的坑**:`ServiceGrantGuard` 在**使用它的那个模块**的注入上下文里实例化,
+它依赖的 `ServiceRegistryService` 必须在那里能解析到。AuthModule 导出了 guard 本身
+但没把 ServiceOpsModule 一起再导出,所以新模块要显式 import 它。
+**tsc 干净、单测全绿,进程仍然起不来**——这类错误只有真起服务才会报。
+
+**修正一处自己写错的数字**:ARCHITECTURE 里「10 处存量债」实际是 **9 处**
+(3 处跨域注入 + 6 处裸写 HTTP,其中 2 处只是注释提到路径)。原数字是照着一次
+带自匹配噪声的输出写的——那次运行把脚本自己的规则字面量也算了进去。
+
+**仍然没闭的**:`platform-client` 依旧零消费方(partner-service 还在用私有的
+`optimus-api-client.ts`)。⑦ 提供了能力,迁移存量调用方不在其范围内。
+
 ## ③ 平台能力 SDK + 架构约束的 CI 检查（2026-09-05，已归档）
 
 **`@optimus/platform-client` 发布到 workspace**：`uploadFile` / `createShortLink` /
