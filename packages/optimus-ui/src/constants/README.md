@@ -174,7 +174,7 @@ const canSeeServiceOps = userPermissions.includes('*') || userPermissions.includ
 getFullMenuConfig()
 ├── SYSTEM_ROUTES                     静态
 ├── getDynamicDocumentMenus()   →     挂到 config_center 的 children
-└── getDynamicServiceMenus()    →     作为顶层菜单项追加
+└── getDynamicServiceMenus()    →     作为顶层菜单项追加（可带 children）
 ```
 
 两个动态函数都是**先看登录态**（`storage('access-token')` 取不到就直接返回 `[]`，不发请求），
@@ -200,14 +200,20 @@ getFullMenuConfig()
 
 这是**当前接入子服务的正式姿势**。调 `serviceOpsApi.entries()`（`GET /system/services/entries`，
 后端 `@AllowNoPerm()`，登录即可读），把服务注册表里 `enabled` 且 `entryType === 'embed'` 且填了
-`embedUrl` 的条目变成顶层菜单项：
+`embedUrl` 的条目变成菜单项。
+
+> **接口返回的是树，不是平铺数组。** 条目可以用 `parentKey` 归到另一条之下
+> （只支持两层），返回的父节点带 `children`。按 key 找某一条时要递归——
+> `pages/embed/index.jsx` 的 `findEntry()` 就是干这个的，只扫第一层会让
+> 所有子菜单都报 404。
 
 ```javascript
 {
   id: `svc_${e.key}`,
   name: e.menuTitle || e.key,
   code: e.permCode || 'ServiceOps',   // 没配 permCode 时缺省从紧，只有 ServiceOps 能看见
-  path: `/embed/${e.key}`,            // 全部指向同一个宿主路由
+  path: `/embed/${e.key}`,            // 全部指向同一个宿主路由；纯分组父节点没有 embedUrl，
+                                      // 因此不给 path，点它只展开子项
   // 图标名先在 @ant-design/icons 里校验存在，写错了就退回默认图标
   icon: e.menuIcon && Icons[e.menuIcon] ? e.menuIcon : 'AppstoreOutlined',
   orderNum: 50,
@@ -216,8 +222,13 @@ getFullMenuConfig()
 }
 ```
 
-条目的 `menuTitle` / `menuIcon` / `permCode` / `embedUrl` 都存在服务注册表
-（`optimus-api` 的 `service_registry`），在「服务状态」页里登记和维护，改菜单不用改这份代码。
+条目的 `menuTitle` / `menuIcon` / `permCode` / `embedUrl` / `parentKey` 都存在服务注册表
+（`optimus-api` 的 `op_sys_service_registry`），在「服务状态」页里登记和维护，改菜单不用改这份代码。
+
+分组的三条行为值得记住（后端 `listEmbedEntries()` 里有对应注释）：
+父节点可以是没有 `embedUrl` 的纯分组条目；父节点被禁用时子节点**提升到顶层**而不是
+一起消失（让一条 enabled 的记录静默不可达是更糟的失败）；子项全被权限挡掉时，
+没有 `path` 的父节点会自己消失，不留点不动的空壳。
 
 宿主路由是 `SYSTEM_ROUTES` 里那条 `id: 'embed_app'`：`path: '/embed/:serviceKey'`，
 `component: 'EmbedApp'`，标了 `public: true` + `hidden: true`——路由本身可达、不进菜单，

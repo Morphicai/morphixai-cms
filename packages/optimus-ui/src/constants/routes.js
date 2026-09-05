@@ -839,22 +839,34 @@ export async function getDynamicDocumentMenus() {
  * 服务目录的动态入口菜单项(仅菜单显示,路由走固定的 /embed/:serviceKey 宿主)。
  * code 用条目自己的 permCode——getMenuTree 按用户权限过滤,没码的人看不见;
  * 条目没配 permCode 时缺省从紧,只有 ServiceOps 能看见
+ *
+ * 接口返回的是**树**(条目可用 parentKey 归组),这里递归映射成带 children 的菜单节点。
+ * 渲染层(getMenuTree/ConstantSiderMenus)本来就支持任意层级,不需要改。
+ *
+ * 纯分组的父节点没有 embedUrl,因此不给 path——点它只展开子项,不跳转。
+ * getMenuTree 末尾的过滤是 `menu.path || children.length > 0`,所以子项全被
+ * 权限挡掉时,父节点会自己消失,不会留一个点不动的空壳
  */
 export async function getDynamicServiceMenus() {
   try {
     if (!storage('access-token')) return [];
     const res = await serviceOpsApi.entries();
-    return (res?.data || []).map((e) => ({
-      id: `svc_${e.key}`,
-      name: e.menuTitle || e.key,
-      code: e.permCode || 'ServiceOps',
-      type: MENU_TYPES.MENU,
-      path: `/embed/${e.key}`,
-      icon: e.menuIcon && Icons[e.menuIcon] ? e.menuIcon : 'AppstoreOutlined',
-      orderNum: 50,
-      parentId: null,
-      isDynamicMenu: true,
-    }));
+    const toMenu = (e, parentId = null) => {
+      const children = (e.children || []).map((c) => toMenu(c, `svc_${e.key}`));
+      return {
+        id: `svc_${e.key}`,
+        name: e.menuTitle || e.key,
+        code: e.permCode || 'ServiceOps',
+        type: MENU_TYPES.MENU,
+        ...(e.embedUrl ? { path: `/embed/${e.key}` } : {}),
+        icon: e.menuIcon && Icons[e.menuIcon] ? e.menuIcon : 'AppstoreOutlined',
+        orderNum: 50,
+        parentId,
+        isDynamicMenu: true,
+        ...(children.length ? { children } : {}),
+      };
+    };
+    return (res?.data || []).map((e) => toMenu(e));
   } catch (error) {
     // 目录接口打不通只影响动态入口,静态菜单照常
     console.warn('[Routes] 获取服务目录入口失败:', error?.message || error);

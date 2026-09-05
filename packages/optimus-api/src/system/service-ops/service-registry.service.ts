@@ -38,6 +38,19 @@ export interface ServiceEntry {
     trustLevel?: ServiceTrustLevel;
     /** 该服务被授予的平台能力。缺省按 trustLevel 取默认集,三方默认为空 */
     grants?: string[];
+    /** 归到哪条记录之下(另一条记录的 key)。空=顶层。只支持两层,父必须是顶层记录 */
+    parentKey?: string;
+}
+
+/** embed 菜单节点。父节点可以没有 embedUrl(纯分组,点击只展开) */
+export interface EmbedMenuNode {
+    key: string;
+    menuTitle: string;
+    menuIcon?: string;
+    permCode?: string;
+    /** 纯分组节点没有这个字段 */
+    embedUrl?: string;
+    children?: EmbedMenuNode[];
 }
 
 const KEY_RE = /^[a-z][a-z0-9-]{0,49}$/;
@@ -74,6 +87,7 @@ function toEntry(row: ServiceRegistryEntity): { key: string; sortOrder: number }
         // 空数组和"没配"要区分开:三方服务的空 grants 是有意义的状态(什么都不许),
         // 还原成 undefined 会让消费方误以为该取默认集
         grants: Array.isArray(row.grants) ? row.grants : [],
+        parentKey: row.parentKey ?? undefined,
     };
 }
 
@@ -102,18 +116,70 @@ export class ServiceRegistryService {
         return row ? toEntry(row) : null;
     }
 
-    /** embed 入口条目(登录即可读,前端据 permCode 过滤菜单;真正的门在子应用后端) */
-    async listEmbedEntries(): Promise<Array<{ key: string } & Pick<ServiceEntry, "menuTitle" | "menuIcon" | "permCode" | "embedUrl">>> {
-        return (await this.rows())
-            .map(toEntry)
-            .filter((e) => e.enabled !== false && e.entryType === "embed" && e.embedUrl)
-            .map(({ key, menuTitle, menuIcon, permCode, embedUrl, name }) => ({
-                key,
-                menuTitle: menuTitle || name,
-                menuIcon,
-                permCode,
-                embedUrl,
-            }));
+    /**
+     * embed 入口条目,按 parentKey 聚合成树(登录即可读,前端据 permCode 过滤菜单;
+     * 真正的门在子应用后端)。
+     *
+     * 返回的是**树**,不是平铺数组——按 key 找某一条时要递归,别只扫第一层。
+     * `findEmbedNode()` 就是干这个的。
+     *
+     * 三条规则值得记住:
+     * 1. 父节点可以不是 embed 条目(纯分组,点击只展开)。只要有可见子节点就会出现
+     * 2. 父节点 disabled 时,子节点**提升到顶层**而不是一起消失。让一条 enabled 的
+     *    记录静默不可达是更糟的失败——会以为服务坏了;要隐藏子项就各自 disable。
+     *    同一条规则顺带兜住"parentKey 指向不存在的记录"(直接改库能造出这种数据)
+     * 3. 顺序沿用 rows() 的 sortOrder/id,子节点在父节点内保持同样的相对顺序
+     */
+    async listEmbedEntries(): Promise<EmbedMenuNode[]> {
+        const all = (await this.rows()).map(toEntry).filter((e) => e.enabled !== false);
+        const visibleKeys = new Set(all.map((e) => e.key));
+        const embeddable = all.filter((e) => e.entryType === "embed" && e.embedUrl);
+
+        const toNode = (e: (typeof all)[number]): EmbedMenuNode => ({
+            key: e.key,
+            menuTitle: e.menuTitle || e.name,
+            menuIcon: e.menuIcon,
+            permCode: e.permCode,
+            embedUrl: e.embedUrl,
+        });
+
+        // 谁被当作父引用了(且父自身可见)——纯分组节点靠这个被带进结果
+        const parentKeys = new Set(
+            embeddable
+                .map((e) => e.parentKey)
+                .filter((k): k is string => !!k && visibleKeys.has(k)),
+        );
+
+        // 有父且父可见 = 归组;父不可见/不存在的一律按顶层处理(规则 2)
+        const isGrouped = (e: (typeof all)[number]) => !!e.parentKey && visibleKeys.has(e.parentKey);
+
+        const nodes = new Map<string, EmbedMenuNode>();
+        const roots: EmbedMenuNode[] = [];
+        for (const e of all) {
+            const isEmbeddable = e.entryType === "embed" && !!e.embedUrl;
+            if (!isEmbeddable && !parentKeys.has(e.key)) continue;
+            if (isGrouped(e)) continue;
+            const node = toNode(e);
+            nodes.set(e.key, node);
+            roots.push(node);
+        }
+
+        for (const e of embeddable) {
+            if (!isGrouped(e)) continue;
+            const parent = nodes.get(e.parentKey!);
+            if (parent) (parent.children ??= []).push(toNode(e));
+        }
+        return roots;
+    }
+
+    /** 在 listEmbedEntries() 的树里按 key 找一条(含子节点)。 */
+    static findEmbedNode(tree: EmbedMenuNode[], key: string): EmbedMenuNode | undefined {
+        for (const node of tree) {
+            if (node.key === key) return node;
+            const hit = node.children && ServiceRegistryService.findEmbedNode(node.children, key);
+            if (hit) return hit;
+        }
+        return undefined;
     }
 
     /** 工具提供方(AgentConsole 门,最小披露:只给工具发现需要的三个字段) */
@@ -164,6 +230,7 @@ export class ServiceRegistryService {
                 if (clash) throw new BadRequestException(`apiPathPrefixes ${prefix} 已被 ${clash.key} 占用`);
             }
         }
+        await this.assertGroupingValid(key, entry.parentKey);
         const existing = await this.repo.findOne({ where: { key } });
         const trustLevel = entry.trustLevel ?? existing?.trustLevel ?? DEFAULT_TRUST_LEVEL;
         const fields = {
@@ -185,6 +252,7 @@ export class ServiceRegistryService {
             // 只有全新登记才落默认授权集。更新时不传 grants = 保持原样,
             // 否则改个 name 就会把管理员精心收窄过的授权悄悄重置回默认值
             grants: entry.grants ?? existing?.grants ?? defaultGrantsFor(trustLevel),
+            parentKey: entry.parentKey ?? null,
         };
         if (existing) {
             await this.repo.save(Object.assign(existing, fields));
@@ -198,8 +266,46 @@ export class ServiceRegistryService {
     async remove(key: string, by: string): Promise<void> {
         const existing = await this.repo.findOne({ where: { key } });
         if (!existing) throw new NotFoundException(`服务不存在: ${key}`);
+        // 不做级联删除:那会在删一条父记录时静默带走几条子记录,误伤起来不可撤销。
+        // 报出子节点的 key,让操作者自己决定是先解组还是先删子
+        const children = await this.repo.find({ where: { parentKey: key } });
+        if (children.length) {
+            throw new BadRequestException(
+                `该服务下还有子菜单(${children.map((c) => c.key).join(", ")}),请先移除它们的 parentKey 或先删除它们`,
+            );
+        }
         await this.repo.remove(existing);
         await this.emitSafe("service.removed", key, toEntry(existing), by);
+    }
+
+    /**
+     * 父子关系校验。**只支持两层**,所以规则可以很简单:父必须是顶层记录。
+     *
+     * 这条规则同时把三种坏数据一起挡掉,不需要真去遍历链路找环:
+     * - 自己指向自己
+     * - A 的父是 B、B 的父是 A(因为 B 有 parentKey,就当不了父)
+     * - 三层嵌套(同上)
+     * 另外,自己已经有子节点时不能再认父——否则就成了三层
+     */
+    private async assertGroupingValid(key: string, parentKey: string | undefined): Promise<void> {
+        if (!parentKey) return;
+        if (!KEY_RE.test(parentKey)) throw new BadRequestException("parentKey 需为小写 slug(≤50字)");
+        if (parentKey === key) throw new BadRequestException("parentKey 不能指向自己");
+
+        const parent = await this.repo.findOne({ where: { key: parentKey } });
+        if (!parent) throw new BadRequestException(`parentKey 指向的服务不存在: ${parentKey}`);
+        if (parent.parentKey) {
+            throw new BadRequestException(
+                `${parentKey} 自己已归到 ${parent.parentKey} 之下,菜单只支持两层,不能再作为父节点`,
+            );
+        }
+
+        const ownChildren = await this.repo.find({ where: { parentKey: key } });
+        if (ownChildren.length) {
+            throw new BadRequestException(
+                `${key} 下已有子菜单(${ownChildren.map((c) => c.key).join(", ")}),它不能同时是别人的子节点`,
+            );
+        }
     }
 
     private validate(entry: ServiceEntry): void {

@@ -6,6 +6,19 @@ import { serviceOpsApi } from '../../apis/serviceOps';
 import { getUserPermissionCodes } from '../../apis/permission';
 
 /**
+ * 目录条目接口返回的是**树**(条目可用 parentKey 归组),按 key 找必须递归——
+ * 只扫第一层会让所有子菜单都报 404。
+ */
+const findEntry = (nodes, key) => {
+  for (const node of nodes || []) {
+    if (node.key === key) return node;
+    const hit = findEntry(node.children, key);
+    if (hit) return hit;
+  }
+  return undefined;
+};
+
+/**
  * 服务目录动态入口的宿主页:/embed/:serviceKey。
  * 菜单项由目录生成(见 routes.js getDynamicServiceMenus),这里按 key 取
  * embedUrl 渲染。进页前再校验一次 permCode——菜单过滤挡不住直敲 URL 的人;
@@ -22,8 +35,10 @@ const EmbedApp = () => {
       try {
         const [res, perms] = await Promise.all([serviceOpsApi.entries(), getUserPermissionCodes()]);
         if (!alive) return;
-        const entry = (res.data || []).find((e) => e.key === serviceKey);
+        const entry = findEntry(res.data, serviceKey);
         if (!entry) { setState('missing'); return; }
+        // 纯分组的父节点没有 embedUrl,直敲它的 URL 没有页面可加载
+        if (!entry.embedUrl) { setState('missing'); return; }
         const codes = perms || [];
         if (entry.permCode && !codes.includes('*') && !codes.includes(entry.permCode)) {
           setState('denied');

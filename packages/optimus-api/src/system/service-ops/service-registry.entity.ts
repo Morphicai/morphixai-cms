@@ -80,6 +80,18 @@ export class ServiceRegistryEntity {
     @Column({ name: "grants", type: "json", nullable: true })
     grants: string[] | null;
 
+    /**
+     * 归组到哪条记录之下(指向另一行的 key)。空 = 顶层。
+     *
+     * 自引用而不是建"分组表":这里的关系是"多条记录归同一个父",一个可空字段就够了,
+     * 建表反而要多维护一份主键与一层 join。
+     *
+     * **只支持两层**(父 → 子,子不能再有子)——父必须是顶层记录,写入时校验。
+     * 层数放开会让侧边栏和权限过滤的组合情况迅速变多,而现在没有这个需求。
+     */
+    @Column({ name: "parent_key", length: 50, nullable: true })
+    parentKey: string | null;
+
     @Column({ name: "sort_order", default: 0 })
     sortOrder: number;
 
