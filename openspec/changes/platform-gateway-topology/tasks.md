@@ -14,8 +14,13 @@
 - [x] 2.2 `/api/*` 不再被 Caddy 拦截转发到 8084：管理后台站点的 `/api/*` 是
       **固定**转发（管理后台自己要用），C 端的 `/api/*` 根本不经过 Caddy，
       由 `optimus-next` 的 `app/api/[...path]/route.ts` 按服务目录分流
-- [ ] 2.3 验证：用 partner-service 的真实 API 前缀发请求，确认落到该服务
-      —— **阻塞于 4.3**（需要能跑起来的镜像）
+- [x] 2.3 验证通过（2026-09-05，真实多进程实例）。四项对照，关键是 ①② 那组——
+      **若分流没生效，① 必然是 404**，而 404 正是改造前生产拓扑下的失效形态：
+      - ① 经 optimus-next 打 `/api/biz/partner/profile` → **401**（已挂载，仅需鉴权）
+      - ② 直接打 optimus-api 同一路径 → **404**（该服务确已无此路由，
+        故 ① 的 401 只可能来自 partner-service）
+      - ③ 经 next 打 `/api/biz/points/me` → **401**（多前缀分流同样生效）
+      - ④ 经 next 打未登记前缀 `/api/auth/introspect` → **200**（正确回落 optimus-api）
 
 ## 3. 管理后台与 embed 服务的公网暴露
 
@@ -42,8 +47,15 @@
       （需要 workspace 清单）。`docker build --check` 无警告
 - [x] 4.2 `start:prod` 脚本：`cross-env NODE_ENV=production node dist/main.js`，
       跑编译产物而非开发态 `nest start`
-- [ ] 4.3 验证 `docker build` 能独立产出可运行镜像 —— **阻塞于网络，非代码问题**。
-      详见下方「4.3 的实际进展」
+- [x] 4.3 验证通过（2026-09-05）：`docker build -f packages/partner-service/Dockerfile`
+      独立产出 591MB 镜像，**完全不依赖根 Dockerfile 的构建流程**。产物与运行均已核对：
+      - 镜像内 `dist/main.js` 与 `public/admin/index.html` + `assets/` 均在位
+      - 容器接开发库启动成功，`HEALTHCHECK` 报 healthy，NestJS 全部路由挂载
+      - `/health` 与 `/metrics-lite` 正常返回（探测的前提）
+      - `/admin/` 静态页 200；`/biz/partner/profile` 返回 **401 而非 404**，
+        证明业务路由已挂载且鉴权生效
+      - 验证后已清理容器与镜像
+      过程中的三个既存缺陷见下方「4.3 的实际进展」
 - [x] 4.4 `docker-compose.prod.yml`：编排 optimus-core（api/ui/next 同镜像）+
       partner-service 独立镜像 + caddy + MySQL + MinIO，同一 Docker 网络。
       `docker compose config` 校验通过。所有密钥用 `${VAR:?}` 强制显式提供，
@@ -57,26 +69,26 @@
 
 ## 5. 验收
 
-- [ ] 5.1 C 端请求经 optimus-next 落到 partner-service —— 阻塞于 4.3
-- [ ] 5.2 zone 路径在新拓扑下正确落到 optimus-next —— 阻塞于 4.3
-- [ ] 5.3 embed 管理页经自己的站点配置加载、握手正常 —— 阻塞于 4.3
-      （静态部分已由 3.3 读代码确认）
+- [x] 5.1 C 端请求经 optimus-next 正确落到 partner-service —— 见 2.3 的四项对照
+- [x] 5.2 zone 路径验证通过：经 optimus-next 打 `/activity` → **200 且内容来自
+      zone-activity**。对照组：zone 未启动时该路径返回 500（说明 next 认得前缀
+      并尝试转发）、未登记的随机路径返回 404（由 next 自己处理）
+- [ ] 5.3 embed 管理页经**独立站点配置**加载 + 握手 —— 部分完成。
+      已验证：镜像内 admin-app 静态资源可服务（`/admin/` 200，见 4.3）；
+      两侧 origin 均动态推导、换域名不需改代码（见 3.3，读代码确认）。
+      **未验证**：经 Caddy 独立站点块（`:8090`）访问并完成 postMessage 握手，
+      这需要起 `docker-compose.prod.yml` 全栈，而其中的 optimus-core 镜像要装
+      全部 workspace 依赖（含 Next.js 与 React 全家桶），在当前网络下代价过高。
+      **剩余风险低**：Caddy 那段是「TLS 终止 + 转发到单个容器」的极薄配置，
+      已过 `caddy validate`；真正容易出错的 origin 校验已由 3.3 确认
 - [ ] 5.4 更新 `TASKS.md`/`HANDOFF.md`，解除 ⑧⑨ 对本变更的悬空依赖
 - [ ] 5.5 提交、合 main
 
 ---
 
-## 4.3 的实际进展（2026-09-05）
+## 4.3 复盘：做部署产物挖出的三个既存缺陷（2026-09-05）
 
-**没有完成，原因是网络，不是代码。** 如实记录避免下次重复排查：
-
-已确定可用的部分：
-- `docker build --check` 对两个 Dockerfile 均无警告
-- 手改后的 `pnpm-lock.yaml` 被 pnpm 接受：构建日志出现
-  `Lockfile is up to date, resolution step is skipped`，依赖解析 `resolved 883`
-- 网络较好的那次构建**走到了 builder 12/13**，只差最后的 `pnpm build`
-
-**这次尝试挖出三个既存缺陷（都已修复）**，它们此前从未暴露是因为**没有人真正构建过
+4.3 已通过。但过程值得记一笔——**这三个缺陷此前从未暴露，因为没有人真正构建过
 生产镜像**：
 
 1. **根 `Dockerfile` 的生产构建链早已断裂**：它用 `pnpm@8.15.9`，而
@@ -89,17 +101,24 @@
 3. **partner-service 缺 `@types/multer`**：`external-task.controller.ts` 用了
    `Express.Multer.File`，报 `TS2694`
 
-> 这三条正好又一次印证了不变量第 4 条——**迁移不是搬运，是给沉睡代码做第一次真实
-> 体检**。partner-service 迁移时挖出过表名前缀、审计表、守卫类型、`depth` 四类旧账，
+> 又一次印证不变量第 4 条——**迁移不是搬运，是给沉睡代码做第一次真实体检**。
+> partner-service 迁移时挖出过表名前缀、审计表、守卫类型、`depth` 四类旧账，
 > 这次做部署产物又挖出三条。⑧⑨ 要继续预留体检时间。
 
-**阻塞点**：`registry.npmmirror.com` 拉大包会挂住（实测 antd metadata 25s 未传完），
-已在 Dockerfile 里默认改用官方源并加 `--fetch-retries 6`；但当前网络对官方源同样
-不稳定，构建跑 614s 后仍在 `axios-0.27.2.tgz` 上 FetchError。
+### 构建环境的两个坑（下次直接用，别重复排查）
 
-**下次重试**：网络恢复后直接跑，无需改代码——
+**registry 必须避开 npmmirror**：它拉大包会挂住（实测 antd metadata 25s 未传完，
+构建表现为长时间零 CPU 卡死）。Dockerfile 已默认官方源 + `--fetch-retries 6`。
+网络不稳时构建可能反复失败在 tarball 上，重试即可，不是代码问题：
+
 ```bash
 docker build -f packages/partner-service/Dockerfile -t optimus/partner-service .
-# 若官方源不通，可切回镜像源：--build-arg NPM_REGISTRY=https://registry.npmmirror.com/
+# 官方源不通时可切回：--build-arg NPM_REGISTRY=https://registry.npmmirror.com/
 ```
-4.3 通过后，2.3 与第 5 组即可连续验收。
+
+**改 lockfile 必须在 Linux 容器里做**：在 macOS 上跑 `pnpm install` 会丢掉 45 处
+`lightningcss-linux-*` 的 `libc` 平台字段，而镜像是 alpine(musl)。另外 pnpm 会读
+`packageManager: pnpm@8.15.1` 自动降级运行（即使你 `npx pnpm@10`），要用
+`npm_config_manage_package_manager_versions=false` 关掉。
+本次的两个依赖因为包定义已存在于 lockfile，采用了最小手工插入 + `--frozen-lockfile`
+校验，避开了上述全部陷阱。

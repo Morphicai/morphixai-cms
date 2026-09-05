@@ -19,6 +19,31 @@
 `platform-closed-loop` 21/22 差一项真实验收（需完整环境，见 ROADMAP §六）、
 `micro-frontend` 16/19 有意挂起等触发条件。
 
+## ⑤ 生产拓扑改造（2026-09-05，16/19）
+
+三条流量路径拆开:C 端经 optimus-next 自托管(不经 Caddy)、管理后台走精简 Caddy、
+embed 各自独立站点。Caddyfile 重写并改用 compose 容器名寻址;新增
+`docker-compose.prod.yml` 与 `packages/partner-service/Dockerfile`;
+entrypoint 不再启动 Caddy(已是独立容器,会抢 8080 且解析不了容器名)。
+
+**关键实证**——经 optimus-next 打 `/api/biz/partner/profile` 得 **401**,而直接打
+optimus-api 同一路径得 **404**。这组对照证明分流真的生效:若没生效,前者必然也是
+404,而 404 正是改造前生产拓扑下的失效形态。zone 路径 `/activity` 经 next 得 200
+且内容来自 zone-activity。partner-service 独立镜像(591MB)构建成功并接库跑通,
+`/health`、`/metrics-lite`、`/admin/` 静态页均正常。
+
+**做部署产物挖出三个既存缺陷**(此前从未暴露,因为没人真正构建过生产镜像):
+① 根 Dockerfile 用 pnpm@8.15.9 配 lockfileVersion 9.0,生产构建链早已断裂;
+② partner-service 缺 dayjs 声明;③ 缺 @types/multer。均已修复。
+又一次印证不变量第 4 条:迁移不是搬运,是给沉睡代码做第一次体检。
+
+**两个构建环境的坑已写进 tasks.md**:registry 必须避开 npmmirror(拉大包挂住);
+改 lockfile 必须在 Linux 容器里做(macOS 上会丢 45 处 lightningcss 的 libc 平台
+字段,而镜像是 alpine),且 pnpm 会读 packageManager 字段自动降级运行。
+
+剩 5.3(经 Caddy 独立站点完成 embed 握手,需起全栈 compose,当前网络下代价过高)
+与合并收尾。
+
 ## 范围决策：先一方二方，三方暂缓（2026-09-05 拍板）
 
 **当前只做一方/二方场景，三方（外部合作方）后续再启动。** 三方方向已定：

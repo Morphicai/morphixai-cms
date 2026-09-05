@@ -118,11 +118,13 @@ partner-service 拆分暴露了两类问题，事后核查"是否具备统一网
 - **`ROADMAP.md`（根目录）是全局导航** — 终局形态、阶段划分与依赖、每阶段的
   完成判据、贯穿全程的不变量、迷路时的重新定位方法都在那里。本文件负责
   「决策的来龙去脉」，路线图负责「现在在哪、下一步做什么、怎么算完成」。
-- **`Caddyfile`/`docker-entrypoint.sh` 是化石文件，不要参考它们理解现在的
-  拓扑** — `git log -1` 显示两者自 2026-01-01 `init project` 后从未被改过，
-  只认识 optimus-api/optimus-ui/optimus-next 三个进程，`/api/*` 硬编码转发
-  到 optimus-api。这是 `platform-gateway-topology` 要修的对象，实施前不要
-  假设它反映了当前的服务拓扑。
+- ~~**`Caddyfile`/`docker-entrypoint.sh` 是化石文件**~~ —— **已于 2026-09-05 改造完成**
+  （`platform-gateway-topology` 16/19）。现在它们反映的就是真实拓扑：Caddy 只服务
+  管理后台 + embed 独立站点，C 端整条线已移除；entrypoint 不再启动 Caddy。
+  新增 `docker-compose.prod.yml` 与 `packages/partner-service/Dockerfile`。
+  改造前的状态（保留以说明问题由来）：两者自 2026-01-01 `init project` 后从未被改过，
+  只认识 optimus-api/optimus-ui/optimus-next 三个进程，`/api/*` 硬编码转发到
+  optimus-api，拦在 optimus-next 的动态分流之前。
 - **TASKS.md** 是迭代级的进展记录，比 CLAUDE.md 新，优先看它。
 - **启动要点在 CLAUDE.md 的"启动要点（踩过的坑，换机必读）"一节**，那部分仍然有效。
 - 每个 openspec 变更的 `design.md` 里都有 Risks / Open Questions 章节，
