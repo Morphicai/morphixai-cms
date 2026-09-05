@@ -44,11 +44,11 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 
 | 维度 | 状态 |
 |---|---|
-| 已归档变更 | 15 个（`openspec/changes/archive/`） |
-| 规格基线 | 23 个能力（`openspec/specs/`） |
-| 活跃变更 | 6 个 |
+| 已归档变更 | 16 个（`openspec/changes/archive/`） |
+| 规格基线 | 24 个能力（`openspec/specs/`） |
+| 活跃变更 | 5 个 |
 | 独立业务服务 | 1 / 3（partner-service） |
-| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **②③⑤⑥⑦ 已完成；下一步 ④，之后进阶段五 ⑧** |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段三 ✅（②③④）· 阶段四 ✅（⑤⑥⑦，⑤ 差 5.3）· 下一步阶段五 ⑧** |
 | CI | 1 条流水线（`sdk-usage`），已推送并跑绿。**但“能拦下违规”还没在真实 PR 上触发过**——只在本地用临时分支验过两条规则 |
 | SDK 消费方 | **仍是 0 个**——`platform-client` 无任何包声明依赖，partner-service 仍用私有 `optimus-api-client.ts`。⑦ 提供了能力，但迁移存量调用方不在其范围内 |
 | grants 生效点 | **2 个**（⑦ 的两个路由）——信任模型从「可配置但未生效」变成「真的在拦」，⑧⑨ 已有可复制的样板 |
@@ -58,7 +58,6 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 | 变更 | 进度 | 性质 |
 |---|---|---|
 | `platform-gateway-topology` | 18/19 | 主线 · 阶段四（代码已合 main，剩 5.3 全栈 embed 握手） |
-| `embed-submenu` | 0/9 | 主线 · 阶段三 |
 | `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
 | `extract-order-service` | 0/23 | 主线 · 阶段五 |
 | `platform-closed-loop` | 21/22 | **收口欠账**，只差一项真实验收，见 §七 |
@@ -74,7 +73,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
                                     ▼
         阶段三 L1 能力补齐
         ② environment-info ✅ ────► ③ client-sdk ✅
-        ④ embed-submenu（独立，未开工）
+        ④ embed-submenu ✅
                     │
                     ▼
         阶段四 拓扑与信任边界
@@ -122,7 +121,7 @@ L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-s
 |---|---|
 | ② environment-info ✅ | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑤）真实取到值 —— ③ 的 `getEnvironment()` 已真实取到 |
 | ③ platform-client-sdk ✅ | `@optimus/platform-client` 发布到 workspace；**CI 静态扫描能拦住违规写法**（裸写 `/auth/introspect`、跨业务 `@InjectRepository`）——不是"建议使用"，是"不这样过不了检查"。两条规则均已实现并验证 |
-| ④ embed-submenu | 一个服务在管理端渲染出多个子菜单，权限码分别生效 |
+| ④ embed-submenu ✅ | 一个服务在管理端渲染出多个子菜单，权限码分别生效 —— 数据层与映射层已验证（真实库 + 26 例单测）；**侧边栏的浏览器目视确认待人工**（需管理员登录） |
 
 **阶段三整体 DoD**：partner-service 里所有"因为没有平台能力而临时凑合"的写法全部
 被替换（HTTP 直调 optimus-api 的 `client-upload`/`client-shorten` 除外，那两处是有意
