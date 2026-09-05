@@ -113,11 +113,11 @@ partner-service 拆分暴露了两类问题，事后核查"是否具备统一网
 
 ## 六、接手前必读的项目约定
 
-- **CLAUDE.md 已过时** — 它说 monorepo 有 4 个包，实际有 11 个
-  （admin-embed / agent-service / auth-ui / client-sdk / common / optimus-api /
-  optimus-next / optimus-ui / partner-service / server-sdk / zone-activity），
-  且完全没提 partner-service。技术栈表和架构章节都停留在拆分之前的状态，
-  参考时注意甄别。**这本身是一项待办**，但不在这 8 个变更的范围内。
+- **CLAUDE.md 已在 `40c4555` 更新完毕**（11 个包、partner-service、四条基建链路
+  全部补齐），可以正常参考。此处原先记的"CLAUDE.md 说只有 4 个包"已不成立。
+- **`ROADMAP.md`（根目录）是全局导航** — 终局形态、阶段划分与依赖、每阶段的
+  完成判据、贯穿全程的不变量、迷路时的重新定位方法都在那里。本文件负责
+  「决策的来龙去脉」，路线图负责「现在在哪、下一步做什么、怎么算完成」。
 - **`Caddyfile`/`docker-entrypoint.sh` 是化石文件，不要参考它们理解现在的
   拓扑** — `git log -1` 显示两者自 2026-01-01 `init project` 后从未被改过，
   只认识 optimus-api/optimus-ui/optimus-next 三个进程，`/api/*` 硬编码转发

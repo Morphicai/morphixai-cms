@@ -1,8 +1,25 @@
 # Optimus CMS - Task Tracking
 
 > 保持精简，定期清理，只留进行中的事。
+> **全局路线图与阶段完成判据见根目录 `ROADMAP.md`**，本文件只记迭代流水。
 
-## 当前状态（2026-08-31）：服务身份能力完成，网关拓扑缺口已排期，进入环境与 SDK 接入阶段
+## 当前状态（2026-09-05）：台账收口完成，主线待从阶段三起步
+
+积压的 11 个已完成变更全部归档，`openspec/changes/` 从 20 个降到 9 个活跃变更，
+同时建立起 `openspec/specs/` 规格基线（18 个能力）。顺带修掉两处台账失真：
+
+- `extract-partner-service` 4.5 补勾 —— 管理页实际已在第 5 组随 `admin-app/`
+  （独立 Vite + React 18 + antd 5）交付，只是复选框没勾，不是待办
+- 8 个早期（08-23 那批）spec delta 是老格式（`# Spec:` + 2 级 Requirement），
+  `openspec archive` 解析不出 delta 操作而中止。统一转成
+  `## ADDED Requirements` + 3 级 Requirement / 4 级 Scenario，四个变更重新 validate 通过。
+  08-24 之后的变更已全部是规范格式，属一次性历史债
+
+9 个活跃变更里 7 个是主线（见 ROADMAP §二），另外两个不在主线上：
+`platform-closed-loop` 21/22 差一项真实验收（需完整环境，见 ROADMAP §六）、
+`micro-frontend` 16/19 有意挂起等触发条件。
+
+## 本轮排期（2026-08-31 定）：服务身份能力完成，网关拓扑缺口已排期，进入环境与 SDK 接入阶段
 
 extract-partner-service 完成后，顺势把"中台 vs 业务团队"的分层架构定了下来
 （L0 接入层 / L1 中台基础能力层 / L2 业务领域服务层，四个业务域：营销/订单/

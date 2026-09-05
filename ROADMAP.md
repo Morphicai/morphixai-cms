@@ -1,0 +1,225 @@
+# ROADMAP — Optimus CMS 中台化路线图
+
+> 导航文档。回答三个问题：**现在在哪 / 下一步做什么 / 做完了怎么算数**。
+> 最后更新：2026-09-05。
+>
+> 与其它文档的分工：本文件是**全局视图与阶段判据**；`ARCHITECTURE.md` 是**终局架构
+> 与层间依赖规则**；`HANDOFF.md` 是**架构决策的来龙去脉**；`TASKS.md` 是**迭代级流水账**；
+> `openspec/changes/<name>/` 是**单个变更的四件套**；`openspec/specs/` 是**已交付能力的
+> 规格基线**（归档时自动累积）。
+> 冲突时以 `openspec list` 的实际任务进度为准，文档一律次之。
+
+---
+
+## 一、终局
+
+把单体 `optimus-api` 收缩成纯 L1 平台服务，业务域按团队边界拆成独立进程。
+
+```
+L0 接入层     optimus-ui / optimus-next / zone-activity / embed 宿主
+              只做渲染、路由分发、iframe 挂载,零业务逻辑
+                              │  依赖 L1 契约;对 L2 的依赖经服务目录间接化
+L1 中台基础能力  optimus-api(收缩后) + agent-service + 六个共享包
+              中台团队独占维护,业务团队只消费;不依赖任何人(叶子)
+                              ▲
+L2 业务领域服务  partner-service ✅ │ marketing-service ⏳ │ order-service ⏳
+              contact(商业合作域,明确不拆) · 彼此只走 HTTP
+```
+
+> **完整终局架构图、每层的成员与职责、层间依赖的具体接口、服务目录如何驱动五条
+> 链路、终局部署拓扑、依赖规则总表 —— 全部见 `ARCHITECTURE.md`。**
+
+**终局判据**：`optimus-api` 的 `src/business/` 下只剩 contact；三个业务域各自独立进程、
+独立 Dockerfile、独立子域名；新增一个业务服务的成本 = 登记服务目录 + 起进程。
+
+---
+
+## 二、当前坐标（2026-09-05）
+
+分支 `main`，与 origin 同步，无进行中代码分支。
+
+| 维度 | 状态 |
+|---|---|
+| 已归档变更 | 11 个（`openspec/changes/archive/`） |
+| 规格基线 | 18 个能力（`openspec/specs/`） |
+| 活跃变更 | 9 个 |
+| 独立业务服务 | 1 / 3（partner-service） |
+| 主线进度 | 阶段一 ✅ · 阶段二 ✅ · **阶段三 1/6 进行中** |
+
+活跃变更的性质要分清，混在一起看就会迷路：
+
+| 变更 | 进度 | 性质 |
+|---|---|---|
+| `platform-environment-info` | 0/5 | 主线 · 阶段三 |
+| `platform-client-sdk` | 0/11 | 主线 · 阶段三 |
+| `embed-submenu` | 0/9 | 主线 · 阶段三 |
+| `platform-user-profile-query` | 0/9 | 主线 · 阶段三 |
+| `platform-gateway-topology` | 2/19 | 主线 · 阶段四（那 2 项只是范围决策，代码零改动） |
+| `extract-marketing-service` | 0/24 | 主线 · 阶段五 |
+| `extract-order-service` | 0/23 | 主线 · 阶段五 |
+| `platform-closed-loop` | 21/22 | **收口欠账**，只差一项真实验收，见 §六 |
+| `micro-frontend` | 16/19 | **有意挂起**，触发条件未到，见 §六 |
+
+---
+
+## 三、阶段与依赖
+
+```
+阶段一 平台基座 ✅ ────► 阶段二 首次拆分+分层定案 ✅
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+        阶段三 L1 能力补齐                   （②③④⑤ 中 ②④ 可并行起步）
+        ② environment-info ──────► ③ client-sdk
+        ① service-token ✅ ───────► ⑤ user-profile-query
+        ④ embed-submenu（独立）
+                    │
+                    ▼
+        阶段四 ⑥ gateway-topology   ← 松耦合于 ②，其余独立
+                    │
+                    ▼
+        阶段五 ⑦ extract-marketing ──► ⑧ extract-order
+               （均依赖 ③⑥；⑧ 建议晚于 ⑦）
+```
+
+**为什么是这个顺序**（每次想抄近路时回来读一遍）：
+
+1. **⑥ 必须在 ⑦⑧ 之前。** 生产网关（`Caddyfile` + `docker-entrypoint.sh`）自项目
+   初始化后从未改过，只认识三个进程。每多拆一个服务，"网关不认识新服务"这个缺口就
+   重演一次。现在只有 partner-service 一个真实案例，是修复成本最低的窗口。
+2. **⑦ 必须在 ⑧ 之前。** 营销域内部耦合简单；订单域涉及支付回调这条收入关键路径。
+   先用营销域把「迁移路径 + SDK 强约束 + 新网关拓扑」这三件事一起验证一遍。
+3. **③ 必须在 ⑦⑧ 之前。** 拆分过程中业务服务需要消费平台能力，没有 SDK 就会退化成
+   裸写 HTTP —— 那正是这轮架构要消灭的东西。
+
+---
+
+## 四、阶段完成判据（DoD）
+
+判据只认可**可执行的验证**，不认"代码写完了"。
+
+### 阶段三 · L1 能力补齐
+
+| 变更 | DoD |
+|---|---|
+| ② environment-info | 根域名 / cookie 域可经接口查询；至少一个消费方（③ 或 ⑥）真实取到值 |
+| ③ platform-client-sdk | `@optimus/platform-client` 发布到 workspace；**CI 静态扫描能拦住违规写法**（裸写 `/auth/introspect`、跨业务 `@InjectRepository`）——不是"建议使用"，是"不这样过不了检查" |
+| ④ embed-submenu | 一个服务在管理端渲染出多个子菜单，权限码分别生效 |
+| ⑤ user-profile-query | 跨服务按 uid 查到资料；**partner-service 的 username 快照漂移问题被消灭**（这是已验证的真实缺陷，不是假想） |
+
+**阶段三整体 DoD**：partner-service 里所有"因为没有平台能力而临时凑合"的写法全部
+被替换（HTTP 直调 optimus-api 的 `client-upload`/`client-shorten` 除外，那两处是有意
+的设计），且 ⑦ 的骨架搭建不再需要新增任何平台能力。
+
+> ⑤ 实施前必须先拍板一件事：**限不限定"哪些服务能查全量用户资料"**。这条直接决定接口
+> 鉴权怎么写，`design.md` 里是故意留白的，不是遗漏。
+
+### 阶段四 · ⑥ 网关拓扑
+
+**DoD**：本地 Docker 完整走一遍新拓扑，四条路径同时成立——
+1. C 端请求经 `optimus-next` 自托管入口 → 服务目录动态分流 → 落到 partner-service
+2. Multi-Zones 的 zone 路径（如 `/activity`）正确落到 optimus-next 而非 optimus-ui
+3. B 端 embed 管理页经各自子域名加载，postMessage 握手与 token 下发正常
+4. `docker-compose.prod.yml` 能起全部服务，partner-service 有独立 Dockerfile
+
+已拍板、**不要再讨论**：embed 可达范围跟随管理后台整体（VPN-only 方案已否决，理由是
+会造成"权限够但不在 VPN 里进不去"的可用性陷阱）；C 端不经 Caddy。
+
+### 阶段五 · ⑦⑧ 业务域拆分
+
+两个变更共用同一套七组模板（partner 踩出来的路径）：
+落地前修复 → 骨架 → 搬迁 → 目录接入验证分流 → **确认分流生效后**才删原代码 → 单测迁移 → 验收。
+
+**DoD**（每个）：
+- 复用 `verify-closed-loop.mjs` 的结构写出该域的闭环脚本，打**真实多进程实例**
+  （不是 mock，也不是单服务隔离的 e2e —— 那测不出跨服务分流是否真接通）
+- 全量单测绿；optimus-api 侧原代码已删且 optimus-ui 侧残留页面同步清理
+- ⑧ 额外：**支付回调路径切流前后逐字节比对**，这是全程风险最高的一点
+
+> ⑦ 实施前要读代码确认：`ActivityService` 现有方法是否覆盖 reward-claim-record 那处
+> 原生 JOIN 所需的全部字段。**不要在设计阶段猜**。
+
+---
+
+## 五、贯穿全程的不变量
+
+任何阶段都不能破的规则。破了就是在给下一个阶段挖坑。
+
+1. **服务目录是唯一事实源。** 探测 / 动态菜单 / Agent 工具发现 / 路由分流全部读它。
+   新服务"登记即接入"，不允许任何一处硬编码服务地址绕过它。
+2. **业务服务之间只走 HTTP。** 禁止跨业务 `@InjectRepository` 别人的 entity、禁止原生
+   SQL 跨表 JOIN 别人的表、禁止裸写 HTTP 调 `/auth/introspect`（走 SDK）。
+3. **先验证分流，再删原代码。** 拆分变更的第 5 组永远排在第 4 组之后，双跑阶段不许压缩。
+4. **迁移不是搬运。** 迁移是给沉睡代码做第一次真实体检。partner 那次挖出表名前缀漏写、
+   审计表从未建过、守卫挂错类型、`depth` 被硬编码忽略——全部集中在"业务代码从未被真实
+   调用路径触达过"这个模式。**⑦⑧ 要预留体检时间，别按纯搬运估工时。**
+5. **`DB_SYNCHRONIZE` 永远是 false**，表名前缀 `op_sys_*` / `op_biz_*` 按归属选。
+6. **每个变更完成后立即 `openspec archive`。** 这次一口气积压了 11 个未归档变更，直接
+   后果是扫一眼目录分不清"在做的"和"做完的"。
+
+---
+
+## 六、不在主线上的两笔账
+
+**`platform-closed-loop` 21/22 —— 收口欠账。**
+ai-writing-assist 的代码全部写完（AiService、`POST /api/ai/assist` + 限频、编辑器入口），
+只差 3.4 一项真实验收：生成一篇摘要入库 / 无 key 环境返回配置提示 / 限频 429 生效。
+**功能已在代码里但从没被真实跑过一次。** 需要起完整环境（Docker + MySQL + AI key）才能收，
+不阻塞主线，但也不该一直挂着——建议下次起环境时顺手做掉。
+
+**`micro-frontend` 16/19 —— 有意挂起，不是烂尾。**
+迭代四（标准 v0→v1 校准、基座 loader、`entryType` 加 `module`）的触发条件写死在 tasks.md 里：
+"第一个真实深度集成模块出现"。partner-service 走的是 embed iframe 而非 module，条件还没到。
+**不要在条件到达前开工**，也不要归档——它是活的标准。
+
+> 附带说明：`openspec validate --all` 会报 `micro-frontend` 一条 ERROR（没有 specs 目录、
+> 解析不出 delta）。这是它建立时就有的状态，**不是被谁改坏的**。迭代四的标准要"以真实
+> 用例校准 v0→v1"，现在补 spec 等于凭空猜，所以有意不补——等触发条件到达、开工时
+> 一并补齐；若届时仍无 spec，归档需加 `--skip-specs`。
+
+---
+
+## 七、技术债台账（与主线的关系）
+
+分三类。只有第一类会咬人。
+
+**会咬人的（建议尽早处理）**
+- `test/utils/database-test.helper.ts` 四处硬编码 `sys_user`（应为 `op_sys_user`）——
+  依赖它的测试**现在就是红的**，会污染 ⑦⑧ 的"全量单测绿"判据
+- `optimus-next/src/components/oss/utils.ts:325` `batchTransformUrls` 缺尾斜杠归一化，
+  env 按文档推荐写法配会拼出 `https://cdn.example.comimg1.jpg`；同文件 `OssImage.tsx:23-26`
+  有补，两处行为不一致
+- `RolesGuard` 权限判断整段被注释、等同永远放行，靠 UnifiedAuthGuard 先执行才无害
+
+**partner 迁移的清理尾巴（应随 ⑦ 一起做掉，同类工作合批）**
+- `optimus-ui`：`pages/{partner,partner-management}`、`pages/external-task-review`、
+  `system/views/PartnerDataManagement.jsx`、三个 `*PartnerService.js` —— 全部无 import 引用
+- `optimus-api`：`ClientUserAuthGuard` + `require-client-user-auth.decorator.ts` 已无调用点
+- embed 端 React 胶水代码抽进 `@optimus/admin-embed`（已排进 ③）
+
+**可延后**
+antd v4→v5 弃用 API、dashboard 数据源、`orderNum` 死字段（`routes.js` 无 sort，字段不生效）、
+`@optimus/common` 未导出文件评估、GameWemade 废弃 env 变量、i18n-platform 内部化、
+ComingSoon 文档页、ArticleSDK 双实现合并。
+
+---
+
+## 八、迷路时怎么重新定位
+
+按顺序执行，三步之内一定能回到坐标系：
+
+```bash
+openspec list                      # 1. 活跃变更 + 真实任务进度(唯一可信进度源)
+openspec show <change>             # 2. 单个变更的完整四件套
+openspec list --specs              # 3. 已交付能力的规格基线
+```
+
+然后对照本文件 §二 的表格确认该变更属于哪个阶段、§四 的 DoD 确认怎么算完成。
+
+**开工前的固定动作**：读该变更的 `design.md` 的 Risks / Open Questions 章节。
+里面有几处是**故意留给实施者确认的**，不是遗漏（已知的两处：⑤ 的资料查询鉴权范围、
+⑦ 的 ActivityService 字段覆盖）。
+
+**不要拿来理解现状的文件**：`Caddyfile` 和 `docker-entrypoint.sh` 是化石，
+自 2026-01-01 `init project` 后从未改动，只认识三个进程——它们是 ⑥ 要修的对象，
+不是现状的描述。
